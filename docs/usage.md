@@ -26,8 +26,8 @@ transcripts: "/path/to/ests.fa"
 rm_lib: "/path/to/repeats.fa"
 reads: "/path/to/*_R{1,2}_001.fastq.gz"
 trinity: false
-augSpecies: "human"
-augCfg: false
+aug_species: "human"
+aug_config: false
 nblast: 200
 blast_evalue: 0.001
 nexonerate: 100

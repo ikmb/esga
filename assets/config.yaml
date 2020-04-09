@@ -2,11 +2,11 @@ genome: ""
 proteins: false
 transcripts: false
 rm_lib: false
-rm_species: "mammals"
+rm_species: false
 reads: false
 trinity: false
 pasa: false
-augSpecies: "human"
+aug_species: "human"
 evm: false
 nevm: 10
 uniprot: false
