@@ -27,8 +27,6 @@ process fastaToDiamondDB {
 
 	label 'medium_running'
 
-        publishDir "${params.outdir}/databases/blast/", mode: 'copy'
-
         input:
 	path protein_fa   
 
@@ -48,8 +46,6 @@ process fastaToCdbindex {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/databases/cdbtools/proteins", mode: 'copy'
-
 	input:
 	path fasta
 
@@ -67,8 +63,6 @@ process fastaToCdbindex {
 // Blast each genome chunk against the protein database
 // This is used to define targets for exhaustive exonerate alignments
 process runDiamondx {
-
-	publishDir "${params.outdir}/evidence/proteins/blastx/chunks", mode: 'copy'
 
 	//scratch true
 
@@ -93,8 +87,6 @@ process diamondxToTargets {
 
 	label 'short_running'
 
-        publishDir "${params.outdir}/evidence/proteins/diamondx/chunks", mode: 'copy'
-
 	input:
 	file blast_reports
 	path genome_agp
@@ -118,8 +110,6 @@ process diamondxToTargets {
 // Takes a list of blast matches and will extract protein sequences and potential target regions
 // from a protein database and genome sequence to run exonerate 
 process protExonerate {
-
-	publishDir "${params.outdir}/evidence/proteins/exonerate/chunks", mode: 'copy'
 
 	scratch true
 
@@ -158,8 +148,6 @@ process protExonerate {
 process protExonerateToHints {
 
 	label 'medium_running'
-
-	publishDir "${params.outdir}/evidence/proteins/exonerate/", mode: 'copy'
 
 	input:
 	path chunks

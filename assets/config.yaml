@@ -1,15 +1,12 @@
 genome: ""
 proteins: false
-ESTs: false
+transcripts: false
 rm_lib: false
 rm_species: mammals
 reads: false
 trinity: false
-training: false
-training_models: 1000
 pasa: false
-augustus: true
-model: "human"
+augSpecies: "human"
 augCfg: false
 evm: false
 nevm: 10

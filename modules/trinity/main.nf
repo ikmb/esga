@@ -14,8 +14,6 @@ workflow trinity_guided_assembly {
 
 process rseqTrinity {
 	
-	publishDir "${OUTDIR}/evidence/rnaseq/trinity", mode: 'copy'
-
 	scratch true 
 	
 	input:

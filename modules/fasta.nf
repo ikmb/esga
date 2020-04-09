@@ -6,8 +6,6 @@
 // will delete all empty chunks since no checking of the absolute minimum number of chunks is performed.
 process fastaSplitChunks {
 
-        publishDir "${params.outdir}/fasta/chunks"
-
         input:
         path fasta
 	val nchunks
@@ -25,8 +23,6 @@ process fastaSplitChunks {
 }
 
 process assemblySplit {
-
-	publishDir "${params.outdir}/databases/genome/", mode: 'copy'
 
 	label 'short_running'
 
@@ -51,8 +47,6 @@ process assemblySplit {
 process fastaMergeChunks {
 
         label 'short_running'
-
-        publishDir "${params.outdir}/fasta", mode: 'copy'
 
         input:
         path chunks

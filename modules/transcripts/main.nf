@@ -18,8 +18,6 @@ workflow esthint {
 
 process estMinimap {
 
-	publishDir "${params.outdir}/evidence/EST/minimap", mode: 'copy'
-
 	scratch true
 
 	input:
@@ -46,8 +44,6 @@ process estMinimapToHints {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/evidence/EST/minimap/", mode: 'copy'
-	
 	input:
 	path minimap_gff
 	

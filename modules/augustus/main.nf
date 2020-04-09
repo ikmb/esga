@@ -19,12 +19,11 @@ workflow augustus_prediction {
 
 	emit:
 		gff = prepMergeAugustus.out
+		config = predAugustusConfig.out
 
 }
 
 process predAugustus {
-
-	publishDir "${params.outdir}/annotation/augustus/chunks"
 
 	input:
 	path genome_chunk
@@ -44,7 +43,7 @@ process predAugustus {
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d . 
-		augustus_from_regions.pl --genome_fai $genome_fai --model $params.model --utr ${params.utr} --isof false --aug_conf ${params.augCfg} --hints $hints --bed $regions > $command_file
+		augustus_from_regions.pl --genome_fai $genome_fai --model $params.augSpecies --utr ${params.utr} --isof false --aug_conf ${params.augCfg} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
 		cat *augustus.gff > $augustus_result
 	"""
@@ -55,8 +54,6 @@ process prepMergeAugustus {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
-	
 	input:
 	path augustus_gffs
 
@@ -74,8 +71,6 @@ process prepMergeAugustus {
 
 // containerized AUGUSTUS_CONFIG_PATH does not work, need to move into work/
 process predAugustusConfig {
-
-        publishDir "${params.outdir}/annotation/augustus/"
 
 	input:
 	path augustus_config_dir

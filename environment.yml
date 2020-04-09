@@ -1,0 +1,32 @@
+# You can use this file to create a conda environment for the genome-annotation pipeline:
+#   conda env create -f genome-annotation-conda.yml
+name: genome-annotation-1.0
+channels:
+ - defaults
+ - conda-forge
+ - bioconda
+dependencies:
+ - parallel
+ - samtools=1.9
+ - perl-text-soundex
+ - repeatmodeler=1.0.11
+ - repeatmasker=4.0.7
+ - cdbtools
+ - exonerate=2.4.0 
+ - trinity=2.8.4
+ - fastp=0.20.0
+ - augustus=3.2.3
+ - hisat2=2.1.0
+ - multiqc=1.8
+ - pasa=2.3.3
+ - bioconductor-seqlogo=1.50.0
+ - r-ggplot2=3.0.0
+ - evidencemodeler=1.1.1
+ - perl-uri=1.76
+ - perl-dbi=1.642
+ - perl-parallel-forkmanager
+ - minimap2=2.17
+ - ucsc-fasomerecords
+ - perl-bioperl=1.6.924
+ - diamond=0.9.10
+ - gaas

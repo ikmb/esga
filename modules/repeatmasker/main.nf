@@ -1,6 +1,6 @@
 include { fastaSplitChunks; fastaMergeChunks } from "./../fasta" params(params)
 
-workflow repeatmasking {
+workflow repeatmasking_with_lib {
 
 	take:
 		genome
@@ -9,7 +9,7 @@ workflow repeatmasking {
 	main:
 	        fastaSplitChunks(genome,params.nchunks)
 		repeatLib(rm_lib)
-		repeatMask(fastaSplitChunks.out.flatMap(),repeatLib.out.map{it.toString()},rm_lib)
+		repeatMask(fastaSplitChunks.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
 		fastaMergeChunks(repeatMask.out[0].collect())
 
 	emit:
@@ -18,13 +18,28 @@ workflow repeatmasking {
 
 }
 
+workflow repeatmasking_with_species {
+
+	take:
+		genome
+		species
+
+	main:
+		fastaSplitChunks(genome,params.nchunks)
+                repeatLibSpecies(species)
+                repeatMask(fastaSplitChunks.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
+                fastaMergeChunks(repeatMask.out[0].collect())
+
+	emit:
+		genome_rm = fastaMergeChunks.out[0]
+                genome_rm_gffs = repeatMask.out[1].collectFile()
+
+}
 // RepeatMasker library needs ot be writable. Need to do this so we can work with locked containers
 // Solution: we trigger initial library formatting and then pass the resulting folder as REPEATMASKER_LIB_DIR
 process repeatLib {
 
 	label 'short_running'
-
-	publishDir "${params.outdir}/repeatmasker/", mode: 'copy'
 
 	input:
 	path repeat_lib
@@ -45,13 +60,35 @@ process repeatLib {
 	"""	
 }
 
+process repeatLibSpecies {
+
+	input:
+	val species
+
+	output:
+	path "Library"
+
+	script:
+
+	"""
+		cp ${baseDir}/assets/repeatmasker/my_genome.fa .
+                cp ${baseDir}/assets/repeatmasker/repeats.fa .
+
+		mkdir -p Library
+		cp ${baseDir}/assets/repeatmasker/DfamConsensus.embl Library/
+		gunzip -c ${baseDir}/assets/repeatmasker/taxonomy.dat.gz > Library/taxonomy.dat
+
+		RepeatMasker -species $species my_genome.fa > out
+
+	"""
+	
+}
+
 // generate a soft-masked sequence for each assembly chunk
 // if nothing was masked, return the original genome sequence instead and an empty gff file. 
 process repeatMask {
 
-	//scratch true
-
-	publishDir "${params.outdir}/repeatmasker/chunks"
+	scratch true
 
 	input: 
 	path(genome)

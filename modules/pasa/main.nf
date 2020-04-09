@@ -8,12 +8,12 @@ workflow pasa {
 		transcripts
 
 	main:
-		fastaSplitChunk(genome)
+		fastaSplitChunks(genome)
 		runSeqClean(transcripts)
 		estMinimap(runSeqClean.out)
-		runMinimapSplit(fastaSplitChunk.out.flatMap(),runSeqClean.out.collect(),runMinimap.out.collect())		
+		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),runMinimap.out.collect())		
 		runPasa(runMinimapSplit.out)
-
+		PasaToModels(runPasa.out.collect())
 
 }
 
@@ -120,7 +120,7 @@ process runPasa {
 // Extract gene models from PASA database
 // All chunks are merged using a perl script into the base name pasa_db_merged
 // this is not...ideal. 
-process transPasaToModels {
+process PasaToModels {
 
 	scratch true
 
