@@ -12,18 +12,18 @@ workflow proteinhint {
 
 	main:
 		assemblySplit(genome_rm,params.chunk_size)
-		protMakeDB(protein_fa)
-		protIndex(protein_fa)		
-		protDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),protMakeDB.out.collect())
-		protDiamondToTargets(protDiamondx.out.collect(),assemblySplit.out[1])
-		protExonerate(protDiamondToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa,protIndex.out,genome_rm)
+		fastaToDiamondDB(protein_fa)
+		fastaToCdbindex(protein_fa)		
+		runDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),fastaToDiamondDB.out.collect())
+		diamondxToTargets(runDiamondx.out.collect(),assemblySplit.out[1])
+		protExonerate(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa,fastaToCdbindex.out,genome_rm)
 		protExonerateToHints(protExonerate.out.collect())
 
 	emit:
 		hints = protExonerateToHints.out
 }
 
-process protMakeDB {
+process fastaToDiamondDB {
 
 	label 'medium_running'
 
@@ -44,7 +44,7 @@ process protMakeDB {
 
 // create a cdbtools compatible  index
 // we need this to do very focused exonerate searches later
-process protIndex {
+process fastaToCdbindex {
 
 	label 'short_running'
 
@@ -66,7 +66,7 @@ process protIndex {
 
 // Blast each genome chunk against the protein database
 // This is used to define targets for exhaustive exonerate alignments
-process protDiamondx {
+process runDiamondx {
 
 	publishDir "${params.outdir}/evidence/proteins/blastx/chunks", mode: 'copy'
 
@@ -89,7 +89,7 @@ process protDiamondx {
 }
 
 // Parse Protein Blast output for exonerate processing
-process protDiamondToTargets {
+process diamondxToTargets {
 
 	label 'short_running'
 

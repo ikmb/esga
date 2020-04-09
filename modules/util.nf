@@ -1,9 +1,9 @@
+// this is currently super simplistic and should be made a bit smarter down the line
 process merge_hints {
 
 
 	input:
-	path protein_hints
-	path est_hints
+	path all_hints
 
 	output:
 	path hints
@@ -13,7 +13,7 @@ process merge_hints {
 
 	"""
 
-		cat $protein_hints $est_hints >> $hints
+		cat $all_hints >> $hints
 	"""
 
 }

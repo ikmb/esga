@@ -1,3 +1,16 @@
+process model_repeats {
+
+	take:
+	genome
+
+	main:
+	repeatModel(genome)
+
+	emit:
+	repeats = repeatModel.out
+
+}
+
 process repeatModel {
 
         publishDir "${params.outdir}/repeatmodeler/", mode: 'copy'
@@ -5,10 +18,10 @@ process repeatModel {
         scratch true
 
         input:
-        file genome_fa 
+        path genome_fa 
 
         output:
-	file repeats
+	path repeats
 
         script:
 

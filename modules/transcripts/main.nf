@@ -30,8 +30,8 @@ process estMinimap {
 	path minimap_gff	
 
 	script:
-	minimap_gff = "ESTs.minimap.gff"
-	minimap_bam = "ESTS.minimap.bam"
+	minimap_gff = est.getBaseName() + ".minimap.gff"
+	minimap_bam = est.getBaseName() + ".minimap.bam"
 
 	"""
 		samtools faidx $genome_rm
@@ -55,7 +55,7 @@ process estMinimapToHints {
 	path minimap_hints
 	
 	script:
-	minimap_hints = "ESTs.minimap.hints.gff"
+	minimap_hints = minimap_gff.getBaseName() + ".hints.gff"
 			
 	"""
 		minimap2hints.pl --source est2genome --pri ${params.pri_est} --infile $minimap_gff --outfile $minimap_hints

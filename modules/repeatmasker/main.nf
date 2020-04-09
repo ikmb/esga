@@ -1,4 +1,4 @@
-include fastaSplitChunks from "./../fasta" params(params)
+include { fastaSplitChunks; fastaMergeChunks } from "./../fasta" params(params)
 
 workflow repeatmasking {
 
@@ -10,10 +10,10 @@ workflow repeatmasking {
 	        fastaSplitChunks(genome,params.nchunks)
 		repeatLib(rm_lib)
 		repeatMask(fastaSplitChunks.out.flatMap(),repeatLib.out.map{it.toString()},rm_lib)
-		repeatMerge(repeatMask.out[0].collect())
+		fastaMergeChunks(repeatMask.out[0].collect())
 
 	emit:
-		genome_rm = repeatMerge.out[0]
+		genome_rm = fastaMergeChunks.out[0]
 		genome_rm_gffs = repeatMask.out[1].collectFile()
 
 }
@@ -79,28 +79,3 @@ process repeatMask {
 	"""
 }
 
-// Merge the repeat-masked assembly chunks
-process repeatMerge {
-
-	label 'short_running'
-
-        publishDir "${params.outdir}/repeatmasker", mode: 'copy'
-
-	input:
-	path genome_chunks
-
-	output:
-	path masked_genome
-
-	script:
-	
-	masked_genome = "assembly.rm.fa"
-	masked_genome_index = masked_genome + ".fai"
-
-	"""
-		cat $genome_chunks >> merged.fa
-		fastasort -f merged.fa > $masked_genome
-		samtools faidx $masked_genome
-		rm merged.fa
-	"""	
-}

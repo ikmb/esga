@@ -2,14 +2,19 @@
 
 nextflow.preview.dsl=2
 
-include repeatmasking from "./modules/repeatmasker/repeatmasking" params(params)
-include proteinhint from "./modules/proteins/proteinevidence" params(params)
-include esthint from "./modules/transcripts/estevidence" params(params)
-include augustus_prediction from "./modules/augustus/augustus" params(params)
+include repeatmasking from "./modules/repeatmasker/main.nf" params(params)
+include proteinhint from "./modules/proteins/main.nf" params(params)
+include esthint from "./modules/transcripts/main.nf" params(params)
+include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
+include augustus_prediction from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
-//include rnaseqhint from "./modules/rnaseq" params(params)
+include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
+include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 //include evm from "./modules/evidencemodeler" params(params)
 //include pasa from "./modules/pasa" params(params)
+
+
+
 
 // ****************
 // input validation
@@ -42,7 +47,14 @@ if (!workflow.containerEngine) {
 
 workflow {
 
-        repeatmasking(params.genome,params.rm_lib)
+	if (params.rm_lib) {
+		repeats = Channel.fromPath(params.rm_lib)
+	} else {
+		model_repeats(params.genome)
+		repeats = model_repeats.out.repeats
+	}
+
+        repeatmasking(params.genome,repeats)
 	
 	if (params.proteins) {
 		proteinhint(repeatmasking.out.genome_rm,proteins)
@@ -59,12 +71,26 @@ workflow {
 	}
 
 	if (params.reads) {
-		rnaseqhint(repeatmasking.out.genome_rm,params.reads)
+		rnaseqhint(params.genome,params.reads)
+		rna_hints = rnaseqhint.out.hints
+		if (params.trinity) {
+			trinity_guided_assembly(rnaseqhint.out.bam)
+			trinity_esthint(repeatmasking.out.genome_rm,trinity_guided_assembly.out.assembly)
+			trinity_hints = trinity_esthint.out.hints
+		} else {
+			trinity_hints = Channel.empty()
+		}	
+		
+	} else {
+		rna_hints = Channel.empty()
+		trinity_hints = Channel.empty()
 	}
 
-	merge_hints(protein_hints,est_hints)
+	hints = protein_hints.merge(est_hints).merge(trinity_hints).merge(rna_hints)
+	merge_hints(hints)
 	
 	augustus_prediction(repeatmasking.out.genome_rm,merge_hints.out,augustus_config_folder)
+
 }
 
 

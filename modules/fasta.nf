@@ -47,3 +47,27 @@ process assemblySplit {
 		chromosome_chunk.pl -fasta_file $genome -size $chunk_size
 	"""
 }
+
+process fastaMergeChunks {
+
+        label 'short_running'
+
+        publishDir "${params.outdir}/fasta", mode: 'copy'
+
+        input:
+        path chunks
+
+        output:
+        path merged_chunks
+
+        script:
+
+        merged_chunks = "assembly.rm.fa"
+
+        """
+                cat $chunks >> merged.fa
+                fastasort -f merged.fa > $merged_chunks
+                rm merged.fa
+        """
+}
+

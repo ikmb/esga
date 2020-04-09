@@ -1,3 +1,5 @@
+// Workflow to perform RNA-seq mapping against a reference
+// requires: genome sequence in FASTA format (unmasked is fine) and one or more RNA-seq read sets
 workflow rnaseqhint {
 
 	take:
@@ -7,7 +9,13 @@ workflow rnaseqhint {
 	main:
 		rseqMakeDB(genome)
 		rseqTrim(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
+		rseqMap(rseqTrim.out[0],rseqMakeDB.out.collect())
+		rseqMergeBams(rseqMap.out.collect())
+		rseqHints(rseqMergeBams.out)
 
+	emit:
+		bam = rseqMergeBams.out
+		hints = rseqHints.out
 }
 
 
@@ -19,8 +27,7 @@ process rseqTrim {
 	scratch true 
 
 	input:
-	val name
-	path reads
+	tuple name, path(reads)
 		
 	output:
 	path "*_trimmed.fastq.gz"
@@ -75,9 +82,9 @@ process rseqMakeDB {
 
 process rseqMap {
 
-	publishDir "${OUTDIR}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
+	publishDir "${params.outdir}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
 	
-	scratch true
+	//scratch true
 
 	input:
 	path reads
