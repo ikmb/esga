@@ -3,6 +3,7 @@
 nextflow.preview.dsl=2
 
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
+include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
 include proteinhint from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
@@ -37,8 +38,8 @@ def helpMessage() {
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
     --rm_species	Perform repeatmasking using the built-in DFam library for a given species/taxonomic group (overrides rm_lib) [ default = 'false' ]
-    --augSpecies	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
-    --augCfg		Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
+    --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
+    --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm		Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
@@ -91,7 +92,9 @@ if (params.transcripts) {
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
-
+if (!params.rm_species && !params.rm_lib) {
+	log.warn "No repeat data provided, will model repeats de-novo (slow!!!)"
+}
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
 if (!workflow.containerEngine) {
@@ -117,8 +120,8 @@ if (params.rm_lib) {
 }
 log.info "-----------------------------------------"
 log.info "Program settings:"
-log.info "AUGUSTUS species:		${params.augSpecies}"
-log.info "AUGUSTUS config:		${params.augCfg}"
+log.info "AUGUSTUS species:		${params.aug_species}"
+log.info "AUGUSTUS config:		${params.aug_config}"
 log.info "EVM weights:			${params.evm_weights}"
 log.info "Maximum intron size:		${params.max_intron_size}"
 log.info "-----------------------------------------"
@@ -152,6 +155,8 @@ workflow {
 	if (params.rm_species) {
 		repeatmasking_with_species(params.genome,params.rm_species)
 		genome_rm = repeatmasking_with_species.out.genome_rm
+		repeats = Channel.empty()
+	// Use a library provided by the user or compute de-novo
 	} else {
 		if (params.rm_lib) {
 			repeats = Channel.fromPath(params.rm_lib)
@@ -159,7 +164,6 @@ workflow {
 			model_repeats(params.genome)
 			repeats = model_repeats.out.repeats
 		}
-
 	        repeatmasking_with_lib(params.genome,repeats)
 		genome_rm = repeatmasking_with_lib.out.genome_rm
 	}
@@ -210,6 +214,7 @@ workflow {
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
+		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
 }
 
 

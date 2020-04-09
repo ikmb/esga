@@ -1,4 +1,4 @@
-process model_repeats {
+workflow model_repeats {
 
 	take:
 	genome

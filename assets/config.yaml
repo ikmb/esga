@@ -2,12 +2,11 @@ genome: ""
 proteins: false
 transcripts: false
 rm_lib: false
-rm_species: mammals
+rm_species: "mammals"
 reads: false
 trinity: false
 pasa: false
 augSpecies: "human"
-augCfg: false
 evm: false
 nevm: 10
 uniprot: false
@@ -18,5 +17,5 @@ nexonerate: 100
 nchunks: 20
 singleEnd: false
 rnaseq_stranded: false
-max_intron_size: 100000
+max_intron_size: 50000
 email: false

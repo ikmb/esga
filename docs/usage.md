@@ -103,12 +103,15 @@ sufficient number of related repeats to be present in your assembly. If your gen
 short read assemblies tend to collapse repeats. In this case, the pipeline will fall back to the built-in library that ships with RepeatMasker
 (which is very limited and probably not very useful).
 
-#### `--augSpecies` [ default = 'human' ]
+#### `--aug_species` [ default = 'human' ]
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
-#### `--augCfg` [ default = 'bin/augustus_default.cfg' ]
+#### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
 Location of Augustus configuration file. By default, this pipeline uses config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. 
     
+#### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
+A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
+
 ### 6. How to tune the speed of the pipeline - data splitting
 
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 

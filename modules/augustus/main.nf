@@ -43,7 +43,7 @@ process predAugustus {
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d . 
-		augustus_from_regions.pl --genome_fai $genome_fai --model $params.augSpecies --utr ${params.utr} --isof false --aug_conf ${params.augCfg} --hints $hints --bed $regions > $command_file
+		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${params.utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
 		cat *augustus.gff > $augustus_result
 	"""
