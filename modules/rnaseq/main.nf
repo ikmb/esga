@@ -7,20 +7,20 @@ workflow rnaseqhint {
 		reads
 
 	main:
-		rseqMakeDB(genome)
-		rseqTrim(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
-		rseqMap(rseqTrim.out[0],rseqMakeDB.out.collect())
-		rseqMergeBams(rseqMap.out.collect())
-		rseqHints(rseqMergeBams.out)
+		HisatMakeDB(genome)
+		runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
+		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
+		mergeBams(HisatMap.out.collect())
+		rseqHints(mergeBams.out)
 
 	emit:
-		bam = rseqMergeBams.out
+		bam = mergeBams.out
 		hints = rseqHints.out
 }
 
 
 // trim reads
-process rseqTrim {
+process runFastp {
 
 	publishDir "${params.outdir}/evidence/rnaseq/fastp", mode: 'copy'
 
@@ -54,7 +54,7 @@ process rseqTrim {
 }
 
 // Generate an alignment index from the genome sequence
-process rseqMakeDB {
+process HisatMakeDB {
 
 	label 'long_running'
 
@@ -80,7 +80,7 @@ process rseqMakeDB {
  * STEP RNAseq.3 - Hisat2
  */
 
-process rseqMap {
+process HisatMap {
 
 	publishDir "${params.outdir}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
 	
@@ -111,7 +111,7 @@ process rseqMap {
 }
 
 // Combine all BAM files for hint generation
-process rseqMergeBams {
+process mergeBams {
 
 	publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
 

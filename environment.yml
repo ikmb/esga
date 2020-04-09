@@ -29,4 +29,4 @@ dependencies:
  - ucsc-fasomerecords
  - perl-bioperl=1.6.924
  - diamond=0.9.10
- - gaas
+ - gaas=1.0.1

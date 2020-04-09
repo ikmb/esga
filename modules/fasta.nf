@@ -65,3 +65,28 @@ process fastaMergeChunks {
         """
 }
 
+process fastaMergeFiles {
+
+	label 'short_running'
+
+        input:
+        path fasta
+	val name
+
+        output:
+        path merged_fasta
+
+        script:
+
+        merged_fasta = name
+
+        """
+                cat $chunks >> merged.fa
+                fastasort -f merged.fa > $merged_fasta
+                rm merged.fa
+        """
+
+
+
+}
+

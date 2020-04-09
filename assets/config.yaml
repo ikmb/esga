@@ -13,7 +13,7 @@ uniprot: false
 chunk_size: 50000
 nblast: 200
 blast_evalue: 0.001
-nexonerate: 100
+nexonerate: 400
 nchunks: 20
 singleEnd: false
 rnaseq_stranded: false

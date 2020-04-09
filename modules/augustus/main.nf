@@ -13,17 +13,17 @@ workflow augustus_prediction {
 	main:
 		fastaSplitChunks(genome,params.nchunks)
 		prepHintsToBed(hints)
-		predAugustusConfig(augustus_config_dir)
-		predAugustus(fastaSplitChunks.out.flatMap(),prepHintsToBed.out,predAugustusConfig.out.collect().map{ it[0].toString() } )
-		prepMergeAugustus(predAugustus.out.collect())
+		prepAugustusConfig(augustus_config_dir)
+		runAugustusBatch(fastaSplitChunks.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
+		mergeAugustusGff(runAugustusBatch.out.collect())
 
 	emit:
-		gff = prepMergeAugustus.out
-		config = predAugustusConfig.out
+		gff = mergeAugustusGff.out
+		config = prepAugustusConfig.out
 
 }
 
-process predAugustus {
+process runAugustusBatch {
 
 	input:
 	path genome_chunk
@@ -50,7 +50,7 @@ process predAugustus {
 }
 
 // Merge all the chunk GFF files into one file
-process prepMergeAugustus {
+process mergeAugustusGff {
 
 	label 'short_running'
 
@@ -70,7 +70,7 @@ process prepMergeAugustus {
 }
 
 // containerized AUGUSTUS_CONFIG_PATH does not work, need to move into work/
-process predAugustusConfig {
+process prepAugustusConfig {
 
 	input:
 	path augustus_config_dir
