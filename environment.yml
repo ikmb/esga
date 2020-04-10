@@ -27,6 +27,6 @@ dependencies:
  - perl-parallel-forkmanager
  - minimap2=2.17
  - ucsc-fasomerecords
- - perl-bioperl=1.6.924
+ - perl-bioperl
  - diamond=0.9.10
  - gaas=1.0.1

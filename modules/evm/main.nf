@@ -1,23 +1,25 @@
-workflow evm {
+workflow evm_prediction {
 
 	take:
 		genome
-		gene_models
 		protein_gff
 		transcript_gff
+		gene_models
 	main:
+		evmPartition(genome,gene_models,transcript_gff,protein_gff)
+		runEvm(evmPartition.out[1].splitText(by: params.nevm, file: true)
+		evmMerge(runEvm.out.collect(),evmPartition.out[0].collect(),genome.collect())
+		evmToGff(evmPartition.out[0].collect())
 
 	emit:
+		gff = evmToGff.out
 }
 
-process predEvmPartition {
+process evmPartition {
 
 	label 'long_running'
 
-	// CANNOT USE SCRATCH FOR THIS!
-	//scratch true
-
-	//publishDir "${OUTDIR}/annotation/evm/jobs", mode: 'copy'
+	// DO NOT USE SCRATCH WITH THIS!
 
 	input:
 	path genome_rm
@@ -33,7 +35,6 @@ process predEvmPartition {
 
 	partitions = "partitions_list.out"
 	evm_commands = "commands.list"
-	transcripts = "transcripts.merged.gff"
         gene_models = "gene_models.gff"
 
 	protein_options = ""
@@ -41,7 +42,7 @@ process predEvmPartition {
 	if (protein_gff) {
 		protein_options = "--protein_alignments $protein_gff "
 	}
-	if ( est_gff ) {
+	if (est_gff) {
 		transcript_options = "--transcript_alignments $est_gff "
 	}
 
@@ -60,79 +61,69 @@ process predEvmPartition {
 			
 }
 
-	// run n commands per chunk
-	evm_command_chunks = inputToEvm.splitText(by: params.nevm, file: true)
+// The outputs doesn't do nothing here, EVM combines the chunks based on the original partition file
+process runEvm {
 
-	// The outputs doesn't do nothing here, EVM combines the chunks based on the original partition file
-	process predEvm {
+	scratch true
 
-		scratch true
+	label 'long_running'
 
-		label 'long_running'
 
-                //publishDir "${OUTDIR}/annotation/evm/chunks", mode: 'copy'
+	input:
+	path evm_chunk	
 
-		input:
-		file(evm_chunk) from evm_command_chunks
+	output:
+	path log_file
 
-		output:
-		file(log_file) into EvmOut
-
-		script:
-		log_file = evm_chunk.getBaseName() + ".log"
-		"""
-			\$EVM_HOME/EvmUtils/execute_EVM_commands.pl $evm_chunk | tee $log_file
-		"""
+	script:
+	log_file = evm_chunk.getBaseName() + ".log"
+	"""
+		\$EVM_HOME/EvmUtils/execute_EVM_commands.pl $evm_chunk | tee $log_file
+	"""
 		
-	}
+}
 	
-	// Merge all the separate partition outputs into a final gff file
-	process predEvmMerge {
+// Merge all the separate partition outputs into a final gff file
+process evmMerge {
 	
-		label 'long_running'
+	label 'long_running'
 
-		publishDir "${OUTDIR}/annotation/evm", mode: 'copy'
+	input:
+	path evm_logs
+	path partition
+	path genome
+	
+	output:
+	path partition
+	path done
 
-		input:
+	script:
+	evm_final = "evm.out"
+	done = "done.txt"
+	"""
+		\$EVM_HOME/EvmUtils/recombine_EVM_partial_outputs.pl --partitions $partitions --output_file_name evm.out
+		\$EVM_HOME/EvmUtils/convert_EVM_outputs_to_GFF3.pl  --partitions $partitions --output evm.out --genome $genome_rm
+		touch $done
+	"""
 
-		file(evm_logs) from EvmOut.collect()
-		file(partitions) from EvmPartition
-		set file(genome_rm),file(genome_index) from genome_to_evm_merge
+}
 
-		output:
-		file(partitions) into EvmResult
-		file(done)
+// We merge the partial gffs from the partitions with a perl script, 
+// since the output folders are not transferred between processes
+process evmToGff {
 
-		script:
-		evm_final = "evm.out"
-		done = "done.txt"
-		"""
-			\$EVM_HOME/EvmUtils/recombine_EVM_partial_outputs.pl --partitions $partitions --output_file_name evm.out
-			\$EVM_HOME/EvmUtils/convert_EVM_outputs_to_GFF3.pl  --partitions $partitions --output evm.out --genome $genome_rm
-			touch $done
-		"""
+	label 'medium_running'
 
-	}
+	path partitions
 
-	// We merge the partial gffs from the partitions with a perl script, 
-	// since the output folders are not transferred between processes
-	process predEvmToGff {
+	output:
+	path evm_gff
 
-		label 'medium_running'
+	script:
+	evm_gff = "annotations.evm.gff"
 
-		publishDir "${OUTDIR}/annotation/evm", mode: 'copy'
+	"""
+		merge_evm_gff.pl --partitions $partitions --gff $evm_gff
+	"""
 
-		input:
-		file(partitions) from EvmResult
-
-		output:
-		file(evm_gff) into EvmGFF
-
-		script:
-		evm_gff = "annotations.evm.gff"
-
-		"""
-			merge_evm_gff.pl --partitions $partitions --gff $evm_gff
-		"""
-
-	}
+}

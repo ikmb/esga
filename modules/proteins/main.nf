@@ -21,6 +21,7 @@ workflow proteinhint {
 
 	emit:
 		hints = protExonerateToHints.out
+		gff = protExonerate.out.collectFile()
 }
 
 process fastaToDiamondDB {

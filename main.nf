@@ -12,7 +12,7 @@ include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 //include evm from "./modules/evidencemodeler" params(params)
-//include pasa from "./modules/pasa" params(params)
+include pasa_assembly from "./modules/pasa/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -88,12 +88,19 @@ if (params.transcripts) {
 	if (!transcripts.exists() ) {
 		exit 1, "The specified transcript file does not exist!"
 	}
+	t = Channel.fromPath(transcripts)
+} else {
+	t = Channel.empty()
 }
+
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
 if (!params.rm_species && !params.rm_lib) {
 	log.warn "No repeat data provided, will model repeats de-novo (slow!!!)"
+}
+if (params.pasa && !params.transcripts && !params.trinity) {
+	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --trinity)"
 }
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
@@ -180,8 +187,10 @@ workflow {
 	if (params.transcripts) {
 		esthint(genome_rm,transcripts)
 		est_hints = esthint.out.hints
+		est_gff = esthint.out.gff
 	} else {
 		est_hints = Channel.empty()
+		est_gff = Channel.empty()
 	}
 
 	// Generate hints from RNA-seq (if any)
@@ -191,14 +200,30 @@ workflow {
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_rm,trinity_guided_assembly.out.assembly)
+			trinity_gff = trinity_esthint.out.gff
 			trinity_hints = trinity_esthint.out.hints
+			trinity_assembly = trinity_guided_assembly.out.assembly
 		} else {
 			trinity_hints = Channel.empty()
+			trinity_gff = Channel.empty()
+			trinity_assembly = Channel.empty()
 		}	
 		
 	} else {
 		rna_hints = Channel.empty()
 		trinity_hints = Channel.empty()
+		trinity_gff = Channel.empty()
+		trinity_assembly = Channel.empty()
+	}
+
+	// Build evidence-based gene models from transcripts
+	if (params.pasa) {
+		transcript_files = trinity_assembly.concat(t)
+		fastaMergeFiles(transcript_files.collect())
+		pasa_assembly(fastaMergeFiles.out)
+		pasa_gff = pasa_assembly.out.gff
+	} else {
+		pasa_gff = Channel.empty()
 	}
 
 	// Merge hints
@@ -207,6 +232,17 @@ workflow {
 	
 	// Run AUGUSTUS
 	augustus_prediction(genome_rm,merge_hints.out,augustus_config_folder)
+	augustus_gff = augustus_prediction.out.gff
+
+	if (params.evm) {
+		gene_gffs = augustus_gff.concat(pasa_gff)
+		transcript_gff = est_gff.concat(trinity_gff)
+		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
+		evm_gff = evm_prediction.out.gff
+	} else {
+		evm_gff = Channel.empty()
+	}
+
 
 	publish:
 		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'

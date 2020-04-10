@@ -1,7 +1,7 @@
-include fastaSplitChunk from "./../fasta"  params(params)
+include fastaSplitChunks from "./../fasta"  params(params)
 include estMinimap from "./../transcripts/main.nf" params(params)
 
-workflow pasa {
+workflow pasa_assembly {
 
 	take:
 		genome
@@ -11,9 +11,12 @@ workflow pasa {
 		fastaSplitChunks(genome)
 		runSeqClean(transcripts)
 		estMinimap(runSeqClean.out)
-		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),runMinimap.out.collect())		
-		runPasa(runMinimapSplit.out)
-		PasaToModels(runPasa.out.collect())
+		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),runMinimap.out.collect())
+		runPasaFromCustom(runMinimapSplit.out)
+		PasaToModels(runPasaFromCustom.out.collect())
+
+	emit:
+		gff = PasaToModels.out
 
 }
 
@@ -21,8 +24,6 @@ workflow pasa {
 process runSeqclean {
 
 	label 'short_running'
-
-	publishDir "${params.outdir}/evidence/rnaseq/pasa/seqclean/", mode: 'copy'
 
 	input:
 	path transcripts
@@ -39,6 +40,7 @@ process runSeqclean {
 }
 		
 // We parallelize PASA by filtering the minimap alignments per genome chunk
+// meaning we select only those alignments present in this part of the assembly
 process runMinimapSplit {
 	
 	label 'short_running'
@@ -68,12 +70,10 @@ process runMinimapSplit {
 }
 
 // Run the PASA pipeline
-process runPasa {
+process runPasaFromCustom {
 			
 	scratch true
 			
-	publishDir "${params.outdir}/annotation/pasa/models", mode: 'copy'
-
 	input:
 	path genome
 	path transcripts
@@ -125,8 +125,6 @@ process PasaToModels {
 	scratch true
 
 	label 'long_running'
-
-	publishDir "${params.outdir}/annotation/pasa/", mode: 'copy'
 
 	input:
 	path pasa_assemblies

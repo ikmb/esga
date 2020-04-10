@@ -10,7 +10,7 @@ workflow repeatmasking_with_lib {
 	        fastaSplitChunks(genome,params.nchunks)
 		repeatLib(rm_lib)
 		repeatMaskLib(fastaSplitChunks.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
-		fastaMergeFiles(repeatMaskLib.out[0].collect(),genome.getBaseName() + ".rm.fa")
+		fastaMergeFiles(repeatMaskLib.out[0].collect())
 
 	emit:
 		genome_rm = fastaMergeFiles.out[0]
@@ -28,7 +28,7 @@ workflow repeatmasking_with_species {
 		fastaSplitChunks(genome,params.nchunks)
                 repeatLibSpecies(species)
                 repeatMaskSpecies(fastaSplitChunks.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
-                fastaMergeFiles(repeatMaskSpecies.out[0].collect(),genome.getBaseName() + ".rm.fa")
+                fastaMergeFiles(repeatMaskSpecies.out[0].collect())
 
 	emit:
 		genome_rm = fastaMergeFiles.out[0]

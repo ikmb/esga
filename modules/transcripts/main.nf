@@ -12,7 +12,7 @@ workflow esthint {
 		estMinimap(est,genome_rm)
 		estMinimapToHints(estMinimap.out)
 	emit:
-		align = estMinimap.out
+		gff = estMinimap.out
 		hints = estMinimapToHints.out
 }
 

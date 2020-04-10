@@ -70,15 +70,14 @@ process fastaMergeFiles {
 	label 'short_running'
 
         input:
-        path fasta
-	val name
+        path chunks
 
         output:
         path merged_fasta
 
         script:
 
-        merged_fasta = name
+        merged_fasta = chunks[0].getBaseName + ".merged.fa"
 
         """
                 cat $chunks >> merged.fa
