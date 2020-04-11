@@ -10,7 +10,7 @@ dependencies:
  - samtools=1.9
  - perl-text-soundex
  - repeatmodeler=1.0.11
- - repeatmasker=4.0.7
+ - repeatmasker=4.0.9_p2
  - cdbtools
  - exonerate=2.4.0 
  - trinity=2.8.4

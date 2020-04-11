@@ -77,7 +77,7 @@ process fastaMergeFiles {
 
         script:
 
-        merged_fasta = chunks[0].getBaseName + ".merged.fa"
+        merged_fasta = "sequences.merged.fa"
 
         """
                 cat $chunks >> merged.fa

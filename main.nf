@@ -92,7 +92,6 @@ if (params.transcripts) {
 } else {
 	t = Channel.empty()
 }
-
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
@@ -234,6 +233,7 @@ workflow {
 	augustus_prediction(genome_rm,merge_hints.out,augustus_config_folder)
 	augustus_gff = augustus_prediction.out.gff
 
+	// Combine all inputs into consensus annotation
 	if (params.evm) {
 		gene_gffs = augustus_gff.concat(pasa_gff)
 		transcript_gff = est_gff.concat(trinity_gff)
