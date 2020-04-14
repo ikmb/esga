@@ -5,14 +5,14 @@ workflow trinity_guided_assembly {
 		bam
 
 	main:
-		rseqTrinity(bam)				
+		runTrinityGuided(bam)				
 
 	emit:
-		assembly = rseqTrinity.out
+		assembly = runTrinityGuided.out
 }
 
 
-process rseqTrinity {
+process runTrinityGuided {
 	
 	scratch true 
 	
