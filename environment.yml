@@ -10,7 +10,7 @@ dependencies:
  - samtools=1.9
  - perl-text-soundex
  - repeatmodeler=1.0.11
- - repeatmasker=4.0.9_p2
+ - repeatmasker=4.0.7
  - cdbtools
  - exonerate=2.4.0 
  - trinity=2.8.4
@@ -26,7 +26,6 @@ dependencies:
  - perl-dbi=1.642
  - perl-parallel-forkmanager
  - minimap2=2.17
- - ucsc-fasomerecords
+ - ucsc-fasomerecords=377
  - perl-bioperl
  - diamond=0.9.10
- - gaas=1.0.1

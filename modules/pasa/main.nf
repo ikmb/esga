@@ -8,20 +8,18 @@ workflow pasa_assembly {
 		transcripts
 
 	main:
-		fastaSplitChunks(genome)
+		fastaSplitChunks(genome, params.nchunks)
 		runSeqClean(transcripts)
-		estMinimap(runSeqClean.out)
-		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),runMinimap.out.collect())
-		runPasaFromCustom(runMinimapSplit.out)
-		PasaToModels(runPasaFromCustom.out.collect())
+		estMinimap(runSeqClean.out[0],genome)
+		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
+		//runPasaFromCustom(runMinimapSplit.out)
+		//PasaToModels(runPasaFromCustom.out.collect())
 
-	emit:
-		gff = PasaToModels.out
 
 }
 
 // Currently does not work in singularity/conda so we just copy the input until we can fix this
-process runSeqclean {
+process runSeqClean {
 
 	label 'short_running'
 
@@ -75,7 +73,7 @@ process runPasaFromCustom {
 	scratch true
 			
 	input:
-	path genome
+	path genome_rm
 	path transcripts
 	path custom_gff
 	
@@ -110,7 +108,7 @@ process runPasaFromCustom {
 			-c pasa_DB.config -C -R \
 			-t $transcripts \
 			-I $params.max_intron_size \
-			-g $genome \
+			-g $genome_rm \
 			--IMPORT_CUSTOM_ALIGNMENTS_GFF3 $custom_gff \
 			--CPU ${task.cpus} \
 			$mysql_config_option
@@ -127,7 +125,8 @@ process PasaToModels {
 	label 'long_running'
 
 	input:
-	path pasa_assemblies
+	path pasa_assemblies_fasta
+	path pasa_assemblies_gff
 
 	output:
 	path pasa_transdecoder_fasta

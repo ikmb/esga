@@ -85,7 +85,5 @@ process fastaMergeFiles {
                 rm merged.fa
         """
 
-
-
 }
 

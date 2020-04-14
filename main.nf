@@ -2,6 +2,7 @@
 
 nextflow.preview.dsl=2
 
+include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
 include proteinhint from "./modules/proteins/main.nf" params(params)
@@ -11,7 +12,7 @@ include augustus_prediction from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
-//include evm from "./modules/evidencemodeler" params(params)
+include evm_prediction from "./modules/evm/main.nf" params(params)
 include pasa_assembly from "./modules/pasa/main.nf" params(params)
 
 def helpMessage() {
@@ -78,20 +79,25 @@ if (!genome.exists()) {
 	exit 1, "Could not find a genome assembly or file does not exist (---genome)"
 }
 if (params.proteins) {
-	proteins = file(params.proteins)
-	if (!proteins.exists()) {
+	p = file(params.proteins)
+	if (!p.exists()) {
 		exit 1, "The specified protein file does not exist!"
 	}
+	proteins = Channel.fromPath(p)
+} else {
+	proteins = Channel.empty()
 }
+
 if (params.transcripts) {
-	transcripts = file(params.transcripts)
-	if (!transcripts.exists() ) {
+	t = file(params.transcripts)
+	if (!t.exists() ) {
 		exit 1, "The specified transcript file does not exist!"
 	}
-	t = Channel.fromPath(transcripts)
+	transcripts = Channel.fromPath(t)
 } else {
-	t = Channel.empty()
+	transcripts = Channel.empty()
 }
+
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
@@ -178,8 +184,10 @@ workflow {
 	if (params.proteins) {
 		proteinhint(genome_rm,proteins)
 		protein_hints = proteinhint.out.hints
+		protein_gff = proteinhint.out.gff
 	} else {
 		protein_hints = Channel.empty()
+		protein_gff = Channel.empty()
 	}
 
 	// Generate hints from transcripts (if any)
@@ -217,10 +225,11 @@ workflow {
 
 	// Build evidence-based gene models from transcripts
 	if (params.pasa) {
-		transcript_files = trinity_assembly.concat(t)
+		transcript_files = trinity_assembly.concat(transcripts)
 		fastaMergeFiles(transcript_files.collect())
-		pasa_assembly(fastaMergeFiles.out)
-		pasa_gff = pasa_assembly.out.gff
+		pasa_assembly(genome_rm,fastaMergeFiles.out[0])
+	//	pasa_gff = pasa_assembly.out.gff
+		pasa_gff = Channel.empty()
 	} else {
 		pasa_gff = Channel.empty()
 	}
@@ -251,6 +260,8 @@ workflow {
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
+		evm_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
+
 }
 
 

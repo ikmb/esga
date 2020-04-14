@@ -7,9 +7,9 @@ workflow evm_prediction {
 		gene_models
 	main:
 		evmPartition(genome,gene_models,transcript_gff,protein_gff)
-		runEvm(evmPartition.out[1].splitText(by: params.nevm, file: true)
+		runEvm(evmPartition.out[1].splitText(by: params.nevm, file: true))
 		evmMerge(runEvm.out.collect(),evmPartition.out[0].collect(),genome.collect())
-		evmToGff(evmPartition.out[0].collect())
+		evmToGff(evmMerge.out[0].collect())
 
 	emit:
 		gff = evmToGff.out
@@ -114,6 +114,7 @@ process evmToGff {
 
 	label 'medium_running'
 
+	input:
 	path partitions
 
 	output:
