@@ -118,6 +118,9 @@ if (!workflow.containerEngine) {
 	Channel.from(file("/opt/conda/envs/genome-annotation-1.0/config"))
         	.set { augustus_config_folder }
 }
+if (!params.aug_species) {
+	exit 1, "Must provide an AUGUSTUS species name to run this pipeline (--aug_species)"
+}
 
 // *******************************
 // Print run information

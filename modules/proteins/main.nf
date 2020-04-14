@@ -16,12 +16,12 @@ workflow proteinhint {
 		fastaToCdbindex(protein_fa)		
 		runDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),fastaToDiamondDB.out.collect())
 		diamondxToTargets(runDiamondx.out.collect(),assemblySplit.out[1])
-		protExonerate(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa,fastaToCdbindex.out,genome_rm)
-		protExonerateToHints(protExonerate.out.collect())
+		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa,fastaToCdbindex.out,genome_rm)
+		protExonerateToHints(protExonerateBatch.out.collect())
 
 	emit:
 		hints = protExonerateToHints.out
-		gff = protExonerate.out.collectFile()
+		gff = protExonerateBatch.out.collectFile()
 }
 
 process fastaToDiamondDB {
@@ -110,7 +110,7 @@ process diamondxToTargets {
 // Run Exonerate on the blast regions
 // Takes a list of blast matches and will extract protein sequences and potential target regions
 // from a protein database and genome sequence to run exonerate 
-process protExonerate {
+process protExonerateBatch {
 
 	scratch true
 
