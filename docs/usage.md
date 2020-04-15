@@ -3,7 +3,7 @@
 The typical command for running the pipeline is as follows:
 
 ```
-nextflow run main.nf --genome 'Genome.fasta' --proteins 'Proteins.fasta' --reads 'data/*_R{1,2}.fastq' --ESTs 'ESTs.fa' --outdir 'my_species_annotation_out'
+nextflow run main.nf --genome 'genome.fasta' --proteins 'proteins.fasta' --reads 'data/*_R{1,2}.fastq' --transcripts 'transcripts.fa' --rm_lib repeats.fa
 ```
 
 This will run all the steps in the pipeline (Proteins, ESTs/Transcriptome, RNAseq). The types of evidences you provide determine which parts of the pipeline are actually run. 
@@ -17,7 +17,7 @@ use `-params-file my_config.yaml`. The revised command could then read:
 
 `nextflow run /path/to/main.nf -params-file config.yaml -profile your_profile`
 
-The full YAML options file:
+The default YAML options file:
 
 ```yaml
 genome: "/path/to/genome.fa"
@@ -76,10 +76,10 @@ For example,if you already have assembled a transcriptome or if you don't want t
 #### `--trinity` [ true | false (default) ] 
 Run transcriptome assembly with Trinity and produce hints from the transcripts. 
 
-### `--pasa` [ true | false (default) ]
+#### `--pasa` [ true | false (default) ]
 Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
 
-### `--evm [ true | false (default) ]
+#### `--evm [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
 ### 4. Within-scaffold parallelization
@@ -94,7 +94,7 @@ However, choosing too large values will drastically increase the run time.
 To run some of the programs, additional information is required. All options have a (hopfully reasonable) default, but you must check if it is the proper one for your organism and for the output you expect. 
 
 #### `--rm_lib`[ fasta file | false ]
-By default, Repeatmasker will run with the built-in DFam hmm profile for (mostly) primates. It is thus generally advisable to instead provide 
+ESGA can run RepeatMasker using the built-in repeat library (DFam 2.0) - see below. However, given that DFam is quite sparse, especially outside of mammals, we would recommend to instead provide 
 repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler) or curated repeat libraries from 
 GRINST (www.grinst.org, commercial). 
 If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like this: 
@@ -118,6 +118,8 @@ short read assemblies tend to collapse repeats. In this case, the pipeline will 
 Use this taxonomic group or species to identify and mask repeats. This option draws from available data included in DFam 2.0 (not 3.0, this option will come later!). 
 Generally, this data set is quite sparse and if you can, you should consider using a FASTA file of repeats instead (--rm_lib). Also, if you choose an unsupported taxonomic
 group, the pipeline may crash...(TBD)
+
+When in doubt, use `--rm_s√pecies /work_imammal` to enable this option and mask mammalian repeats.
 
 #### `--aug_species` [ default = 'human' ]
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
