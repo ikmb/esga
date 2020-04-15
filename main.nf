@@ -181,9 +181,10 @@ log.info "========================================="
 workflow {
 
 	// Pre-process the assembly
-
+	// Generate assembly stats and remove small contigs
 	assembly_preprocessing(params.genome)
 	genome_clean = assembly_preprocessing.out.fasta
+	assembly_stats = assembly_preprocessing.out.stats
 
 	// Repeat-mask the assembly
 	if (params.rm_species) {
@@ -276,6 +277,7 @@ workflow {
 
 	publish:
 		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'
+		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
 		augustus_prediction.out.gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
