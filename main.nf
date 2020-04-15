@@ -14,6 +14,7 @@ include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
 include pasa_assembly from "./modules/pasa/main.nf" params(params)
+include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -44,7 +45,8 @@ def helpMessage() {
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm		Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
-  
+    --min_contig_size   Discard all contigs from the assembly smaller than this [ default = 5000 ]
+
     Evidence tuning
     --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
     --pri_est		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 3)
@@ -55,6 +57,7 @@ def helpMessage() {
     --nexonerate	Chunks (# of blast hits) to divide Exonerate jobs [ default = 200 ]
     --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000 ]
     --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
+
     Other options:
     --singleEnd		Specifies that the input is single end reads [ true | false (default) ]
     --rnaseq_stranded	Whether the RNAseq reads were sequenced using a strand-specific method (dUTP) [ true | false (default) ]
@@ -179,11 +182,12 @@ workflow {
 
 	// Pre-process the assembly
 
-	//assembly_preprocessing(params.genome)
+	assembly_preprocessing(params.genome)
+	genome_clean = assembly_preprocessing.out.fasta
 
 	// Repeat-mask the assembly
 	if (params.rm_species) {
-		repeatmasking_with_species(params.genome,params.rm_species)
+		repeatmasking_with_species(genome_clean,params.rm_species)
 		genome_rm = repeatmasking_with_species.out.genome_rm
 		repeats = Channel.empty()
 	// Use a library provided by the user or compute de-novo
@@ -220,7 +224,7 @@ workflow {
 
 	// Generate hints from RNA-seq (if any)
 	if (params.reads) {
-		rnaseqhint(params.genome,params.reads)
+		rnaseqhint(genome_clean,params.reads)
 		rna_hints = rnaseqhint.out.hints
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)

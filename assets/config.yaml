@@ -18,4 +18,5 @@ npart_size: 200000000
 singleEnd: false
 rnaseq_stranded: false
 max_intron_size: 50000
+min_contig_size: 5000
 email: false

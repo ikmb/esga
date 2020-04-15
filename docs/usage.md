@@ -35,6 +35,7 @@ blast_evalue: 0.001
 nexonerate: 200
 npart_size: 200000000
 chunk_size: 100000
+min_contig_size: 5000
 singleEnd: false
 max_intron_size: 50000
 ```
@@ -152,6 +153,9 @@ assembly into chunks of this size - some chunks may be bigger, some smaller. Thi
 
 Settings this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
 individual parts of the genome were too small for pasa to be able to derive meaningful statistics for gene building. 
+
+#### `--min_contig_size [ default = 5000 ]
+Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
 
 ### 7. Other options 
 

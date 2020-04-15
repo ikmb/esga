@@ -22,6 +22,41 @@ process fastaSplitChunks {
         """
 }
 
+process AssemblyStats {
+
+	input:
+	path fasta
+
+	output:
+	path stats
+
+	script:
+	stats = fasta.getName() + ".stats"
+
+	"""
+		gaas_fasta_statistics.pl -f $fasta > $stats
+	"""
+	
+}
+
+process AssemblyFilterSize {
+
+	input:
+	path fasta
+	val min_size
+
+	output:
+	path fasta_filtered
+
+	script:
+	fasta_filtered = fasta.getBaseName() + ".filtered.fa"
+
+	"""
+		gaas_fasta_filter_by_size.pl -f $fasta -s $min_size > $fasta_filtered
+	"""
+
+}
+
 process fastaSplitSize {
 
 	input:
