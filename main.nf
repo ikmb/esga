@@ -141,7 +141,7 @@ log.info "Genome assembly: 		${params.genome}"
 if (params.rm_lib) {
 	log.info "Repeatmasker lib:		${params.rm_lib}"
 } else if (params.rm_species) {
-	log.info "Repeatmasker DFam 2.0species:	${params.rm_species}"
+	log.info "Repeatmasker DFam 2.0 species: ${params.rm_species}"
 } else {
 	log.info "Repeatmasking:			Compute de-novo"
 }

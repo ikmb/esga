@@ -7,7 +7,7 @@ workflow model_repeats {
 	repeatModel(genome)
 
 	emit:
-	repeats = repeatModel.out
+	repeats = repeatModel.out[0]
 
 }
 
