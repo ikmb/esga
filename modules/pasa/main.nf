@@ -12,9 +12,12 @@ workflow pasa_assembly {
 		runSeqClean(transcripts)
 		estMinimap(runSeqClean.out[0],genome)
 		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
-		//runPasaFromCustom(runMinimapSplit.out)
-		//PasaToModels(runPasaFromCustom.out.collect())
+		runPasaFromCustom(runMinimapSplit.out[0],runMinimapSplit.out[1],runMinimapSplit.out[2])
+		PasaToModels(runPasaFromCustom.out[0].collect(),runPasaFromCustom.out[1].collect())
 
+	emit:
+		gff = PasaToModels.out[1]
+		alignments = PasaToModels.out[2]
 
 }
 
