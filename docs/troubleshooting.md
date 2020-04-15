@@ -31,6 +31,11 @@ of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. Howe
 The performance of the pipeline can be tuned in a number of ways. We have observed long run times for highly fragmented genomes or if the number of sequences
 in blast and exonerate jobs is chosen too large. 
 
+## The pipeline crashes during the PASA stage
+
+This is likely caused by a small value for `--npart_size` . PASA derives certain stastics about the base distribution etc from the individual assembly chunks. If these are set too small, PASA may return
+a cryptic error and crash. Solution: increase the value for `--npart_size`. We found 200MB to work well for the genomes we tested, but depending on the gene density, smaller or larger values may be needed. 
+
 ### Genome assembly 
 Your genome assembly should, at most, contain thousands of scaffolds - ideally much less than that. Modern sequencing approaches such as linked-read sequencing
 or long reads make this a feasible goal for many organisms. It is also advisable to exclude very short scaffolds (<5kb) from your assembly prior to annotation;

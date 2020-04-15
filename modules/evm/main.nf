@@ -6,13 +6,33 @@ workflow evm_prediction {
 		transcript_gff
 		gene_models
 	main:
-		evmPartition(genome,gene_models,transcript_gff,protein_gff)
-		runEvm(evmPartition.out[1].splitText(by: params.nevm, file: true))
+		evmMergeGenes(gene_models)
+		evmPartition(genome,evmMergeGenes.out[0],transcript_gff,protein_gff)
+		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
 		evmMerge(runEvm.out.collect(),evmPartition.out[0].collect(),genome.collect())
 		evmToGff(evmMerge.out[0].collect())
 
 	emit:
 		gff = evmToGff.out
+}
+
+process evmMergeGenes {
+
+	label 'short_running'
+
+	input:
+	path gene_models
+
+	output:
+	path merged_models
+
+	script:
+	merged_models = "genes.merged.gff"
+
+	"""
+		cat $gene_models | grep -v "^#" >> $merged_models
+	"""
+
 }
 
 process evmPartition {
@@ -35,7 +55,6 @@ process evmPartition {
 
 	partitions = "partitions_list.out"
 	evm_commands = "commands.list"
-        gene_models = "gene_models.gff"
 
 	protein_options = ""
 	transcript_options = ""
@@ -64,7 +83,7 @@ process evmPartition {
 // The outputs doesn't do nothing here, EVM combines the chunks based on the original partition file
 process runEvm {
 
-	scratch true
+	//scratch true
 
 	label 'long_running'
 

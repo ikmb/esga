@@ -1,5 +1,5 @@
 include prepHintsToBed from "./../util" params(params)
-include fastaSplitChunks from "./../fasta" params(params)
+include fastaSplitSize from "./../fasta" params(params)
 
 // Predict gene models on a genome sequence using hints
 // We need the augustus_config_dir so we can create custom-trained models and pass them to Augustus in the context of a container
@@ -11,10 +11,10 @@ workflow augustus_prediction {
 		augustus_config_dir
 
 	main:
-		fastaSplitChunks(genome,params.nchunks)
+		fastaSplitSize(genome,params.npart_size)
 		prepHintsToBed(hints)
 		prepAugustusConfig(augustus_config_dir)
-		runAugustusBatch(fastaSplitChunks.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
+		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 
 	emit:

@@ -14,7 +14,7 @@ chunk_size: 50000
 nblast: 200
 blast_evalue: 0.001
 nexonerate: 400
-nchunks: 20
+npart_size: 200000000
 singleEnd: false
 rnaseq_stranded: false
 max_intron_size: 50000

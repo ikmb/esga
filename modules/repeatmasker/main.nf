@@ -1,4 +1,4 @@
-include { fastaSplitChunks; fastaMergeChunks } from "./../fasta" params(params)
+include { fastaSplitSize; fastaMergeChunks } from "./../fasta" params(params)
 
 workflow repeatmasking_with_lib {
 
@@ -7,9 +7,9 @@ workflow repeatmasking_with_lib {
 		rm_lib
 	
 	main:
-	        fastaSplitChunks(genome,params.nchunks)
+		fastaSplitSize(genome,params.npart_size)
 		repeatLib(rm_lib)
-		repeatMaskLib(fastaSplitChunks.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
+		repeatMaskLib(fastaSplitSize.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
 		fastaMergeChunks(repeatMaskLib.out[0].collect())
 
 	emit:
@@ -25,9 +25,9 @@ workflow repeatmasking_with_species {
 		species
 
 	main:
-		fastaSplitChunks(genome,params.nchunks)
+		fastaSplitSize(genome,params.npart_size)
                 repeatLibSpecies(species)
-                repeatMaskSpecies(fastaSplitChunks.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
+                repeatMaskSpecies(fastaSplitSize.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
                 fastaMergeChunks(repeatMaskSpecies.out[0].collect())
 
 	emit:

@@ -18,7 +18,7 @@ dependencies:
  - augustus=3.2.3
  - hisat2=2.1.0
  - multiqc=1.8
- - pasa=2.3.3
+ - pasa=2.4.1
  - bioconductor-seqlogo=1.50.0
  - r-ggplot2=3.0.0
  - evidencemodeler=1.1.1

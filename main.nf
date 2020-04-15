@@ -53,7 +53,7 @@ def helpMessage() {
     How to split programs:
     --nblast		Chunks (# of sequences) to divide genome for blastx jobs [ default = 100 ]
     --nexonerate	Chunks (# of blast hits) to divide Exonerate jobs [ default = 200 ]
-    --nchunks		Chunks (# of scaffolds) to divide RepeatMasker and Augustus jobs [ default = 30 ]
+    --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000 ]
     --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
     Other options:
     --singleEnd		Specifies that the input is single end reads [ true | false (default) ]
@@ -121,12 +121,22 @@ if (!workflow.containerEngine) {
 if (!params.aug_species) {
 	exit 1, "Must provide an AUGUSTUS species name to run this pipeline (--aug_species)"
 }
+if (params.pasa && params.npart_size < 100000000) {
+	log.warn "An npart_size smaller than 100MB is risking PASA to fail - increase in case of a crash..."
+}
 
 // *******************************
 // Print run information
 // *******************************
 log.info "========================================="
 log.info "ESGA Genome Annotation Pipeline v${workflow.manifest.version}"
+log.info "d88888b .d8888.  d888b   .d8b.  "
+log.info "88'     88'  YP 88' Y8b d8' `8b "
+log.info "88ooooo `8bo.   88      88ooo88 "
+log.info "88~~~~~   `Y8b. 88  ooo 88~~~88 "
+log.info "88.     db   8D 88. ~8~ 88   88 "
+log.info "Y88888P `8888Y'  Y888P  YP   YP "
+log.info "========================================="
 log.info "Genome assembly: 		${params.genome}"
 if (params.rm_lib) {
 	log.info "Repeatmasker lib:		${params.rm_lib}"
@@ -146,10 +156,10 @@ log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
-log.info "Chunk size for assembly:		${params.chunk_size}"
+log.info "Size of blastx jobs:			${params.chunk_size} bp"
 log.info "# Sequences per Blast job:		${params.nblast}"
 log.info "# Sequences per Exonerate job:		${params.nexonerate}"
-log.info "# Jobs for RepeatMasker/Augustus:	${params.nchunks}"
+log.info "# Size of genome-level jobs:		${params.npart_size} bp"
 log.info "-----------------------------------------"
 log.info "Nextflow Version:		$workflow.nextflow.version"
 log.info "Command Line:			$workflow.commandLine"
@@ -231,8 +241,7 @@ workflow {
 		transcript_files = trinity_assembly.concat(transcripts)
 		fastaMergeFiles(transcript_files.collect())
 		pasa_assembly(genome_rm,fastaMergeFiles.out[0])
-	//	pasa_gff = pasa_assembly.out.gff
-		pasa_gff = Channel.empty()
+		pasa_gff = pasa_assembly.out.gff
 	} else {
 		pasa_gff = Channel.empty()
 	}
@@ -247,8 +256,8 @@ workflow {
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
-		gene_gffs = augustus_gff.concat(pasa_gff)
-		transcript_gff = est_gff.concat(trinity_gff)
+		gene_gffs = augustus_gff.concat(pasa_gff).collect()
+		transcript_gff = est_gff.concat(trinity_gff).collectFile()
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
 		evm_gff = evm_prediction.out.gff
 	} else {
@@ -264,7 +273,8 @@ workflow {
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
 		evm_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
-
+		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
+		
 }
 
 

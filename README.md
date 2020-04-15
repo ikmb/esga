@@ -12,6 +12,20 @@ This pipeline peforms annotation of novel genomes using a combination of evidenc
 
 The minimum requirements are a genome file and at least one type of evidence.
 
+From this, the pipeline can run the following processing steps:
+
+* align proteins against a genome and generate annotation hints
+* align transcripts against a genome and generate annotation hints
+* align RNA-seq reads against a genome and generate annotation hints
+* assemble transcripts from aligned RNA-seq reads and generate annotation hints (Trinity pipeline)
+* Produce evidence-based gene models from aligned transcript sequences (PASA pipeline)
+* Produce ab-initio, hint-supported gene models (AUGUSTUS pipeline)
+* Produce consensus annotation from all of the above (EvidenceModeler pipeline)
+
+Optional:
+
+* Train a novel ab-initio prediction profile for AUGUSTUS (using PASA transcripts)
+
 ### Test data
 
 A simple test data set can be downloaded [here](https://drive.google.com/open?id=1VFqLnRJiuj5Vhj2KCOdY58jwxZKkkMVU)
@@ -27,10 +41,6 @@ Documentation about the pipeline can be found in the `docs/` directory or under 
 5. [Output](docs/output.md)
 6. [Troubleshooting](docs/troubleshooting.md)
 7. [What's next](docs/whatsnext.md)
-
-### Pipeline Scheme
-
-![](images/Pipeline_dag.svg)
 
 ### Credits
 

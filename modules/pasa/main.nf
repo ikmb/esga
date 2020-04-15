@@ -1,4 +1,4 @@
-include fastaSplitChunks from "./../fasta"  params(params)
+include fastaSplitSize from "./../fasta"  params(params)
 include estMinimap from "./../transcripts/main.nf" params(params)
 
 workflow pasa_assembly {
@@ -8,10 +8,10 @@ workflow pasa_assembly {
 		transcripts
 
 	main:
-		fastaSplitChunks(genome, params.nchunks)
+		fastaSplitSize(genome, params.npart_size)
 		runSeqClean(transcripts)
 		estMinimap(runSeqClean.out[0],genome)
-		runMinimapSplit(fastaSplitChunks.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
+		runMinimapSplit(fastaSplitSize.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
 		runPasaFromCustom(runMinimapSplit.out[0],runMinimapSplit.out[1],runMinimapSplit.out[2])
 		PasaToModels(runPasaFromCustom.out[0].collect(),runPasaFromCustom.out[1].collect())
 
@@ -85,7 +85,7 @@ process runPasaFromCustom {
 	path pasa_assemblies_gff
 
 	script:
-	trunk = genome_rm.getBaseName()
+	trunk = genome_rm.getName()
 	pasa_assemblies_fasta = "pasa_DB_${trunk}.sqlite.assemblies.fasta"
 	pasa_assemblies_gff = "pasa_DB_${trunk}.sqlite.pasa_assemblies.gff3"
 			
@@ -105,7 +105,7 @@ process runPasaFromCustom {
 	// the script statement
 
 	"""
-		make_pasa_config.pl --infile $pasa_config --trunk $trunk --outfile pasa_DB.config $mysql_db_name
+		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
 		$mysql_create_options
 		\$PASAHOME/Launch_PASA_pipeline.pl \
 			-c pasa_DB.config -C -R \

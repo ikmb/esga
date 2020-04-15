@@ -24,18 +24,23 @@ genome: "/path/to/genome.fa"
 proteins: "/path/to/proteins.fa"
 transcripts: "/path/to/ests.fa"
 rm_lib: "/path/to/repeats.fa"
+rm_species: false
 reads: "/path/to/*_R{1,2}_001.fastq.gz"
 trinity: false
+pasa: false
+evm: false
 aug_species: "human"
-aug_config: false
-nblast: 200
+nblast: 400
 blast_evalue: 0.001
-nexonerate: 100
-nchunks: 20
+nexonerate: 200
+npart_size: 200000000
+chunk_size: 100000
 singleEnd: false
-max_intron_size: 200000
+max_intron_size: 50000
 ```
   
+An explanation of these options follows below.
+
 ### 1. Mandatory arguments 
 
 #### `--genome` 
@@ -68,8 +73,14 @@ Location of a single FASTA file with protein sequences from related species. If 
 By default, the complete pipeline you see above will run, given the types of evidences your provide. However, you can skip some steps if you want. 
 For example,if you already have assembled a transcriptome or if you don't want to run gene prediction. 
 
-#### `--trinity` [ true (default) | false ] 
+#### `--trinity` [ true | false (default) ] 
 Run transcriptome assembly with Trinity and produce hints from the transcripts. 
+
+### `--pasa` [ true | false (default) ]
+Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
+
+### `--evm [ true | false (default) ]
+Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
 ### 4. Within-scaffold parallelization
 
@@ -103,6 +114,11 @@ sufficient number of related repeats to be present in your assembly. If your gen
 short read assemblies tend to collapse repeats. In this case, the pipeline will fall back to the built-in library that ships with RepeatMasker
 (which is very limited and probably not very useful).
 
+#### `--rm_species` 
+Use this taxonomic group or species to identify and mask repeats. This option draws from available data included in DFam 2.0 (not 3.0, this option will come later!). 
+Generally, this data set is quite sparse and if you can, you should consider using a FASTA file of repeats instead (--rm_lib). Also, if you choose an unsupported taxonomic
+group, the pipeline may crash...(TBD)
+
 #### `--aug_species` [ default = 'human' ]
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
@@ -128,8 +144,12 @@ Number of sequences in each Blast job. Larger values will usually create longer 
 #### `--nexonerate` [ default = 200 ]
 Number of alignments to compute in each Exonerate job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system.
 
-#### `--nchunks` [ default = 10 ]
-Number of pieces to split the genome assembly into before running RepeatMasker and Augustus jobs. For example, if you want to annotate the human genome, a chunk size of 23 would place each chromosome into one chunk. Chunks cannot be smaller than individual scaffolds/chromosomes.
+#### `--npart_size` [ default = 200000000 ]
+Size of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
+assembly into chunks of this size - some chunks may be bigger, some smaller. This function uses [fasta-splitter.pl](http://kirill-kryukov.com/study/tools/fasta-splitter/).
+
+Settings this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
+individual parts of the genome were too small for pasa to be able to derive meaningful statistics for gene building. 
 
 ### 7. Other options 
 

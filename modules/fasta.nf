@@ -22,6 +22,23 @@ process fastaSplitChunks {
         """
 }
 
+process fastaSplitSize {
+
+	input:
+	path fasta
+	val fsize
+
+	output:
+	path "*.part-*.*"
+
+	script:
+
+	"""
+		fasta-splitter.pl -part-sequence-size $fsize $fasta
+	"""
+
+}
+
 process assemblySplit {
 
 	label 'short_running'
