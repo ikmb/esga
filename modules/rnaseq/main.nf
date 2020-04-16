@@ -22,7 +22,7 @@ workflow rnaseqhint {
 // trim reads
 process runFastp {
 
-	publishDir "${params.outdir}/evidence/rnaseq/fastp", mode: 'copy'
+	//publishDir "${params.outdir}/evidence/rnaseq/fastp", mode: 'copy'
 
 	scratch true 
 
@@ -58,7 +58,7 @@ process HisatMakeDB {
 
 	label 'long_running'
 
-	publishDir "${params.outdir}/databases/HisatDB", mode: 'copy'
+	//publishDir "${params.outdir}/databases/HisatDB", mode: 'copy'
 
 	input:
 	path genome
@@ -82,9 +82,9 @@ process HisatMakeDB {
 
 process HisatMap {
 
-	publishDir "${params.outdir}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
+	//publishDir "${params.outdir}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
 	
-	//scratch true
+	scratch true
 
 	input:
 	path reads
@@ -113,7 +113,7 @@ process HisatMap {
 // Combine all BAM files for hint generation
 process mergeBams {
 
-	publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
+	//publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
 
 	scratch true 
 
@@ -137,7 +137,7 @@ process mergeBams {
  */	
 process rseqHints {
 
-	publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
+	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
 
 	input:
 	path bam

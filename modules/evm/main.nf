@@ -133,7 +133,7 @@ process evmToGff {
 
 	label 'medium_running'
 
-	publishDir "${params.outdir}/annotation/evm", mode: 'copy'
+	//publishDir "${params.outdir}/annotation/evm", mode: 'copy'
 
 	input:
 	path partitions

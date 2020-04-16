@@ -16,6 +16,8 @@ workflow assembly_preprocessing {
 
 process AssemblyStats {
 
+	//publishDir "${params.outdir}/assembly", mode: 'copy'
+
         input:
         path fasta
 
@@ -32,6 +34,8 @@ process AssemblyStats {
 }
 
 process AssemblyFilterSize {
+
+        //publishDir "${params.outdir}/assembly", mode: 'copy'
 
         input:
         path fasta

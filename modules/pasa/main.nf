@@ -127,7 +127,7 @@ process PasaToModels {
 
 	label 'long_running'
 
-	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
+	//publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
 	input:
 	path pasa_assemblies_fasta

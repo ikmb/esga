@@ -23,6 +23,87 @@ workflow augustus_prediction {
 
 }
 
+workflow augustus_training_from_pasa {
+
+	take:
+		genome
+		pasa_gff
+		model
+		augustus_config
+
+	main:
+
+		PasaGffToTraining(pasa_gff)
+		trainAugustus(genome,PasaGffToTraining.out[0],augustus_config,augustus_config)
+
+	emit:
+		acf_folder = trainAugustus.out[0]
+		stats = trainAugustus.out[1]
+
+}
+
+process PasaGffToTraining {
+
+	label 'short_running'
+
+	input:
+	path pasa_gff
+
+	output:
+	path training_gff
+
+	script:
+	training_gff = "transdec.complete.gff3"
+
+	"""
+		pasa_select_training_models.pl --nmodels $params.aug_training_models --infile $pasa_transdecoder_gff >> $training_gff
+        """
+}
+
+// Run one of two training routines for model training
+process trainAugustus {
+
+	label 'extra_long_running'
+
+	scratch true
+
+	//publishDir "${params.outdir}/augustus/training/", mode: 'copy'
+
+	input:
+	path genome
+	path complete_models
+	env AUGUSTUS_CONFIG_PATH
+	path acf_folder
+
+        output:
+	path acf_folder
+	path training_stats
+
+	script:
+        complete_gb = "complete_peptides.raw.gb"
+        train_gb = "complete_peptides.raw.gb.train"
+        test_gb = "complete_peptides.raw.gb.test"
+        training_stats = "training_accuracy.out"
+
+        // If the model already exists, do not run new_species.pl
+        //model_path = "${acf_training_path}/species/${params.aug_species}"
+        model_file = file("${acf_folder}/species/${params.aug_species}")
+	options = ""
+	if (!model_file.exists()) {
+		options = "new_species.pl --species=${params.aug_species}"
+	}
+
+	"""
+		echo ${acf_folder.toString()} >> training.txt
+		gff2gbSmallDNA.pl $complete_models $genome 1000 $complete_gb
+		split_training.pl --infile $complete_gb --percent 90
+		$options
+		etraining --species=$params.aug_species --stopCodonExcludedFromCDS=false $train_gb
+		optimize_augustus.pl --species=$params.aug_species $train_gb --cpus=${task.cpus} --UTR=off 
+		augustus --stopCodonExcludedFromCDS=false --species=$params.aug_species $test_gb | tee $training_stats
+	"""
+}
+
 process runAugustusBatch {
 
 	input:
@@ -55,7 +136,7 @@ process mergeAugustusGff {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
+	//publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
 
 	input:
 	path augustus_gffs

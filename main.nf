@@ -59,9 +59,8 @@ def helpMessage() {
     --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
 
     Other options:
-    --singleEnd		Specifies that the input is single end reads [ true | false (default) ]
+    --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]
     --rnaseq_stranded	Whether the RNAseq reads were sequenced using a strand-specific method (dUTP) [ true | false (default) ]
-    --outdir		The output directory where the results will be saved [ default = 'output' ]
     -name		Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
     """.stripIndent()
 }
@@ -229,6 +228,7 @@ workflow {
 	if (params.reads) {
 		rnaseqhint(genome_clean,params.reads)
 		rna_hints = rnaseqhint.out.hints
+		rna_bam = rnaseqhin.out.bam
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_rm,trinity_guided_assembly.out.assembly)
@@ -243,6 +243,7 @@ workflow {
 		
 	} else {
 		rna_hints = Channel.empty()
+		rna_bam = Channel.empty()
 		trinity_hints = Channel.empty()
 		trinity_gff = Channel.empty()
 		trinity_assembly = Channel.empty()
@@ -281,8 +282,11 @@ workflow {
 		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
 		augustus_prediction.out.gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
+		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
+		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
+		rna_bam to: "${params.outdir}/evidence/rnaseq", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
 		evm_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'

@@ -120,7 +120,7 @@ Use this taxonomic group or species to identify and mask repeats. This option dr
 Generally, this data set is quite sparse and if you can, you should consider using a FASTA file of repeats instead (--rm_lib). Also, if you choose an unsupported taxonomic
 group, the pipeline may crash...(TBD)
 
-When in doubt, use `--rm_s√pecies /work_imammal` to enable this option and mask mammalian repeats.
+When in doubt, use `--rm_species /work_imammal` to enable this option and mask mammalian repeats.
 
 #### `--aug_species` [ default = 'human' ]
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
@@ -130,6 +130,15 @@ Location of Augustus configuration file. By default, this pipeline uses config f
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
 A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
+
+#### `--pri_prot <int>` [ 5 (default ]
+Priority of protein-based hints for Augustus gene predictions. Higher priority hints are considered first and override lower-priority hints. 
+
+#### `--pri_est <int>` [ 3 (default) ]
+Priority of transcript-based hints for Augustus gene predictions. Higher priority hints are considered first and override lower-priority hints.
+
+#### `--pri_rnaseq <int>` [ 4 (default) ]
+Priority of RNAseq-based hints for Augustus gene predictions. Higher priority hints are considered first and override lower-priority hints.
 
 ### 6. How to tune the speed of the pipeline - data splitting
 
@@ -151,7 +160,7 @@ Number of alignments to compute in each Exonerate job. Larger values will usuall
 Size of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
 assembly into chunks of this size - some chunks may be bigger, some smaller. This function uses [fasta-splitter.pl](http://kirill-kryukov.com/study/tools/fasta-splitter/).
 
-Settings this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
+Setting this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
 individual parts of the genome were too small for pasa to be able to derive meaningful statistics for gene building. 
 
 #### `--min_contig_size [ default = 5000 ]
