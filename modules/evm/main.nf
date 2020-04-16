@@ -1,3 +1,5 @@
+include GffToFasta from "./../util" params(params)
+
 workflow evm_prediction {
 
 	take:
@@ -11,9 +13,11 @@ workflow evm_prediction {
 		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
 		evmMerge(runEvm.out.collect(),evmPartition.out[1].collect(),genome.collect())
 		evmToGff(evmMerge.out[0].collect())
+		GffToFasta(evmToGff.out[0],genome)
 
 	emit:
 		gff = evmToGff.out
+		fasta = GffToFasta.out[0]
 }
 
 process evmMergeGenes {

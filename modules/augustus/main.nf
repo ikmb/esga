@@ -1,6 +1,6 @@
-include prepHintsToBed from "./../util" params(params)
+include { prepHintsToBed ; GffToFasta } from "./../util" params(params)
 include fastaSplitSize from "./../fasta" params(params)
-
+i
 // Predict gene models on a genome sequence using hints
 // We need the augustus_config_dir so we can create custom-trained models and pass them to Augustus in the context of a container
 workflow augustus_prediction {
@@ -16,10 +16,12 @@ workflow augustus_prediction {
 		prepAugustusConfig(augustus_config_dir)
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
+		GffToFasta(mergeAugustusGff.out[0],genome)
 
 	emit:
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
+		fasta = GffToFasta.out[0]
 
 }
 
@@ -152,6 +154,7 @@ process mergeAugustusGff {
 		create_gff_ids.pl --gff merged.gff > $augustus_merged_gff
 	"""
 }
+
 
 // containerized AUGUSTUS_CONFIG_PATH does not work, need to move into work/
 process prepAugustusConfig {

@@ -143,7 +143,7 @@ log.info "Genome assembly: 		${params.genome}"
 if (params.rm_lib) {
 	log.info "Repeatmasker lib:		${params.rm_lib}"
 } else if (params.rm_species) {
-	log.info "Repeatmasker DFam 2.0 species: ${params.rm_species}"
+	log.info "Repeatmasker DFam 2.0 species:	${params.rm_species}"
 } else {
 	log.info "Repeatmasking:			Compute de-novo"
 }
@@ -197,10 +197,10 @@ workflow {
 		if (params.rm_lib) {
 			repeats = Channel.fromPath(params.rm_lib)
 		} else {
-			model_repeats(params.genome)
+			model_repeats(genome_clean)
 			repeats = model_repeats.out.repeats
 		}
-	        repeatmasking_with_lib(params.genome,repeats)
+	        repeatmasking_with_lib(genome_clean,repeats)
 		genome_rm = repeatmasking_with_lib.out.genome_rm
 	}
 	
@@ -255,8 +255,10 @@ workflow {
 		fastaMergeFiles(transcript_files.collect())
 		pasa_assembly(genome_rm,fastaMergeFiles.out[0])
 		pasa_gff = pasa_assembly.out.gff
+		pasa_fa = pasa_assembly.out.fasta
 	} else {
 		pasa_gff = Channel.empty()
+		pasa_fa = Channel.empty()
 	}
 
 	// Merge hints
@@ -266,6 +268,7 @@ workflow {
 	// Run AUGUSTUS
 	augustus_prediction(genome_rm,merge_hints.out,augustus_config_folder)
 	augustus_gff = augustus_prediction.out.gff
+	augustus_fa = augustus_prediction.out.fasta
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
@@ -273,14 +276,17 @@ workflow {
 		transcript_gff = est_gff.concat(trinity_gff).collectFile()
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
 		evm_gff = evm_prediction.out.gff
+		evm_fa = evm_prediction.out.fasta
 	} else {
 		evm_gff = Channel.empty()
+		evm_fa = Channel.empty()
 	}
 
 	publish:
 		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'
 		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
-		augustus_prediction.out.gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
+		augustus_gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
+		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
@@ -289,7 +295,9 @@ workflow {
 		rna_bam to: "${params.outdir}/evidence/rnaseq", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
 		evm_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
+		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
+		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
 		
 }
 

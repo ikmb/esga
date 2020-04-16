@@ -1,5 +1,6 @@
 include fastaSplitSize from "./../fasta"  params(params)
 include estMinimap from "./../transcripts/main.nf" params(params)
+include GffToFasta from "./../util" params(params)
 
 workflow pasa_assembly {
 
@@ -14,10 +15,11 @@ workflow pasa_assembly {
 		runMinimapSplit(fastaSplitSize.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
 		runPasaFromCustom(runMinimapSplit.out[0],runMinimapSplit.out[1],runMinimapSplit.out[2])
 		PasaToModels(runPasaFromCustom.out[0].collect(),runPasaFromCustom.out[1].collect())
-
+		GffToFasta(PasaToModels.out[1],genome)
 	emit:
 		gff = PasaToModels.out[1]
 		alignments = PasaToModels.out[2]
+		fasta = GffToFasta.out[0]
 
 }
 

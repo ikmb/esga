@@ -123,7 +123,7 @@ Use this taxonomic group or species to identify and mask repeats. This option dr
 Generally, this data set is quite sparse and if you can, you should consider using a FASTA file of repeats instead (--rm_lib). Also, if you choose an unsupported taxonomic
 group, the pipeline may crash...(TBD)
 
-When in doubt, use `--rm_species /work_imammal` to enable this option and mask mammalian repeats.
+When in doubt, use `--rm_species mammal` to enable this option and mask mammalian repeats.
 
 #### `--aug_species` [ default = 'human' ]
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).

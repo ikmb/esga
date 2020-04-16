@@ -41,3 +41,22 @@ process prepHintsToBed {
         """
 }
 
+process GffToFasta {
+
+	label 'short_running'
+
+	input:
+	path gff
+	path genome
+
+	output:
+	path fasta
+
+	script:
+	fasta = gff.getBaseName() + ".proteins.fasta"
+
+	"""
+		gffread $gff -g $genome -y $fasta
+	"""
+	
+}
