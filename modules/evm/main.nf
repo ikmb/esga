@@ -9,7 +9,7 @@ workflow evm_prediction {
 		evmMergeGenes(gene_models)
 		evmPartition(genome,evmMergeGenes.out[0],transcript_gff,protein_gff)
 		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
-		evmMerge(runEvm.out.collect(),evmPartition.out[0].collect(),genome.collect())
+		evmMerge(runEvm.out.collect(),evmPartition.out[1].collect(),genome.collect())
 		evmToGff(evmMerge.out[0].collect())
 
 	emit:
@@ -109,11 +109,11 @@ process evmMerge {
 
 	input:
 	path evm_logs
-	path partition
-	path genome
+	path partitions
+	path genome_rm
 	
 	output:
-	path partition
+	path partitions
 	path done
 
 	script:
@@ -132,6 +132,8 @@ process evmMerge {
 process evmToGff {
 
 	label 'medium_running'
+
+	publishDir "${params.outdir}/annotation/evm", mode: 'copy'
 
 	input:
 	path partitions

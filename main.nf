@@ -180,6 +180,8 @@ log.info "========================================="
 // ***********************************
 workflow {
 
+	main:
+
 	// Pre-process the assembly
 	// Generate assembly stats and remove small contigs
 	assembly_preprocessing(params.genome)
@@ -273,7 +275,6 @@ workflow {
 	} else {
 		evm_gff = Channel.empty()
 	}
-
 
 	publish:
 		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'

@@ -5,12 +5,14 @@ workflow repeatmasking_with_lib {
 	take:
 		genome
 		rm_lib
-	
+
 	main:
+		assembly_name = Channel.value("genome.rm.fa")
+
 		fastaSplitSize(genome,params.npart_size)
 		repeatLib(rm_lib)
 		repeatMaskLib(fastaSplitSize.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
-		fastaMergeChunks(repeatMaskLib.out[0].collect())
+		fastaMergeChunks(repeatMaskLib.out[0].collect(),assembly_name)
 
 	emit:
 		genome_rm = fastaMergeChunks.out[0]
@@ -25,10 +27,12 @@ workflow repeatmasking_with_species {
 		species
 
 	main:
+                assembly_name = Channel.value("genome.rm.fa")
+
 		fastaSplitSize(genome,params.npart_size)
                 repeatLibSpecies(species)
                 repeatMaskSpecies(fastaSplitSize.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
-                fastaMergeChunks(repeatMaskSpecies.out[0].collect())
+                fastaMergeChunks(repeatMaskSpecies.out[0].collect(),assembly_name)
 
 	emit:
 		genome_rm = fastaMergeChunks.out[0]

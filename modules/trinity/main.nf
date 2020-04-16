@@ -15,6 +15,8 @@ workflow trinity_guided_assembly {
 process runTrinityGuided {
 	
 	scratch true 
+
+	publishDir "${params.outdir}/transcripts/trinity", mode: 'copy'
 	
 	input:
 	path bam	

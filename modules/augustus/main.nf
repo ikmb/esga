@@ -55,6 +55,8 @@ process mergeAugustusGff {
 
 	label 'short_running'
 
+	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
+
 	input:
 	path augustus_gffs
 

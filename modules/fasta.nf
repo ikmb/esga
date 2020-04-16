@@ -65,15 +65,18 @@ process fastaMergeChunks {
 
         label 'short_running'
 
+	publishDir "${params.outdir}/fasta", mode: 'copy'
+
         input:
         path chunks
+	val assembly_name
 
         output:
         path merged_chunks
 
         script:
 
-        merged_chunks = "assembly.rm.fa"
+	merged_chunks = assembly_name
 
         """
                 cat $chunks >> merged.fa

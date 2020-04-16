@@ -20,6 +20,8 @@ process estMinimap {
 
 	scratch true
 
+	publishDir "${params.outdir}/transcripts", mode: 'copy'
+
 	input:
 	path est
 	path genome_rm	
