@@ -1,6 +1,6 @@
 include { prepHintsToBed ; GffToFasta } from "./../util" params(params)
 include fastaSplitSize from "./../fasta" params(params)
-i
+
 // Predict gene models on a genome sequence using hints
 // We need the augustus_config_dir so we can create custom-trained models and pass them to Augustus in the context of a container
 workflow augustus_prediction {

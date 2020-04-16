@@ -14,8 +14,9 @@ workflow pasa_assembly {
 		estMinimap(runSeqClean.out[0],genome)
 		runMinimapSplit(fastaSplitSize.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
 		runPasaFromCustom(runMinimapSplit.out[0],runMinimapSplit.out[1],runMinimapSplit.out[2])
-		PasaToModels(runPasaFromCustom.out[0].collect(),runPasaFromCustom.out[1].collect())
+		PasaToModels(runPasaFromCustom.out.collect())
 		GffToFasta(PasaToModels.out[1],genome)
+
 	emit:
 		gff = PasaToModels.out[1]
 		alignments = PasaToModels.out[2]
@@ -83,8 +84,7 @@ process runPasaFromCustom {
 	path custom_gff
 	
 	output:
-	path pasa_assemblies_fasta
-	path pasa_assemblies_gff
+	tuple path(pasa_assemblies_fasta),path(pasa_assemblies_gff)
 
 	script:
 	trunk = genome_rm.getName()
@@ -132,8 +132,7 @@ process PasaToModels {
 	//publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
 	input:
-	path pasa_assemblies_fasta
-	path pasa_assemblies_gff
+	tuple path(pasa_assemblies_fasta),path(pasa_assemblies_gff)
 
 	output:
 	path pasa_transdecoder_fasta

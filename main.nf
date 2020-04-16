@@ -255,7 +255,7 @@ workflow {
 		fastaMergeFiles(transcript_files.collect())
 		pasa_assembly(genome_rm,fastaMergeFiles.out[0])
 		pasa_gff = pasa_assembly.out.gff
-		pasa_fa = pasa_assembly.out.fasta
+		pasa_fa = Channel.empty()
 	} else {
 		pasa_gff = Channel.empty()
 		pasa_fa = Channel.empty()

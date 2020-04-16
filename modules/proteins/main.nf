@@ -16,7 +16,7 @@ workflow proteinhint {
 		fastaToCdbindex(protein_fa)		
 		runDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),fastaToDiamondDB.out.collect())
 		diamondxToTargets(runDiamondx.out.collect(),assemblySplit.out[1])
-		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa,fastaToCdbindex.out,genome_rm)
+		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
 		protExonerateToHints(protExonerateBatch.out.collect())
 
 	emit:
