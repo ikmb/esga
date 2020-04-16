@@ -228,7 +228,7 @@ workflow {
 	if (params.reads) {
 		rnaseqhint(genome_clean,params.reads)
 		rna_hints = rnaseqhint.out.hints
-		rna_bam = rnaseqhin.out.bam
+		rna_bam = rnaseqhint.out.bam
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_rm,trinity_guided_assembly.out.assembly)

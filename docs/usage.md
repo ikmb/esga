@@ -71,8 +71,11 @@ for example).
 Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them before into a single file. 
 
 ### 3. Programs to run 
-By default, the complete pipeline you see above will run, given the types of evidences your provide. However, you can skip some steps if you want. 
-For example,if you already have assembled a transcriptome or if you don't want to run gene prediction. 
+By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
+yes you can run the Trinity transcriptome assembly part of the pipeline (see below), but if you already have a set of assembled transcripts (--transcripts), this may not be necessary in combination with the RNA-seq hints
+that are always generated when RNA-seq data is available. Likewise, you can select to only run AUGUSTUS-based gene predictions and skip the evidence modeler stage, and so on. 
+
+The only non-optional part is the AUGUSTUS stage as this is the core around which ESGA was originally built. 
 
 #### `--trinity` [ true | false (default) ] 
 Run transcriptome assembly with Trinity and produce hints from the transcripts. 
@@ -80,7 +83,7 @@ Run transcriptome assembly with Trinity and produce hints from the transcripts.
 #### `--pasa` [ true | false (default) ]
 Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
 
-#### `--evm [ true | false (default) ]
+#### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
 ### 4. Within-scaffold parallelization
@@ -163,7 +166,7 @@ assembly into chunks of this size - some chunks may be bigger, some smaller. Thi
 Setting this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
 individual parts of the genome were too small for pasa to be able to derive meaningful statistics for gene building. 
 
-#### `--min_contig_size [ default = 5000 ]
+#### `--min_contig_size` [ default = 5000 ]
 Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
 
 ### 7. Other options 
