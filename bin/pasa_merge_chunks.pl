@@ -38,10 +38,10 @@ opendir(DIR, $dir) or die $!;
 my $file_base = undef;
 
 my $fasta = $base . ".assemblies.fasta";
-open(FASTA_OUT,">",$fasta) or die "Couldnt open fasta out\n";
+open(FASTA_OUT,">>",$fasta) or die "Couldnt open fasta out\n";
 
 my $gff = $base . ".pasa_assemblies.gff" ;
-open(GFF_OUT,">",$gff) or die "Couldnt open gff out\n";
+open(GFF_OUT,">>",$gff) or die "Couldnt open gff out\n";
 
 my %bucket_fa;
 my %bucket_gff;
@@ -56,7 +56,7 @@ while (my $file = readdir(DIR)) {
         # We only want files
         next unless (-f "$dir/$file");
 
-	my $num = (split /\./,$file)[-4];
+	my $num = (split /\./,$file)[2];
 
 	if ($file =~ m/\.pasa_assemblies\.gff3$/) {
 			
@@ -70,7 +70,8 @@ while (my $file = readdir(DIR)) {
 
 # Find all FASTA files
 foreach ( sort {$a<=>$b} keys %bucket_fa) {
-        #print "key $_ value: $bucket_fa{$_}\n";
+
+        print "key $_ value: $bucket_fa{$_}\n";
 
 	my $num = $_;
 	my $file = $bucket_fa{$num};
@@ -153,7 +154,7 @@ foreach ( sort {$a<=>$b} keys %bucket_gff) {
 				my $tmp  = shift @values ;
 				my $id = undef;
 
-	                        printf "original: $original_asmbl_id This: $tmp\n";
+	                        #printf "original: $original_asmbl_id This: $tmp\n";
 				if (!defined $original_asmbl_id) {
 					#printf "No id defined, starting new one\n";
                                         $original_asmbl_id = $tmp;
