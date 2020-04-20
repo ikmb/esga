@@ -18,8 +18,8 @@ workflow pasa_assembly {
 		GffToFasta(PasaToModels.out[1],genome)
 
 	emit:
-		gff = PasaToModels.out[1]
-		alignments = PasaToModels.out[2]
+		gff = PasaToModels.out[2]
+		alignments = PasaToModels.out[1]
 		fasta = GffToFasta.out[0]
 
 }
