@@ -13,7 +13,7 @@ include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
-include pasa_assembly from "./modules/pasa/main.nf" params(params)
+include pasa_standard from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 
 def helpMessage() {
@@ -253,9 +253,9 @@ workflow {
 	if (params.pasa) {
 		transcript_files = trinity_assembly.concat(transcripts)
 		fastaMergeFiles(transcript_files.collect())
-		pasa_assembly(genome_rm,fastaMergeFiles.out[0])
-		pasa_gff = pasa_assembly.out.gff
-		pasa_fa = pasa_assembly.out.fasta
+		pasa_standard(genome_rm,fastaMergeFiles.out[0])
+		pasa_gff = pasa_standard.out.gff
+		pasa_fa = pasa_standard.out.fasta
 	} else {
 		pasa_gff = Channel.empty()
 		pasa_fa = Channel.empty()
