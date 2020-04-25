@@ -18,6 +18,8 @@ process AssemblyStats {
 
 	//publishDir "${params.outdir}/assembly", mode: 'copy'
 
+	label 'long_running'
+
         input:
         path fasta
 

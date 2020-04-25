@@ -147,6 +147,7 @@ foreach my $query ( keys %bucket ) {
 
 		my @clean_matches;
 		foreach my $match (@sorted_matches) {
+			
 
 			if ( $match->{'bitscore'} >= $min_bit ) {
 				push(@clean_matches,$match);

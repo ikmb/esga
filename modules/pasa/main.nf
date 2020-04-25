@@ -35,7 +35,7 @@ workflow pasa_standard {
 		estMinimap(runSeqClean.out[0],genome)
 		runPasa(genome,transcripts,estMinimap.out[0])
 		PasaToModels(runPasa.out[0],runPasa.out[1])
-		GffToFasta(PasaToModels.out[0],genome)	
+		GffToFasta(PasaToModels.out[1],genome)	
 
 	emit:
 		gff = PasaToModels.out[1]

@@ -24,6 +24,27 @@ workflow proteinhint {
 		gff = protExonerateBatch.out[0].collectFile()
 }
 
+workflow proteinhint_slow {
+
+	take:
+                genome_rm
+                protein_fa
+
+        main:
+                fastaToBlastnDB(genome_rm)
+                fastaToCdbindex(protein_fa)
+		tblastn(protein_fa.splitFasta(by: params.nblast, file: true) , fastaToBlastnDB.out)
+		tblastnToTargets(tblastn.out[0].collect())
+                protExonerateBatch(tblastnToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
+                protExonerateToHints(protExonerateBatch.out.collect())
+
+        emit:
+                hints = protExonerateToHints.out
+                gff = protExonerateBatch.out[0].collectFile()
+
+
+}
+
 process fastaToDiamondDB {
 
 	label 'medium_running'
@@ -65,6 +86,10 @@ process fastaToCdbindex {
 // This is used to define targets for exhaustive exonerate alignments
 process runDiamondx {
 
+	tag "Diamond-${chunk_name}"
+	
+        publishDir "${params.outdir}/logs/diamond"
+
 	//scratch true
 
 	input:
@@ -75,7 +100,7 @@ process runDiamondx {
 	path protein_blast_report
 
 	script:
-	db_name = db_files[0].baseName
+	db_name = db_files[0].getBaseName()
 	chunk_name = genome_chunk.getName().tokenize('.')[-2]
 	protein_blast_report = "${genome_chunk.baseName}.blast"
 	"""
@@ -83,10 +108,73 @@ process runDiamondx {
 	"""
 }
 
+process fastaToBlastnDB {
+
+	input:
+	path genome_fa
+
+	output:
+	path "${dbName}*.n*"
+	
+	script:
+	dbName = genome_fa.getBaseName()
+	mask = dbName + ".asnb"
+	"""
+		convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
+			-masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
+ 			-out $mask
+                makeblastdb -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
+	"""
+}
+
+process tblastn {
+
+        publishDir "${params.outdir}/logs/tblastn"
+	
+	input:
+	path protein_chunk
+	path blastdb_files
+
+	output:
+	path protein_blast_report
+
+	script:
+	db_name = blastdb_files[0].baseName
+	chunk_name = protein_chunk.getName().tokenize('.')[-2]
+	protein_blast_report = "${protein_chunk.baseName}.blast"
+
+	"""
+		tblastn -num_threads ${task.cpus} -evalue ${params.blast_evalue} -db_soft_mask 40 -max_intron_length ${params.max_intron_size} -outfmt \"${params.blast_options}\" -db $db_name -query $protein_chunk > $protein_blast_report
+	"""
+
+}
+
+process tblastnToTargets {
+
+        publishDir "${params.outdir}/logs/tblastn"
+
+	input:
+	path blast_reports
+
+	output:
+	path targets
+	
+	script:
+	query_tag = "ProteinDB"
+	targets = "${query_tag}.targets"
+	
+	"""
+		cat $blast_reports > merged.txt
+		tblastn2exonerate_targets.pl --infile merged.txt --max_intron_size $params.max_intron_size > $targets
+	"""
+}
+
 // Parse Protein Blast output for exonerate processing
 process diamondxToTargets {
 
 	label 'short_running'
+
+	publishDir "${params.outdir}/logs/diamond"
 
 	input:
 	file blast_reports
@@ -113,6 +201,8 @@ process diamondxToTargets {
 process protExonerateBatch {
 
 	scratch true
+
+        publishDir "${params.outdir}/logs/exonerate"
 
 	input:
 	path hits_chunk

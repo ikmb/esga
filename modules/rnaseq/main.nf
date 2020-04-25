@@ -12,10 +12,11 @@ workflow rnaseqhint {
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
 		mergeBams(HisatMap.out.collect())
 		rseqHints(mergeBams.out)
+		filterRseqHints(rseqHints.out)		
 
 	emit:
-		bam = mergeBams.out
-		hints = rseqHints.out
+		bam = mergeBams.out[0]
+		hints = filterRseqHints.out[0]
 }
 
 
@@ -151,4 +152,21 @@ process rseqHints {
 	"""
 		bam2hints --intronsonly 0 -p ${params.pri_rnaseq} -s 'E' --in=$bam --out=$hisat_hints
 	"""
+}
+
+process filterRseqHints {
+
+	input:
+	path hints
+
+	output:
+	path filtered_hints
+
+	script:
+	filtered_hints = hints.getBaseName() + ".filtered.gff"
+
+	"""
+		gff_filter_by_multi.pl --infile $hints > $filtered_hints
+	"""
+
 }

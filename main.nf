@@ -5,7 +5,7 @@ nextflow.preview.dsl=2
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include proteinhint from "./modules/proteins/main.nf" params(params)
+include proteinhint_slow as proteinhint from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include augustus_prediction from "./modules/augustus/main.nf" params(params)
