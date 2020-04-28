@@ -2,7 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include assemblySplit from "./../fasta" params(params)
+include { fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 workflow proteinhint {
 
@@ -12,11 +12,13 @@ workflow proteinhint {
 
 	main:
 		assemblySplit(genome_rm,params.chunk_size)
-		fastaToDiamondDB(protein_fa)
-		fastaToCdbindex(protein_fa)		
+		fastaCleanProteins(protein_fa)
+		fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+		fastaToDiamondDB(fastaRemoveShort.out)
+		fastaToCdbindex(fastaRemoveShort.out)		
 		runDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),fastaToDiamondDB.out.collect())
 		diamondxToTargets(runDiamondx.out.collect(),assemblySplit.out[1])
-		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
+		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
 		protExonerateToHints(protExonerateBatch.out.collect())
 
 	emit:
@@ -32,10 +34,12 @@ workflow proteinhint_slow {
 
         main:
                 fastaToBlastnDB(genome_rm)
-                fastaToCdbindex(protein_fa)
-		tblastn(protein_fa.splitFasta(by: params.nblast, file: true) , fastaToBlastnDB.out)
+		fastaCleanProteins(protein_fa)
+		fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+                fastaToCdbindex(fastaRemoveShort.out)
+		tblastn(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true) , fastaToBlastnDB.out)
 		tblastnToTargets(tblastn.out[0].collect())
-                protExonerateBatch(tblastnToTargets.out.splitText(by: params.nexonerate, file: true),protein_fa.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
+                protExonerateBatch(tblastnToTargets.out.splitText(by: params.nexonerate, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
                 protExonerateToHints(protExonerateBatch.out.collect())
 
         emit:
@@ -123,13 +127,15 @@ process fastaToBlastnDB {
 		convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
 			-masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
  			-out $mask
-                makeblastdb -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
 	"""
 }
 
 process tblastn {
 
         publishDir "${params.outdir}/logs/tblastn"
+
+	label 'long_running'
 	
 	input:
 	path protein_chunk
@@ -144,7 +150,7 @@ process tblastn {
 	protein_blast_report = "${protein_chunk.baseName}.blast"
 
 	"""
-		tblastn -num_threads ${task.cpus} -evalue ${params.blast_evalue} -db_soft_mask 40 -max_intron_length ${params.max_intron_size} -outfmt \"${params.blast_options}\" -db $db_name -query $protein_chunk > $protein_blast_report
+		${params.tblastn} -num_threads ${task.cpus} -evalue ${params.blast_evalue} -db_soft_mask 40 -max_intron_length ${params.max_intron_size} -outfmt \"${params.blast_options}\" -db $db_name -query $protein_chunk > $protein_blast_report
 	"""
 
 }
@@ -165,7 +171,7 @@ process tblastnToTargets {
 	
 	"""
 		cat $blast_reports > merged.txt
-		tblastn2exonerate_targets.pl --infile merged.txt --max_intron_size $params.max_intron_size > $targets
+		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size > $targets
 	"""
 }
 
@@ -200,7 +206,7 @@ process diamondxToTargets {
 // from a protein database and genome sequence to run exonerate 
 process protExonerateBatch {
 
-	scratch true
+	//scratch true
 
         publishDir "${params.outdir}/logs/exonerate"
 
@@ -232,6 +238,10 @@ process protExonerateBatch {
 		cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> merged.${chunk_name}.exonerate.out 2>/dev/null
 		exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_chunk
 		test -f $exonerate_chunk || cat "#" > $exonerate_chunk
+
+		rm *.align
+		rm *._target_.fa*
+		rm *._query_.fa*
 	"""
 }
 

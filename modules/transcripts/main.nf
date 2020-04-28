@@ -130,6 +130,9 @@ process transcriptExonerateBatch {
                 cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> merged.${chunk_name}.exonerate.out 2>/dev/null
                 exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_chunk
                 test -f $exonerate_chunk || cat "#" > $exonerate_chunk
+		rm *.align
+		rm *._target_.fa*
+		rm *._query_.fa*
         """
 }
 

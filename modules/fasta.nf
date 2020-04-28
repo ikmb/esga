@@ -107,3 +107,43 @@ process fastaMergeFiles {
 
 }
 
+process fastaRemoveShort {
+
+	input:
+	path fasta
+	val min_len
+
+	output:
+	path fasta_filtered
+
+	script:
+
+	fasta_filtered = fasta.getBaseName() + "." + min_len + "." + fasta.getExtension()
+
+	"""
+		gaas_fasta_filter_by_size.pl -f $fasta -s $min_len -o $fasta_filtered
+	"""
+
+}
+
+process fastaCleanProteins {
+
+	input:
+	path fasta
+
+	output:
+	path fasta_clean
+
+	script:
+
+	fasta_clean = fasta.getBaseName() + ".clean.fa"
+
+	"""
+
+		gaas_fasta_cleaner.pl -f $fasta > tmp
+		fastaclean -f tmp -p | sed 's/:filter(clean)//' > $fasta_clean
+		rm tmp
+	"""
+
+
+}

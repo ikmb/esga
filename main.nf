@@ -36,6 +36,7 @@ def helpMessage() {
     Programs to run:
     --trinity		Run transcriptome assembly with Trinity and produce hints from the transcripts [ true (default) | false ]
     --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads with --trinity. 
+    --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -43,9 +44,9 @@ def helpMessage() {
     --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
     --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
-    --evm		Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
     --min_contig_size   Discard all contigs from the assembly smaller than this [ default = 5000 ]
+    --min_prot_length 	Length of proteins in AA to consider when building hints [default = 30]
 
     Evidence tuning
     --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
@@ -167,6 +168,7 @@ log.info "Size of blastx jobs:			${params.chunk_size} bp"
 log.info "# Sequences per Blast job:		${params.nblast}"
 log.info "# Sequences per Exonerate job:		${params.nexonerate}"
 log.info "Size of genome-level jobs:		${params.npart_size} bp"
+log.info "Max intron length:			${params.max_intron_size}"
 log.info "-----------------------------------------"
 log.info "Nextflow Version:		$workflow.nextflow.version"
 log.info "Command Line:			$workflow.commandLine"
