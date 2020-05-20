@@ -3,7 +3,7 @@
 The typical command for running the pipeline is as follows:
 
 ```
-nextflow run main.nf --genome 'genome.fasta' --proteins 'proteins.fasta' --reads 'data/*_R{1,2}.fastq' --transcripts 'transcripts.fa' --rm_lib repeats.fa
+nextflow run ikmb/esga --genome 'genome.fasta' --proteins 'proteins.fasta' --reads 'data/*_R{1,2}.fastq' --transcripts 'transcripts.fa' --rm_lib repeats.fa
 ```
 
 This will run all the steps in the pipeline (Proteins, ESTs/Transcriptome, RNAseq). The types of evidences you provide determine which parts of the pipeline are actually run. 
@@ -15,7 +15,7 @@ In the next section, you will find a list of all user-configurable pipeline opti
 You can of course provide each option as a command line parameter. But this can get a bit tedious. As an alterantive, you can provide a configuration file using the YAML format. An example is included under [../assets/config.yaml](../assist/config.yaml). To provide a config file as an option, 
 use `-params-file my_config.yaml`. The revised command could then read:
 
-`nextflow run /path/to/main.nf -params-file config.yaml -profile your_profile`
+`nextflow run ikmb/esga -params-file config.yaml -profile your_profile`
 
 The default YAML options file:
 
