@@ -102,6 +102,8 @@ process transcriptExonerateBatch {
 
         scratch true
 
+	publishDir "${params.outdir}/logs/transcripts/", mode: 'copy'
+
         input:
         path hits_chunk
         path protein_db

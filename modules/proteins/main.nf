@@ -92,7 +92,7 @@ process runDiamondx {
 
 	tag "Diamond-${chunk_name}"
 	
-        publishDir "${params.outdir}/logs/diamond"
+        publishDir "${params.outdir}/logs/diamond", mode: 'copy'
 
 	//scratch true
 
@@ -133,7 +133,7 @@ process fastaToBlastnDB {
 
 process tblastn {
 
-        publishDir "${params.outdir}/logs/tblastn"
+        publishDir "${params.outdir}/logs/tblastn" , mode: 'copy'
 
 	label 'long_running'
 	
@@ -157,7 +157,7 @@ process tblastn {
 
 process tblastnToTargets {
 
-        publishDir "${params.outdir}/logs/tblastn"
+        publishDir "${params.outdir}/logs/tblastn" , mode: 'copy'
 
 	input:
 	path blast_reports
@@ -180,7 +180,7 @@ process diamondxToTargets {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/logs/diamond"
+	publishDir "${params.outdir}/logs/diamond" , mode: 'copy'
 
 	input:
 	file blast_reports
@@ -208,7 +208,7 @@ process protExonerateBatch {
 
 	//scratch true
 
-        publishDir "${params.outdir}/logs/exonerate"
+        publishDir "${params.outdir}/logs/exonerate", mode: 'copy'
 
 	input:
 	path hits_chunk

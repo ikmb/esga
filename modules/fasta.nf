@@ -140,7 +140,7 @@ process fastaCleanProteins {
 
 	"""
 
-		gaas_fasta_cleaner.pl -f $fasta > tmp
+		gaas_fasta_cleaner.pl -f $fasta -o tmp
 		fastaclean -f tmp -p | sed 's/:filter(clean)//' > $fasta_clean
 		rm tmp
 	"""

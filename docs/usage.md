@@ -163,8 +163,7 @@ Number of alignments to compute in each Exonerate job. Larger values will usuall
 Size of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
 assembly into chunks of this size - some chunks may be bigger, some smaller. This function uses [fasta-splitter.pl](http://kirill-kryukov.com/study/tools/fasta-splitter/).
 
-Setting this to larger values will create fewer parallel jobs, so the run time is likely going to increase. However, this may be desirable for example if the pipeline crashes during the PASA stage, meaning that the 
-individual parts of the genome were too small for pasa to be able to derive meaningful statistics for gene building. 
+Setting this to larger values will create fewer parallel jobs, so the run time is likely going to increase. 
 
 #### `--min_contig_size` [ default = 5000 ]
 Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
