@@ -18,7 +18,7 @@ process AssemblyStats {
 
 	//publishDir "${params.outdir}/assembly", mode: 'copy'
 
-	label 'long_running'
+	label 'gaas'
 
         input:
         path fasta
@@ -38,6 +38,8 @@ process AssemblyStats {
 process AssemblyFilterSize {
 
         //publishDir "${params.outdir}/assembly", mode: 'copy'
+
+	label 'gaas'
 
         input:
         path fasta
