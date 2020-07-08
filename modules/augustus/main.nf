@@ -129,6 +129,8 @@ process trainAugustus {
 
 process runAugustus {
 
+	label 'long_running'
+
 	input:
         path genome_chunk
         path hints
@@ -149,6 +151,8 @@ process runAugustus {
 }
 
 process runAugustusBatch {
+
+	label 'medium_running'
 
 	input:
 	path genome_chunk
