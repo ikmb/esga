@@ -93,6 +93,8 @@ process repeatLibSpecies {
 // if nothing was masked, return the original genome sequence instead and an empty gff file. 
 process repeatMaskLib {
 
+	label 'long_running'
+
 	scratch true
 
 	input: 

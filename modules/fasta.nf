@@ -24,6 +24,8 @@ process fastaSplitChunks {
 
 process fastaSplitSize {
 
+	label 'medium_running'
+
 	input:
 	path fasta
 	val fsize

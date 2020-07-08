@@ -12,7 +12,6 @@ workflow augustus_prediction {
 
 	main:
 		fastaSplitSize(genome,params.npart_size)
-		prepHintsToBed(hints)
 		prepAugustusConfig(augustus_config_dir)
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
@@ -22,6 +21,28 @@ workflow augustus_prediction {
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
 		fasta = GffToFasta.out[0]
+
+}
+
+workflow augustus_prediction_slow {
+
+	take:
+                genome
+                hints
+                augustus_config_dir
+
+        main:
+                fastaSplitSize(genome,params.npart_size)
+                prepHintsToBed(hints)
+                prepAugustusConfig(augustus_config_dir)
+                runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() } )
+                mergeAugustusGff(runAugustus.out.collect())
+                GffToFasta(mergeAugustusGff.out[0],genome)
+
+        emit:
+                gff = mergeAugustusGff.out
+                config = prepAugustusConfig.out
+                fasta = GffToFasta.out[0]
 
 }
 
@@ -104,6 +125,27 @@ process trainAugustus {
 		optimize_augustus.pl --species=$params.aug_species $train_gb --cpus=${task.cpus} --UTR=off 
 		augustus --stopCodonExcludedFromCDS=false --species=$params.aug_species $test_gb | tee $training_stats
 	"""
+}
+
+process runAugustus {
+
+	input:
+        path genome_chunk
+        path hints
+        env AUGUSTUS_CONFIG_PATH
+
+        output:
+        path augustus_result
+
+        script:
+        chunk_name = genome_chunk.getName().tokenize("_")[-1]
+        augustus_result = "augustus.${chunk_name}.out.gff"
+
+        """
+		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${params.aug_conf} --uniqueGeneId=true $genome_chunk > $augustus_result
+ 
+        """
+
 }
 
 process runAugustusBatch {
