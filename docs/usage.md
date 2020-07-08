@@ -38,6 +38,7 @@ chunk_size: 100000
 min_contig_size: 5000
 singleEnd: false
 max_intron_size: 50000
+slow: false
 ```
   
 An explanation of these options follows below.
