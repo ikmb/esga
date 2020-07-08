@@ -142,7 +142,7 @@ process runAugustus {
         augustus_result = "augustus.${chunk_name}.out.gff"
 
         """
-		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${params.aug_conf} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${params.aug_config} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
