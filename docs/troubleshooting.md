@@ -26,6 +26,12 @@ use some sort of sample sheet to let the pipeline know about the various charact
 like this later if there is demand for it. For now, this simply means that you won't be able to feed your "mixed" RNA-seq data into ESGA - but you could devise an assembly strategy with Trinity outside 
 of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. However, please note that Trinity too is not exactly designed to assembly mixed data like that. 
 
+## The annotation is missing many genes
+
+ESGA is driven primarily by annotation hints/evidence, in part to ensure that not too many false positive predictions are produced. However, if the input evidence is incomplete or not quite fitting for the species to be annotated, 
+the resulting gene build will potentially be missing some models (or contain many errors). You can use the option `--slow` address the issue of incomplete evidence - this will run the ab-initio prediction stage on the entire assembly, irrespective
+of whether a particular locus is supported by external evidence or not. However, this strategy may introduce false positive annotations. Consider generating (additional) poly-A selected RNA-seq data to help improving your annotation. 
+
 ## Pipeline is very slow
 
 The performance of the pipeline can be tuned in a number of ways. We have observed long run times for highly fragmented genomes or if the number of sequences

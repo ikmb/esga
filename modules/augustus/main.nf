@@ -12,6 +12,7 @@ workflow augustus_prediction {
 
 	main:
 		fastaSplitSize(genome,params.npart_size)
+                prepHintsToBed(hints)
 		prepAugustusConfig(augustus_config_dir)
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
@@ -33,7 +34,6 @@ workflow augustus_prediction_slow {
 
         main:
                 fastaSplitSize(genome,params.npart_size)
-                prepHintsToBed(hints)
                 prepAugustusConfig(augustus_config_dir)
                 runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() } )
                 mergeAugustusGff(runAugustus.out.collect())
