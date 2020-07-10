@@ -29,20 +29,15 @@ of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. Howe
 ## The annotation is missing many genes
 
 ESGA is driven primarily by annotation hints/evidence, in part to ensure that not too many false positive predictions are produced. However, if the input evidence is incomplete or not quite fitting for the species to be annotated, 
-the resulting gene build will potentially be missing some models (or contain many errors). You can use the option `--slow` address the issue of incomplete evidence - this will run the ab-initio prediction stage on the entire assembly, irrespective
+the resulting gene build will potentially be missing some models (or contain many errors). You can use the option `--slow` to address the issue of incomplete evidence - this will run the ab-initio prediction stage on the entire assembly, irrespective
 of whether a particular locus is supported by external evidence or not. However, this strategy may introduce false positive annotations. Consider generating (additional) poly-A selected RNA-seq data to help improving your annotation. 
 
-## Pipeline is very slow
+## The pipeline is very slow
 
 The performance of the pipeline can be tuned in a number of ways. We have observed long run times for highly fragmented genomes or if the number of sequences
 in blast and exonerate jobs is chosen too large. 
 
-## The pipeline crashes during the PASA stage
-
-This is likely caused by a small value for `--npart_size` . PASA derives certain stastics about the base distribution etc from the individual assembly chunks. If these are set too small, PASA may return
-a cryptic error and crash. Solution: increase the value for `--npart_size`. We found 200MB to work well for the genomes we tested, but depending on the gene density, smaller or larger values may be needed. 
-
-### Genome assembly 
+### Genome assembly is highly fragmented
 Your genome assembly should, at most, contain thousands of scaffolds - ideally much less than that. Modern sequencing approaches such as linked-read sequencing
 or long reads make this a feasible goal for many organisms. It is also advisable to exclude very short scaffolds (<5kb) from your assembly prior to annotation;
 usually these will not contain any useful information but can increase the run time dramatically. 

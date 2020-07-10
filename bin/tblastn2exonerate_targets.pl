@@ -141,6 +141,8 @@ foreach my $query ( keys %bucket ) {
 		my $first_entry = @sorted_matches[0];
 		my $last_entry = @sorted_matches[-1];
 
+		#printf STDERR "${query}\t${target}\tQL:${query_length}\tML:${match_length}\tFR:${fraction}\n";
+
 		# is this overall a valid match?
 		if ($first_entry->{"bitscore"} >= $min_bit && $last_entry->{"bitscore"} >= $min_bit && $fraction >= $length_percent ) {
 

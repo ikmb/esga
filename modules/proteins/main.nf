@@ -127,7 +127,8 @@ process fastaToBlastnDB {
 		convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
 			-masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
  			-out $mask
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
+	
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName 
 	"""
 }
 
@@ -135,7 +136,7 @@ process tblastn {
 
         publishDir "${params.outdir}/logs/tblastn" , mode: 'copy'
 
-	label 'long_running'
+	label 'short_running'
 	
 	input:
 	path protein_chunk
@@ -170,7 +171,7 @@ process tblastnToTargets {
 	targets = "${query_tag}.targets"
 	
 	"""
-		cat $blast_reports > merged.txt
+		cat $blast_reports >> merged.txt
 		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size > $targets
 	"""
 }

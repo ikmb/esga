@@ -2,4 +2,4 @@ ABINITIO_PREDICTION      AUGUSTUS       2
 OTHER_PREDICTION	transdecoder	5
 PROTEIN         protein2genome 8
 TRANSCRIPT      est2genome      5
-TRANSCRIPT      PASA_transcript_assemblies      6
+TRANSCRIPT      PASA_transcript_assemblies      4

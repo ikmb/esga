@@ -169,7 +169,6 @@ log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
-log.info "Size of blastx jobs:			${params.chunk_size} bp"
 log.info "# Sequences per Blast job:		${params.nblast}"
 log.info "# Sequences per Exonerate job:		${params.nexonerate}"
 log.info "Size of genome-level jobs:		${params.npart_size} bp"
@@ -199,6 +198,7 @@ workflow {
 		repeatmasking_with_species(genome_clean,params.rm_species)
 		genome_rm = repeatmasking_with_species.out.genome_rm
 		repeats = Channel.empty()
+		repeat_gffs = Channel.empty()
 	// Use a library provided by the user or compute de-novo
 	} else {
 		if (params.rm_lib) {
@@ -209,6 +209,7 @@ workflow {
 		}
 	        repeatmasking_with_lib(genome_clean,repeats)
 		genome_rm = repeatmasking_with_lib.out.genome_rm
+		repeat_gffs = repeatmasking_with_lib.out.genome_rm_gffs
 	}
 	
 	// Generate hints from proteins (if any)
@@ -306,6 +307,7 @@ workflow {
 
 	publish:
 		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'
+		repeat_gffs to: "${params.outdir}/repeatmasking", mode: 'copy'
 		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
 		augustus_gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'

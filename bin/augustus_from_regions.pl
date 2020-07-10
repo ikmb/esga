@@ -102,7 +102,7 @@ while (<$BED>) {
 			$direction = "--strand=backward";
 		}
 		
-		my $command = "augustus --species=$model $direction --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=$utr --alternatives-from-evidence=$isof --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$from --predictionEnd=$to --uniqueGeneId=true $chr.fa > $outfile" ;
+		my $command = "augustus --species=$model $direction --alternatives-from-sampling=false --alternatives-from-evidence=false --gff3=on --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$from --predictionEnd=$to --uniqueGeneId=true $chr.fa > $outfile" ;
 		printf $command . "\n" ;
 	}
 }
