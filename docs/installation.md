@@ -57,45 +57,60 @@ In addition, you will need a config file that specifies which resource manager y
 Singularity (see below) is included as [conf/slurm_ikmba.config](../conf/slurm_ikmba.config). Detailed instructions about resource managers and 
 available options can be found [here](https://www.nextflow.io/docs/latest/executor.html).
 
-You can now create a new execution profile by editing the file [nextflow.config](../nextflow.config):
+Create your own config file and pass it to the pipeline during start-up using the `-c` flag
 
 ```bash
-profiles {
+nextflow -c nextflow.config ikmb/esga -params-file config.yaml`
 
-	...
-	your_cluster {
-		includeConfig 'conf/base.config'
-		includeConfig 'conf/your_cluster.config'
-	}
+An example of a simple SLURM config file:
+
+```bash
+#!/usr/bin/env nextflow
+
+/*
+ * -------------------------------------------------------
+ *  Your local config file
+ * -------------------------------------------------------
+ */
+
+executor {
+  name="slurm"
+  queueSize=150
 }
+
+process {
+
+  executor = 'slurm'
+  queue = 'all'
+  memory = { 8.GB * task.attempt }
+  cpus = { 1 * task.attempt }
+  time = { 2.h * task.attempt }
+  errorStrategy = { task.exitStatus == 143 ? 'retry' : 'finish' }
+  maxRetries = 3
+  maxErrors = '-1'
+
+}
+
+singularity {
+        enabled = true
+}
+
+params {
+  max_memory = 120.GB
+  max_cpus = 16
+  max_time = 120.h
+}
+
 ```
 
 ## Installing all other software 
 
 This pipeline uses a lot of different bioinformatics software - you can find a full list with versions in the included 
-file [environment.yml](../environment.yml). You won't have to install any of these tools, but can instead use one of the two options below:
+file [environment.yml](../environment.yml). You won't have to install any of these tools - assuming your cluster offers singularity or docker support:
 
-### A. (Bio-) Conda
+### Singularity
 
-All of the required programs are available as [bioconda packages](https://bioconda.github.io/recipes.html) for easy installation. 
-All you need to do is install the corresponding miniconda2 for your system: 
-
-[miniconda2 installer](https://repo.continuum.io/miniconda/) 
-
-Your custom config file should then contain the following line:
-
-```bash
-process {
-	conda = "${baseDir}/environment.yml"
-}
-```
-
-Nextflow will install the environment with the necessary packages during pipeline start-up. However, please be advised that this takes a little while and 
-needs to be done every time you run a new project. Using Singularity is therefore highly recommended (see below). Failing that, you can also install the conda environment into some other location (default is usually $HOME/.conda) and just make sure to activate it any time you want to start the pipeline. Your config file would then container neither a `conda` nor a `singularity` statement. 
-
-### B. Singularity
-
-The preferred way of provisioning the software is through [Singularity](https://github.com/sylabs/singularity). If Singularity is not available on 
+Make sure you have [Singularity](https://github.com/sylabs/singularity). If Singularity is not available on 
 your cluster, please ask your admins to install it. 
 
 To enable use of singularity, simply add the following to your custom config file (see below):
@@ -113,5 +128,8 @@ A typical example would be that your data is stored on a network-mounted drive, 
 singularity {
 	enabled=true
 	runOptions="-B /path/to/network/drive"
+	cacheDir="/path/to/cache"
 }
 ```
+
+Note, that the cacheDir option will make sure that the container is only downloaded once and can be re-used for future pipeline runs. Otherwise, nextflow will re-download it every time you start an annotation project. 
