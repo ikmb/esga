@@ -61,7 +61,7 @@ def helpMessage() {
     --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
 
     Other options:
-    --slow		Runs some tools in slow-mode to try and find more evidence and models
+    --fast		Runs some tools in fast-mode (less sensitive, but faster)
     --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]
     --rnaseq_stranded	Whether the RNAseq reads were sequenced using a strand-specific method (dUTP) [ true | false (default) ]
     -name		Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
@@ -159,8 +159,8 @@ log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
 log.info "Run EVM gene building:		${params.evm}"
 log.info "EVM weights:			${params.evm_weights}"
-if (params.slow) {
-	log.info "Exhaustive (slow) mode:		${params.slow}"
+if (params.fast) {
+	log.info "Rapid mode:		${params.fast}"
 }
 log.info "-----------------------------------------"
 log.info "Evidences:"
@@ -274,7 +274,7 @@ workflow {
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
-	if (params.slow) {
+	if (!params.fast) {
 		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_config_folder)
                 augustus_gff = augustus_prediction_slow.out.gff
                 augustus_fa = augustus_prediction_slow.out.fasta

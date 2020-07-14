@@ -38,7 +38,7 @@ chunk_size: 100000
 min_contig_size: 5000
 singleEnd: false
 max_intron_size: 50000
-slow: false
+fast: false
 ```
   
 An explanation of these options follows below.
@@ -171,8 +171,8 @@ Small contigs generally will not contribute anything useful to the annotation, b
 
 ### 7. Other options 
 
-#### `--slow` [ true | false (default)]
-Will run AUGUSTUS (and in future other tools) on full chromosomes/scaffolds rather than regions pre-defined by supporting hints. This will potentially recover genes not supported by hints, but may add false positive calls as well. 
+#### `--fast` [ true | false (default)]
+Will run AUGUSTUS (and in future other tools) in sub-divided chunks to increase parallelization and overall speed. Note that this speed increase tends to mis-annotate some genes in our testing. 
 
 #### `--email` [ you@somewhere.com | false (default)]
 If you specify an Email address, the pipeline will send a notification upon completion. However, for this to work, the node running the nextflow process must have a configured Email server. 

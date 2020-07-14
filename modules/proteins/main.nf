@@ -172,7 +172,7 @@ process tblastnToTargets {
 	
 	"""
 		cat $blast_reports >> merged.txt
-		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size > $targets
+		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent > $targets
 	"""
 }
 
