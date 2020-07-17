@@ -172,7 +172,7 @@ process tblastnToTargets {
 	
 	"""
 		cat $blast_reports >> merged.txt
-		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent > $targets
+		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent --min_id $params.blast_pident > $targets
 	"""
 }
 
@@ -196,7 +196,8 @@ process diamondxToTargets {
 	
 	"""
 		cat $blast_reports > merged.txt
-		blast_chunk_to_toplevel.pl --blast merged.txt --agp $genome_agp > merged.translated.txt
+		awk '\$3>80 {print}' merged.txt > merged.filtered.txt
+		blast_chunk_to_toplevel.pl --blast merged.filtered.txt --agp $genome_agp > merged.translated.txt
 		blast2exonerate_targets.pl --infile merged.translated.txt --max_intron_size $params.max_intron_size > $targets
 		rm merged.*.txt
 	"""

@@ -131,6 +131,8 @@ process runAugustus {
 
 	label 'long_running'
 
+	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
 	input:
         path genome_chunk
         path hints
@@ -142,9 +144,10 @@ process runAugustus {
         script:
         chunk_name = genome_chunk.getName().tokenize("_")[-1]
         augustus_result = "augustus.${chunk_name}.out.gff"
+	config_file = file(params.aug_config)
 
         """
-		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${params.aug_config} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
@@ -184,7 +187,7 @@ process mergeAugustusGff {
 
 	label 'short_running'
 
-	//publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
+	// publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
 	input:
 	path augustus_gffs

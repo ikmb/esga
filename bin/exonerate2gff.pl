@@ -93,8 +93,13 @@ while (<$IN>) {
 		($GeneID) =($comment =~/gene_id\s\w+\s;\ssequence\s(\S+)\s;\s/);		
 		# if this is a protein alignment, we use the bounds as start and stop hints
 		if ($method eq "protein2genome") {
-			printf $Chrom."\t".$method."\tstart\t". ($start-20) . "\t" . ($start+20) . "\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
-			printf $Chrom."\t".$method."\tstop\t" . ($end-20) . "\t" . ($end+20) ."\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
+			if ($strand eq "+") {
+				printf $Chrom."\t".$method."\tstart\t". ($start-20) . "\t" . ($start+20) . "\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
+				printf $Chrom."\t".$method."\tstop\t" . ($end-20) . "\t" . ($end+20) ."\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
+			} else {
+				printf $Chrom."\t".$method."\tstop\t". ($end-20) . "\t" . ($end+20) . "\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
+                                printf $Chrom."\t".$method."\tstart\t" . ($start-20) . "\t" . ($start+20) ."\t".$score."\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";
+			}
 			printf $Chrom."\t".$method."\tgenicpart\t" . ($start-20) . "\t" . ($end+20) . "\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;pri=$pri\n";	
 		}
 	} elsif ($feature eq "exon") {

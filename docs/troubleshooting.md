@@ -29,8 +29,8 @@ of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. Howe
 ## The annotation is missing many genes
 
 ESGA is driven primarily by annotation hints/evidence, in part to ensure that not too many false positive predictions are produced. However, if the input evidence is incomplete or not quite fitting for the species to be annotated, 
-the resulting gene build will potentially be missing some models (or contain many errors). You can use the option `--slow` to address the issue of incomplete evidence - this will run the ab-initio prediction stage on the entire assembly, irrespective
-of whether a particular locus is supported by external evidence or not. However, this strategy may introduce false positive annotations. Consider generating (additional) poly-A selected RNA-seq data to help improving your annotation. 
+the resulting gene build will potentially be missing some models (or contain many errors). Another source if problems is the quality of the ab-initio profile used for gene finding with AUGUSTUS. If you organism is taxonomically distant to any of the available 
+prediction profiles, the resulting models will often not be of high quality. Consider using the built-in training routine to improve this.
 
 ## The pipeline is very slow
 

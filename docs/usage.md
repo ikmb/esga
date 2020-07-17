@@ -87,7 +87,22 @@ Run the PASA pipeline to build gene models from aligned transcripts (requires --
 #### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
-### 4. Within-scaffold parallelization
+### 3. Search options
+ESGA runs tools such as Blast+ to identify alignment regions for evidence data. We made some of the parameters editable, although we stress that changes to any of these options my produce sub-par results. 
+
+#### `--blast_evalue` [ 0.000001 (default ]
+Evalue cut-off for Blast hits to be reported.
+
+#### `--blast_pident` [ 80 (default) ]
+Hits below this (percentage) identity to the target will be ignored.
+
+#### `--blast_length_percent` [ 0.8 (default) ]
+Hits that cover less than this percentage of the query protein will be ignored. Note that this value is given as a decimal fraction. 
+
+#### `--blast_bitscore` [ 25 (default) ]
+Hits with a bitscore lower than this will be ignored. 
+
+### 5. Within-scaffold parallelization
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
 This pipeline will run certain programs not on full scaffolds, but on clusters of data within those scaffolds. The factor determining how to build these evidence clusters is the expected maximum intron size for your organism of interest. 
