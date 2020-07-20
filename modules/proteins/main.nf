@@ -171,7 +171,7 @@ process tblastnToTargets {
 	targets = "${query_tag}.targets"
 	
 	"""
-		cat $blast_reports >> merged.txt
+		cat $blast_reports | sort -k1 -k2 -k3 >> merged.txt
 		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent --min_id $params.blast_pident > $targets
 	"""
 }
@@ -251,6 +251,8 @@ process protExonerateBatch {
 process protExonerateToHints {
 
 	label 'medium_running'
+
+        publishDir "${params.outdir}/logs/exonerate", mode: 'copy'
 
 	input:
 	path chunks

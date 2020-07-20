@@ -59,6 +59,7 @@ open (my $IN, '<', $infile) or die "FATAL: Can't open file: $infile for reading.
 
 my @bucket;
 my $previous_group = "placeholder";
+my $previous_end = 1;
 
 while (<$IN>) {
 	
@@ -71,6 +72,14 @@ while (<$IN>) {
 
 		my ($chr,$origin,$feature,$from,$to,$score,$strand,$phase,$info) = split("\t",$line);
 		my $group = (split /[;,=]/ , $info)[1];
+
+		# make an intron if this is still the same aligned sequence
+		if ($previous_group eq $group) {
+			my $intron_start = $previous_end+1;
+			my $intron_end = $from-1;
+			my $intron = $chr . "\t" . $source . "\tintronpart\t" . $intron_start . "\t" . $intron_end . "\t" . $score . "\t" . $strand . "\t" . $phase . "\t" . "src=$src;grp=$group;pri=$pri" ;
+			push(@bucket,$intron);
+		}
 
 		my $entry =  $chr . "\t" . $source . "\t" . $hintfeature . "\t" . $from . "\t" . $to . "\t" . $score . "\t" . $strand . "\t" . $phase . "\t" . "src=$src;grp=$group;pri=$pri" ;
 		
@@ -89,6 +98,7 @@ while (<$IN>) {
 		} 
 
 		$previous_group = $group;
+		$previous_end = $to;
 		push(@bucket,$entry);
 	}
 
