@@ -39,8 +39,10 @@ workflow proteinhint_slow {
                 fastaToCdbindex(fastaRemoveShort.out)
 		tblastn(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true) , fastaToBlastnDB.out)
 		tblastnToTargets(tblastn.out[0].collect())
+		TargetsFindMissing(tblastnToTargets.out,fastaRemoveShort.out)
+		protExonerateFromList(TargetsFindMissing.out.splitText(by: params.nexonerate_exhaustive, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())	
                 protExonerateBatch(tblastnToTargets.out.splitText(by: params.nexonerate, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
-                protExonerateToHints(protExonerateBatch.out.collect())
+                protExonerateToHints(protExonerateBatch.out.concat(protExonerateFromList.out).collect())
 
         emit:
                 hints = protExonerateToHints.out
@@ -90,8 +92,8 @@ process fastaToCdbindex {
 // This is used to define targets for exhaustive exonerate alignments
 process runDiamondx {
 
-	tag "Diamond-${chunk_name}"
-	
+	label 'short_running'
+
         publishDir "${params.outdir}/logs/diamond", mode: 'copy'
 
 	//scratch true
@@ -106,7 +108,7 @@ process runDiamondx {
 	script:
 	db_name = db_files[0].getBaseName()
 	chunk_name = genome_chunk.getName().tokenize('.')[-2]
-	protein_blast_report = "${genome_chunk.baseName}.blast"
+	protein_blast_report = "${genome_chunk.baseName}.${params.chunk_size}.blast"
 	"""
 		diamond blastx --sensitive --threads ${task.cpus} --evalue ${params.blast_evalue} --outfmt ${params.blast_options} --db $db_name --query $genome_chunk --out $protein_blast_report
 	"""
@@ -172,7 +174,7 @@ process tblastnToTargets {
 	
 	"""
 		cat $blast_reports | sort -k1 -k2 -k3 >> merged.txt
-		tblastn2exonerate_targets.pl --infile merged.txt --min_bit $params.blast_bitscore --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent --min_id $params.blast_pident > $targets
+		tblastn2exonerate_targets.pl --infile merged.txt --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent --min_id $params.blast_pident > $targets
 	"""
 }
 
@@ -184,12 +186,12 @@ process diamondxToTargets {
 	publishDir "${params.outdir}/logs/diamond" , mode: 'copy'
 
 	input:
-	file blast_reports
+	path blast_reports
 	path genome_agp
 
 	output:
 	path targets
-	
+
 	script:
 	query_tag = "proteinDB"
 	targets = "${query_tag}.targets"
@@ -199,7 +201,53 @@ process diamondxToTargets {
 		awk '\$3>80 {print}' merged.txt > merged.filtered.txt
 		blast_chunk_to_toplevel.pl --blast merged.filtered.txt --agp $genome_agp > merged.translated.txt
 		blast2exonerate_targets.pl --infile merged.translated.txt --max_intron_size $params.max_intron_size > $targets
-		rm merged.*.txt
+	"""
+}
+
+// Compare a target file with a protein fasta file and find the proteins missing from the target file
+process TargetsFindMissing {
+
+	label 'short_running'
+
+	input:
+	path targets
+	path protein_fa
+
+	output:
+	path missing
+
+	script:
+	missing = file(protein_fa).getBaseName() + ".missing.txt"
+
+	"""
+		blast_find_missing_targets.pl --targets $targets --proteins $protein_fa > $missing
+	"""
+
+}
+// Run exonerate on full genomes for select proteins unable to be located using heuristics
+process protExonerateFromList {
+
+	input:
+	path accessions
+	path protein_db
+	path protein_db_index
+	path genome
+
+	output:
+	path exonerate_aligns
+
+	script:
+	chunk_name = accessions.getBaseName()
+	exonerate_aligns = protein_db.getBaseName() + "." + chunk_name +  ".exonerate.out"
+
+	"""
+		for i in \$(cat $accessions); do cdbyank -a \$i $protein_db_index > \$i.fasta ; done;
+		exonerate_from_list.pl --accessions $accessions --db $protein_db_index --genome $genome --max_intron_size ${params.max_intron_size} > commands.txt
+		parallel -j ${task.cpus} < commands.txt
+                cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> $exonerate_aligns 2>/dev/null
+		for i in \$(cat $accessions); do rm \$i.fasta ; done;
+		
+
 	"""
 }
 

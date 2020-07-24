@@ -31,7 +31,7 @@ my $GeneID = undef;
 my $pri = 3;
 my $help;
 
-my $src = "T";
+my $src = "E";
 my $pri = 3;
 my $hintfeature = "exonpart";
 
@@ -40,6 +40,7 @@ my $help;
 GetOptions(
     "help" => \$help,
     "source=s" => \$source,
+    "src=s" => \$src,
     "pri=i" => \$pri,
     "infile=s" => \$infile,
     "outfile=s" => \$outfile);

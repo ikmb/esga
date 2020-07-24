@@ -56,7 +56,7 @@ process estMinimapToHints {
 	minimap_hints = minimap_gff.getBaseName() + ".hints.gff"
 			
 	"""
-		minimap2hints.pl --source est2genome --pri ${params.pri_est} --infile $minimap_gff --outfile $minimap_hints
+		minimap2hints.pl --src $params.t_est --source est2genome --pri ${params.pri_est} --infile $minimap_gff --outfile $minimap_hints
 	"""
 }
 

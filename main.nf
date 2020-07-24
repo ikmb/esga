@@ -5,7 +5,8 @@ nextflow.preview.dsl=2
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include proteinhint_slow as proteinhint from "./modules/proteins/main.nf" params(params)
+include proteinhint_slow from "./modules/proteins/main.nf" params(params)
+include proteinhint from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include augustus_prediction from "./modules/augustus/main.nf" params(params)
@@ -57,6 +58,7 @@ def helpMessage() {
     How to split programs:
     --nblast		Chunks (# of sequences) to divide genome for blastx jobs [ default = 100 ]
     --nexonerate	Chunks (# of blast hits) to divide Exonerate jobs [ default = 200 ]
+    --nexonerate_exhaustive	Chunks (# of sequences) to divide Exonerate jobs for full-genome alignments [ default = 50]
     --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000 ]
     --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
 
@@ -160,7 +162,7 @@ log.info "Run Trinity assembly:		${params.trinity}"
 log.info "Run EVM gene building:		${params.evm}"
 log.info "EVM weights:			${params.evm_weights}"
 if (params.fast) {
-	log.info "Rapid mode:		${params.fast}"
+	log.info "Rapid mode:			${params.fast}"
 }
 log.info "-----------------------------------------"
 log.info "Evidences:"
@@ -172,6 +174,9 @@ log.info "Parallelization settings"
 log.info "# Sequences per Blast job:		${params.nblast}"
 log.info "# Sequences per Exonerate job:		${params.nexonerate}"
 log.info "Size of genome-level jobs:		${params.npart_size} bp"
+if (params.fast) {
+	log.info "Size of BlastX jobs:			${params.chunk_size} bp"
+}
 log.info "Max intron length:			${params.max_intron_size}"
 log.info "-----------------------------------------"
 log.info "Nextflow Version:		$workflow.nextflow.version"
@@ -214,9 +219,16 @@ workflow {
 	
 	// Generate hints from proteins (if any)
 	if (params.proteins) {
-		proteinhint(genome_rm,proteins)
-		protein_hints = proteinhint.out.hints
-		protein_gff = proteinhint.out.gff
+
+		if (params.fast) {
+			proteinhint(genome_clean,proteins)
+			protein_hints = proteinhint.out.hints
+			protein_gff = proteinhint.out.gff
+		} else {
+			proteinhint_slow(genome_rm,proteins)
+			protein_hints = proteinhint_slow.out.hints
+			protein_gff = proteinhint_slow.out.gff
+		}
 	} else {
 		protein_hints = Channel.empty()
 		protein_gff = Channel.empty()
