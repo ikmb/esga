@@ -51,7 +51,7 @@ while (<$IN>) {
 
 	my $line = $_;
 	chomp $line;
-	my $acc = (split "\t", $line)[0];
+	my $acc = (split /\t/, $line)[0];
 	$target_list{$acc} = 1;
 }
 
@@ -65,7 +65,8 @@ while (<$PROT>) {
 	chomp $line;
 
 	if ($line =~ /^>.*/) {
-		my $def_line = substr($line, 1, -1);
+		my $def_line = $line;
+		$def_line =~  s/^>// ;
 		my $acc = (split " ",$def_line)[0];
 		push(@protein_accs,$acc);
 	}
