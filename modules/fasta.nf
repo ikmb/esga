@@ -2,6 +2,26 @@
 // Generic functions for FASTA processing
 // ******************
 
+// create a cdbtools compatible  index
+// we need this to do very focused exonerate searches later
+process fastaToCdbindex {
+
+        label 'short_running'
+
+        input:
+        path fasta
+
+        output:
+        path fasta_index
+
+        script:
+        fasta_index = fasta.getName()+ ".cidx"
+
+        """
+                cdbfasta $fasta
+        """
+}
+
 // split a fasta file into a number of chunks
 // will delete all empty chunks since no checking of the absolute minimum number of chunks is performed.
 process fastaSplitChunks {

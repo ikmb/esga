@@ -46,6 +46,26 @@ workflow augustus_prediction_slow {
 
 }
 
+workflow augustus_prescan {
+
+	take:
+		genome
+		augustus_config_dir
+	
+	main:
+                fastaSplitSize(genome,params.npart_size)
+		prepAugustusConfig(augustus_config_dir)
+		scanAugustus(fastaSplitSize.out.flatMap(),prepAugustusConfig.out.collect().map{ it[0].toString() } )
+		mergeAugustusGff(runAugustus.out.collect())
+                GffToFasta(mergeAugustusGff.out[0],genome)
+
+	emit:
+		gff = mergeAugustusGff.out
+		config = prepAugustusConfig.out
+                fasta = GffToFasta.out[0]
+
+}
+
 workflow augustus_training_from_pasa {
 
 	take:
@@ -127,6 +147,31 @@ process trainAugustus {
 	"""
 }
 
+// this method runs naked without hints to identify putative coding regions
+process scanAugustus {
+
+	label 'long_running'
+
+        publishDir "${params.outdir}/logs/scan_genes", mode: 'copy'
+
+	input:
+	path genome_chunk
+	env AUGUSTUS_CONFIG_PATH
+
+	output:
+	path augustus_result
+
+	script:
+        chunk_name = genome_chunk.getName().tokenize("_")[-1]
+	augustus_result = "augustus.${chunk_name}.prescan.out.gff"
+        config_file = file(params.aug_config)
+
+	"""
+		augustus --species=${params.aug_species} --gff3=on --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+	"""
+
+}
+
 process runAugustus {
 
 	label 'long_running'
@@ -147,7 +192,7 @@ process runAugustus {
 	config_file = file(params.aug_config)
 
         """
-		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} --sample=100  --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 

@@ -2,7 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include { fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
+include { fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 workflow proteinhint {
 
@@ -33,12 +33,12 @@ workflow proteinhint_slow {
                 protein_fa
 
         main:
-                fastaToBlastnDB(genome_rm)
+                fastaToBlastnDBMasked(genome_rm)
 		fastaCleanProteins(protein_fa)
 		fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
                 fastaToCdbindex(fastaRemoveShort.out)
-		tblastn(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true) , fastaToBlastnDB.out)
-		tblastnToTargets(tblastn.out[0].collect())
+		tblastnMasked(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true) , fastaToBlastnDBMasked.out)
+		tblastnToTargets(tblastnMasked.out[0].collect())
 		TargetsFindMissing(tblastnToTargets.out,fastaRemoveShort.out)
 		protExonerateFromList(TargetsFindMissing.out.splitText(by: params.nexonerate_exhaustive, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())	
                 protExonerateBatch(tblastnToTargets.out.splitText(by: params.nexonerate, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
@@ -67,27 +67,6 @@ process fastaToDiamondDB {
 		diamond makedb --in $protein_fa --db $dbName
        	"""
 }
-
-// create a cdbtools compatible  index
-// we need this to do very focused exonerate searches later
-process fastaToCdbindex {
-
-	label 'short_running'
-
-	input:
-	path fasta
-
-	output:
-	path protein_index
-
-	script:
-	protein_index = fasta.getName()+ ".cidx"
-
-	"""
-		cdbfasta $fasta 
-	"""
-}
-
 // Blast each genome chunk against the protein database
 // This is used to define targets for exhaustive exonerate alignments
 process runDiamondx {
@@ -109,12 +88,13 @@ process runDiamondx {
 	db_name = db_files[0].getBaseName()
 	chunk_name = genome_chunk.getName().tokenize('.')[-2]
 	protein_blast_report = "${genome_chunk.baseName}.${params.chunk_size}.blast"
+
 	"""
 		diamond blastx --sensitive --threads ${task.cpus} --evalue ${params.blast_evalue} --outfmt ${params.blast_options} --db $db_name --query $genome_chunk --out $protein_blast_report
 	"""
 }
 
-process fastaToBlastnDB {
+process fastaToBlastnDBMasked {
 
 	input:
 	path genome_fa
@@ -126,6 +106,9 @@ process fastaToBlastnDB {
 	dbName = genome_fa.getBaseName()
 	mask = dbName + ".asnb"
 	"""
+
+		${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
+
 		convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
 			-masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
  			-out $mask
@@ -134,7 +117,47 @@ process fastaToBlastnDB {
 	"""
 }
 
+process fastaToBlastnDB {
+
+        input:
+        path genome_fa
+
+        output:
+        path "${dbName}*.n*"
+
+        script:
+        dbName = genome_fa.getBaseName()
+
+        """
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
+        """
+}
+
 process tblastn {
+
+        publishDir "${params.outdir}/logs/tblastn" , mode: 'copy'
+
+	label 'short_running'
+	
+	input:
+	path protein_chunk
+	path blastdb_files
+
+	output:
+	path protein_blast_report
+
+	script:
+	db_name = blastdb_files[0].baseName
+	chunk_name = protein_chunk.getName().tokenize('.')[-2]
+	protein_blast_report = "${protein_chunk.baseName}.blast"
+
+	"""
+		${params.tblastn} -num_threads ${task.cpus} -evalue ${params.blast_evalue} -max_intron_length ${params.max_intron_size} -outfmt \"${params.blast_options}\" -db $db_name -query $protein_chunk > $protein_blast_report
+	"""
+
+}
+
+process tblastnMasked {
 
         publishDir "${params.outdir}/logs/tblastn" , mode: 'copy'
 
@@ -224,8 +247,36 @@ process TargetsFindMissing {
 	"""
 
 }
+
+process spalnBatch {
+
+	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+
+	input:
+	path protein_index
+	path genome
+	path targets
+
+	output:
+	path spaln_align
+
+	script:
+
+	spaln_align = targets.getBaseName() + ".spaln.out"
+
+	"""
+		spaln_from_targets.pl --protein_index $protein_fa --genome $genome --matches $targets > commands.txt
+		parallel -j ${task.cpus} < commands.txt
+		cat *.spaln.out > $spaln_align
+	"""
+
+}
+
+
 // Run exonerate on full genomes for select proteins unable to be located using heuristics
 process protExonerateFromList {
+
+        publishDir "${params.outdir}/logs/exonerate_exhaustive", mode: 'copy'
 
 	input:
 	path accessions
@@ -238,16 +289,16 @@ process protExonerateFromList {
 
 	script:
 	chunk_name = accessions.getBaseName()
-	exonerate_aligns = protein_db.getBaseName() + "." + chunk_name +  ".exonerate.out"
+	exonerate_aligns = chunk_name +  ".exonerate.out"
 
 	"""
 		for i in \$(cat $accessions); do cdbyank -a \$i $protein_db_index > \$i.fasta ; done;
 		exonerate_from_list.pl --accessions $accessions --db $protein_db_index --genome $genome --max_intron_size ${params.max_intron_size} > commands.txt
-		parallel -j ${task.cpus} < commands.txt
-                cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> $exonerate_aligns 2>/dev/null
-		for i in \$(cat $accessions); do rm \$i.fasta ; done;
-		
-
+		echo "Starting Exonerate run..."
+		parallel -j ${task.cpus} < commands.txt 2>/dev/null
+		echo "Finished exonerate run"
+		echo '# exonerate alignments for ${accessions}' > $exonerate_aligns
+                cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> $exonerate_aligns  2>/dev/null  || true
 	"""
 }
 
@@ -283,11 +334,11 @@ process protExonerateBatch {
 	"""
 		samtools faidx $genome
 		extractMatchTargetsFromIndex.pl --matches $hits_chunk --db $protein_db_index
-		exonerate_from_blast_hits.pl --matches $hits_chunk --assembly_index $genome --max_intron_size $params.max_intron_size --query_index $protein_db_index --analysis protein2genome --outfile $commands
+		exonerate_from_blast_hits.pl --matches $hits_chunk --assembly_index $genome --max_intron_size $params.max_intron_size --analysis protein2genome --outfile $commands
 		parallel -j ${task.cpus} < $commands
 		cat *.exonerate.align | grep -v '#' | grep 'exonerate:protein2genome:local' >> merged.${chunk_name}.exonerate.out 2>/dev/null
 		exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_chunk
-		test -f $exonerate_chunk || cat "#" > $exonerate_chunk
+		[ -s $exonerate_chunk ] || cat "#" > $exonerate_chunk
 
 		rm *.align
 		rm *._target_.fa*

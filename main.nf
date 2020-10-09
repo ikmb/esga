@@ -2,6 +2,9 @@
 
 nextflow.preview.dsl=2
 
+// this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
+params.utr = (params.reads || params.transcripts) ? "on" : "off"
+
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
@@ -11,6 +14,7 @@ include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include augustus_prediction from "./modules/augustus/main.nf" params(params)
 include augustus_prediction_slow from "./modules/augustus/main.nf" params(params)
+include augustus_prescan from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
@@ -114,6 +118,7 @@ if (!params.rm_species && !params.rm_lib) {
 if (params.pasa && !params.transcripts && !params.trinity) {
 	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --trinity)"
 }
+
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
 if (!workflow.containerEngine) {
@@ -164,6 +169,7 @@ log.info "EVM weights:			${params.evm_weights}"
 if (params.fast) {
 	log.info "Rapid mode:			${params.fast}"
 }
+log.info "Predict UTRs:			${params.utr}"
 log.info "-----------------------------------------"
 log.info "Evidences:"
 log.info "Proteins:			${params.proteins}"
@@ -203,7 +209,8 @@ workflow {
 		repeatmasking_with_species(genome_clean,params.rm_species)
 		genome_rm = repeatmasking_with_species.out.genome_rm
 		repeats = Channel.empty()
-		repeat_gffs = Channel.empty()
+		repeat_gffs = repeatmasking_with_species.out.genome_rm_gffs
+		repeat_hints = repeatmasking_with_species.out.genome_rm_hints
 	// Use a library provided by the user or compute de-novo
 	} else {
 		if (params.rm_lib) {
@@ -215,13 +222,19 @@ workflow {
 	        repeatmasking_with_lib(genome_clean,repeats)
 		genome_rm = repeatmasking_with_lib.out.genome_rm
 		repeat_gffs = repeatmasking_with_lib.out.genome_rm_gffs
+		repeat_hints = repeatmasking_with_lib.out.genome_rm_hints
 	}
+
+	// perform naked augustus predictions to get a list of plausible coding regions
+	//augustus_prescan(genome_rm,augustus_config_folder)
+	//prescan_gff = augustus_prescan.out.gff
+	//prescan_fa = augustus_prescan.out.fasta
 	
 	// Generate hints from proteins (if any)
 	if (params.proteins) {
 
 		if (params.fast) {
-			proteinhint(genome_clean,proteins)
+			proteinhint(genome_rm,proteins)
 			protein_hints = proteinhint.out.hints
 			protein_gff = proteinhint.out.gff
 		} else {
@@ -282,7 +295,7 @@ workflow {
 	}
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints)
+	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
@@ -323,6 +336,8 @@ workflow {
 		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
 		augustus_gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'
+		//prescan_gff to: "${params.outdir}/annotation/prescan", mode: 'copy'
+		//prescan_fa to: "${params.outdir}/annotation/prescan", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'

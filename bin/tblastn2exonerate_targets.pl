@@ -42,7 +42,7 @@ GetOptions(
     "max_intron_size=i" => \$max_intron_size,
     "min_bit=i" => \$min_bit,
     "min_id=i" => \$min_id,
-    "length_percent=i" => \$length_percent,
+    "length_percent=f" => \$length_percent,
     "outfile=s" => \$outfile);
 
 # Print Help and exit

@@ -14,8 +14,6 @@ perl my_script.pl
 		The name of the match file to read. 
 	[--assembly_index filename]
 		Name of the CDBtools genome assembly index
-	[--query_index filename]
-		Name of the CDBtools protein fasta index
 	[--analysis name]
 		Exonerate algorithm to use (est2genome or protein2genome)
 	[--max_intron_size]
@@ -31,7 +29,6 @@ my $outfile = undef;
 my $matches = undef;
 my $assembly_index = undef;
 my $max_intron_size = undef;
-my $query_index = undef;
 my $analysis = undef;
 my $help;
 
@@ -40,7 +37,6 @@ GetOptions(
     "matches=s" => \$matches,
     "assembly_index=s" => \$assembly_index,
     "max_intron_size=i" => \$max_intron_size,
-    "query_index=s" => \$query_index,
     "analysis=s" => \$analysis,
     "outfile=s" => \$outfile);
 

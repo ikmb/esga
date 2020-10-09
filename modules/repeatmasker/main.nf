@@ -13,10 +13,11 @@ workflow repeatmasking_with_lib {
 		repeatLib(rm_lib)
 		repeatMaskLib(fastaSplitSize.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
 		fastaMergeChunks(repeatMaskLib.out[0].collect(),assembly_name)
-
+		repeats_to_hints(repeatMaskLib.out[1].collect())
 	emit:
 		genome_rm = fastaMergeChunks.out[0]
 		genome_rm_gffs = repeatMaskLib.out[1].collectFile()
+		genome_rm_hints = repeats_to_hints.out
 
 }
 
@@ -33,10 +34,11 @@ workflow repeatmasking_with_species {
                 repeatLibSpecies(species)
                 repeatMaskSpecies(fastaSplitSize.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
                 fastaMergeChunks(repeatMaskSpecies.out[0].collect(),assembly_name)
-
+		repeats_to_hints(repeatMaskSpecies.out[1].collect())
 	emit:
 		genome_rm = fastaMergeChunks.out[0]
                 genome_rm_gffs = repeatMaskSpecies.out[1].collectFile()
+		genome_rm_hints = repeats_to_hints.out
 
 }
 // RepeatMasker library needs ot be writable. Need to do this so we can work with locked containers
@@ -118,7 +120,7 @@ process repeatMaskLib {
 	
 	"""
 		echo \$REPEATMASKER_LIB_DIR > lib_dir.txt
-		RepeatMasker $options -gff -xsmall -q -pa ${task.cpus} $genome
+		RepeatMasker $options -gff -xsmall -q -nolow -pa ${task.cpus} $genome
 		test -f ${genome_rm} || cp $genome $genome_rm && touch $rm_gff
 	"""
 }
@@ -149,8 +151,27 @@ process repeatMaskSpecies {
 
         """
                 echo \$REPEATMASKER_LIB_DIR > lib_dir.txt
-                RepeatMasker $options -gff -xsmall -q -pa ${task.cpus} $genome
+                RepeatMasker $options -gff -xsmall -nolow -q -pa ${task.cpus} $genome
                 test -f ${genome_rm} || cp $genome $genome_rm && touch $rm_gff
         """
 }
 
+process repeats_to_hints {
+
+	scratch true
+
+	input:
+	path gffs
+
+	output:
+	path hints
+
+	script:
+	hints = "hints.repeats.gff"
+
+	"""
+		cat $gffs > merged.gff
+		gff_repeats2hints.pl --infile merged.gff > $hints
+	"""
+
+}

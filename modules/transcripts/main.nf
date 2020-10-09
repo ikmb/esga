@@ -1,6 +1,7 @@
 // **************************
 // Production of annotation hints from EST/transcript FASTA sequences
 // **************************
+include fastaToCdbindex from "./../fasta" params(params)
 
 workflow esthint {
 
@@ -16,9 +17,108 @@ workflow esthint {
 		hints = estMinimapToHints.out
 }
 
+workflow esthint_slow {
+
+	take:
+		genome_rm
+		est
+
+	main:
+		makeBlastDB(genome_rm)
+		fastaToCdbindex(est)
+		estBlastN(est.splitFasta(by: params.nblast),makeBlastDB.out)
+		estExonerate(estBlastN.out.collectFile().splitText(by: params.nexonerate, file:true),genome_rm.collect(),fastaToCdbindex.out.collect())
+		estExonerateToHints( estExonerate.collect() )
+	emit:
+		gff = estExonerate.out
+		hints = estExonerateToHints.out
+
+}
+
+process makeBlastDB {
+
+	input:
+	path genome_rm
+
+	output:
+	path "${dbName}*.n*"
+
+	script:
+	dbName = genome_rm.getBaseName()
+
+	"""
+		makeblastdb -in $genome_rm -dbtype nucl -out $dbName
+	"""
+}
+
+process estBlastN {
+
+	input:
+	path est_chunk
+	path blast_db
+
+	output:
+	path blast_result
+
+        db_name = blastdb_files[0].baseName
+        chunk_name = est_chunk.getName().tokenize('.')[-2]
+        blast_result = "${est_chunk.baseName}.blast"
+
+        """
+                blastn -num_threads ${task.cpus} -evalue ${params.blast_evalue} -outfmt \"${params.blast_options}\" -db $db_name -query $est_chunk > $blast_result
+        """
+
+}
+
+process estExonerate {
+
+	input:
+	path hits_chunk
+	path genome
+	path est_db_index	
+
+	output:
+	path exonerate_report
+
+	script:
+
+	exonerate_report = blast_report.getBaseName() + ".est.exonerate.out"
+
+	"""
+		samtools faidx $genome
+                extractMatchTargetsFromIndex.pl --matches $hits_chunk --db $est_db_index
+                exonerate_from_blast_hits.pl --matches $hits_chunk --assembly_index $genome --max_intron_size $params.max_intron_size  --analysis est2genome --outfile $commands
+                parallel -j ${task.cpus} < $commands
+                cat *.exonerate.align | grep -v '#' | grep 'exonerate:est2genome:local' >> merged.${chunk_name}.est.exonerate.out 2>/dev/null
+                exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_chunk
+                [ -s $exonerate_chunk ] || cat "#" > $exonerate_chunk
+
+                rm *.align
+                rm *._target_.fa*
+                rm *._query_.fa*
+
+	"""
+}
+
+process estExonerateToHints {
+
+	input:
+	path exonerate_report
+
+	output:
+	path hints
+
+	script:
+
+	hints = exonerate_report.getBaseName() + ".hints.gff"
+
+	"""
+	"""
+}
+
 process estMinimap {
 
-	scratch true
+	//scratch true
 
 	publishDir "${params.outdir}/transcripts", mode: 'copy'
 
