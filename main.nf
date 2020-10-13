@@ -8,9 +8,11 @@ params.utr = (params.reads || params.transcripts) ? "on" : "off"
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
+include proteinhint_sensitive from "./modules/proteins/main.nf" params(params)
 include proteinhint_slow from "./modules/proteins/main.nf" params(params)
 include proteinhint from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
+include esthint_slow from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include augustus_prediction from "./modules/augustus/main.nf" params(params)
 include augustus_prediction_slow from "./modules/augustus/main.nf" params(params)
@@ -234,9 +236,9 @@ workflow {
 	if (params.proteins) {
 
 		if (params.fast) {
-			proteinhint(genome_rm,proteins)
-			protein_hints = proteinhint.out.hints
-			protein_gff = proteinhint.out.gff
+			proteinhint_slow(genome_rm,proteins)
+			protein_hints = proteinhint_slow.out.hints
+			protein_gff = proteinhint_slow.out.gff
 		} else {
 			proteinhint_slow(genome_rm,proteins)
 			protein_hints = proteinhint_slow.out.hints
@@ -249,9 +251,16 @@ workflow {
 
 	// Generate hints from transcripts (if any)
 	if (params.transcripts) {
-		esthint(genome_rm,transcripts)
-		est_hints = esthint.out.hints
-		est_gff = esthint.out.gff
+
+		if (params.fast) {
+			esthint(genome_rm,transcripts)
+			est_hints = esthint.out.hints
+			est_gff = esthint.out.gff
+		} else {
+			esthint_slow(genome_rm,transcripts)
+			est_hints = esthint_slow.out.hints
+			est_gff = esthint_slow.out.gff
+		}
 	} else {
 		est_hints = Channel.empty()
 		est_gff = Channel.empty()

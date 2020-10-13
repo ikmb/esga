@@ -1,7 +1,7 @@
 // **************************
 // Production of annotation hints from EST/transcript FASTA sequences
 // **************************
-include fastaToCdbindex from "./../fasta" params(params)
+include { fastaToBlastnDBMasked; fastaToCdbindex } from "./../fasta" params(params)
 
 workflow esthint {
 
@@ -24,43 +24,29 @@ workflow esthint_slow {
 		est
 
 	main:
-		makeBlastDB(genome_rm)
+		fastaToBlastnDBMasked(genome_rm)
 		fastaToCdbindex(est)
-		estBlastN(est.splitFasta(by: params.nblast),makeBlastDB.out)
-		estExonerate(estBlastN.out.collectFile().splitText(by: params.nexonerate, file:true),genome_rm.collect(),fastaToCdbindex.out.collect())
-		estExonerateToHints( estExonerate.collect() )
+		estBlastN( est.splitFasta(by: params.nblast, file: true), fastaToBlastnDBMasked.out.collect() )
+		blastnToTargets(estBlastN.out.collect())
+		estExonerate(blastnToTargets.out.splitText(by: params.nexonerate, file:true),genome_rm.collect(),fastaToCdbindex.out.collect(),est.collect())
+		estExonerateToHints( estExonerate.out.collect() )
 	emit:
 		gff = estExonerate.out
 		hints = estExonerateToHints.out
 
 }
 
-process makeBlastDB {
-
-	input:
-	path genome_rm
-
-	output:
-	path "${dbName}*.n*"
-
-	script:
-	dbName = genome_rm.getBaseName()
-
-	"""
-		makeblastdb -in $genome_rm -dbtype nucl -out $dbName
-	"""
-}
-
 process estBlastN {
 
 	input:
 	path est_chunk
-	path blast_db
+	path blast_db_files
 
 	output:
 	path blast_result
 
-        db_name = blastdb_files[0].baseName
+	script:
+        db_name = blast_db_files[0].getBaseName()
         chunk_name = est_chunk.getName().tokenize('.')[-2]
         blast_result = "${est_chunk.baseName}.blast"
 
@@ -70,28 +56,49 @@ process estBlastN {
 
 }
 
+process blastnToTargets {
+
+	input:
+	path reports
+
+	output:
+	path targets
+
+	script:
+
+	targets = reports[0].getBaseName() + ".targets.txt"
+
+	"""
+		cat $reports > reports.txt
+		tblastn2exonerate_targets.pl --infile reports.txt --max_intron_size ${params.max_intron_size} > $targets
+	"""
+
+}
+
 process estExonerate {
 
 	input:
 	path hits_chunk
 	path genome
-	path est_db_index	
+	path est_db_index
+	path est
 
 	output:
 	path exonerate_report
 
 	script:
-
-	exonerate_report = blast_report.getBaseName() + ".est.exonerate.out"
-
+	commands = "commands.txt"
+	exonerate_report = hits_chunk.getBaseName() + ".est.exonerate.out"
+	chunk_name = hits_chunk.getBaseName()
+	
 	"""
 		samtools faidx $genome
                 extractMatchTargetsFromIndex.pl --matches $hits_chunk --db $est_db_index
                 exonerate_from_blast_hits.pl --matches $hits_chunk --assembly_index $genome --max_intron_size $params.max_intron_size  --analysis est2genome --outfile $commands
                 parallel -j ${task.cpus} < $commands
                 cat *.exonerate.align | grep -v '#' | grep 'exonerate:est2genome:local' >> merged.${chunk_name}.est.exonerate.out 2>/dev/null
-                exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_chunk
-                [ -s $exonerate_chunk ] || cat "#" > $exonerate_chunk
+                exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_report
+                [ -s $exonerate_report ] || cat "#" > $exonerate_report
 
                 rm *.align
                 rm *._target_.fa*
@@ -100,20 +107,26 @@ process estExonerate {
 	"""
 }
 
+// merge the exonerate hits and create the hints
 process estExonerateToHints {
 
-	input:
-	path exonerate_report
+        label 'medium_running'
 
-	output:
-	path hints
+        publishDir "${params.outdir}/logs/exonerate", mode: 'copy'
 
-	script:
+        input:
+        path chunks
 
-	hints = exonerate_report.getBaseName() + ".hints.gff"
+        output:
+        path exonerate_gff
 
-	"""
-	"""
+        script:
+        exonerate_gff = "transcripts.exonerate.hints.gff"
+
+        """
+                cat $chunks > all_chunks.out
+                exonerate2gff.pl --infile all_chunks.out --pri ${params.pri_est} --source est --outfile $exonerate_gff
+        """
 }
 
 process estMinimap {

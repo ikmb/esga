@@ -49,8 +49,7 @@ while (<$IN>) {
 
 	my $query_clean = $query;
 	$query_clean =~ s/\|/_/g ;
-	
-	
+		
 	my $fa_clean = "$query_clean._query_.fa" ;
 
 	unless (-e $fa_clean) {

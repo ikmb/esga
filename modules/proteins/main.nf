@@ -2,7 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include { fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
+include { fastaToBlastnDBMasked; fastaToList; fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 workflow proteinhint {
 
@@ -51,6 +51,28 @@ workflow proteinhint_slow {
 
 }
 
+workflow proteinhint_sensitive {
+
+	take:
+                genome_rm
+                protein_fa
+
+        main:
+                fastaCleanProteins(protein_fa)
+                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+                fastaToCdbindex(fastaRemoveShort.out)
+		fastaToList(fastaRemoveShort.out)
+                protExonerateFromList(fastaToList.out.splitText(by: params.nexonerate_exhaustive, file: true),fastaRemoveShort.out.collect() ,fastaToCdbindex.out.collect() ,genome_rm.collect() )
+                protExonerateToHints(protExonerateFromList.out.collect())
+
+        emit:
+                hints = protExonerateToHints.out
+                gff = protExonerateFromList.out[0].collectFile()
+
+
+
+}
+
 process fastaToDiamondDB {
 
 	label 'medium_running'
@@ -92,45 +114,6 @@ process runDiamondx {
 	"""
 		diamond blastx --sensitive --threads ${task.cpus} --evalue ${params.blast_evalue} --outfmt ${params.blast_options} --db $db_name --query $genome_chunk --out $protein_blast_report
 	"""
-}
-
-process fastaToBlastnDBMasked {
-
-	input:
-	path genome_fa
-
-	output:
-	path "${dbName}*.n*"
-	
-	script:
-	dbName = genome_fa.getBaseName()
-	mask = dbName + ".asnb"
-	"""
-
-		${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
-
-		convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
-			-masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
- 			-out $mask
-	
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName 
-	"""
-}
-
-process fastaToBlastnDB {
-
-        input:
-        path genome_fa
-
-        output:
-        path "${dbName}*.n*"
-
-        script:
-        dbName = genome_fa.getBaseName()
-
-        """
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
-        """
 }
 
 process tblastn {

@@ -167,7 +167,7 @@ process scanAugustus {
         config_file = file(params.aug_config)
 
 	"""
-		augustus --species=${params.aug_species} --gff3=on --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species}  ${params.aug_options} --gff3=on --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
 	"""
 
 }
@@ -192,7 +192,7 @@ process runAugustus {
 	config_file = file(params.aug_config)
 
         """
-		augustus --species=${params.aug_species} --sample=100  --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} ${params.aug_options} --sample=100  --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
@@ -222,7 +222,7 @@ process runAugustusBatch {
 		fastaexplode -f $genome_chunk -d . 
 		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${params.utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
-		cat *augustus.gff > $augustus_result
+			cat *augustus.gff > $augustus_result
 		rm *augustus.gff
 	"""
 }

@@ -53,6 +53,13 @@ if ($outfile) {
     open(STDOUT, ">$outfile") or die("Cannot open $outfile");
 }
 
+my $percent_id = 80;
+if ($analysis eq "protein2genome") {
+	$percent_id = 70;
+} elsif ($analysis eq "est2genome") {
+	$percent_id = 95;
+}
+
 print STDERR "Preparing exonerate jobs!\n" ;
 
 open (my $IN, '<', $matches) or die "FATAL: Can't open file: $matches for reading.\n$!\n";
@@ -82,7 +89,7 @@ while (<$IN>) {
 	system($cmd_target);
 	
 	# Run exonerate on these data
-	my $cmd_run = "exonerate --model $analysis --softmasktarget --percent 20 --bestn 1 --minintron 20 --maxintron $max_intron_size  --showalignment false --showtargetgff true $fa_clean $region_name._target_.fa > subjob_$query_clean.$region_name.exonerate.align\n";
+	my $cmd_run = "exonerate --model $analysis --softmasktarget yes --percent $percent_id -M 3500 --bestn 1 --minintron 20 --maxintron $max_intron_size --showalignment false --showtargetgff true $fa_clean $region_name._target_.fa > subjob_$query_clean.$region_name.exonerate.align 2>>exonerate.log \n";
 	
 	printf($cmd_run);
 

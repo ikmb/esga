@@ -2,6 +2,67 @@
 // Generic functions for FASTA processing
 // ******************
 
+
+process fastaToBlastnDBMasked {
+
+        input:
+        path genome_fa
+
+        output:
+        path "${dbName}*.n*"
+
+        script:
+        dbName = genome_fa.getBaseName()
+        mask = dbName + ".asnb"
+        """
+
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
+
+                convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
+                        -masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
+                        -out $mask
+
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
+        """
+}
+
+process fastaToBlastnDB {
+
+        input:
+        path genome_fa
+
+        output:
+        path "${dbName}*.n*"
+
+        script:
+        dbName = genome_fa.getBaseName()
+
+        """
+                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
+        """
+}
+
+// Get Accession numbers from FASTA file
+
+process fastaToList {
+
+	label 'short_running'
+
+	input:
+	path fasta
+
+	output:
+	path accessions
+
+	script:
+	accessions = fasta.getBaseName() + ".accs.txt"
+
+	"""
+		grep "^>.*" $fasta | sed 's/^>//'  > $accessions
+	"""
+
+}
+
 // create a cdbtools compatible  index
 // we need this to do very focused exonerate searches later
 process fastaToCdbindex {
@@ -163,9 +224,8 @@ process fastaCleanProteins {
 	"""
 
 		gaas_fasta_cleaner.pl -f $fasta -o tmp
-		fastaclean -f tmp -p | sed 's/:filter(clean)//' > $fasta_clean
+		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 		rm tmp
 	"""
-
 
 }
