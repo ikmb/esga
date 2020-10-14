@@ -10,7 +10,8 @@ workflow rnaseqhint {
 		HisatMakeDB(genome)
 		runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
-		mergeBams(HisatMap.out.collect())
+		makeBigWig(HisatMap.out[0],HisatMap.out[1])		
+		mergeBams(HisatMap.out[0].collect())
 		rseqHints(mergeBams.out)
 		filterRseqHints(rseqHints.out)		
 
@@ -93,7 +94,8 @@ process HisatMap {
 	
 	output:
 	path "*accepted_hits.bam"
-	
+	path "*.bai"
+
 	script:
 	indexBase = hs2_indices[0].toString() - ~/.\d.ht2/
 	ReadsBase = reads[0].toString() - ~/(_R1)?(_trimmed)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
@@ -103,12 +105,49 @@ process HisatMap {
 	if (params.singleEnd) {
 		"""
 		hisat2 -x $indexBase -U $reads -p ${task.cpus} | samtools view -bS - | samtools sort -m 2G -@ 4 - > ${prefix}_accepted_hits.bam
+		samtools index  ${prefix}_accepted_hits.bam
 		"""
 	} else {
 		"""
 		hisat2 -x $indexBase -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} | samtools view -bS - | samtools sort -m 2G -@4 - > ${prefix}_accepted_hits.bam
+		samtools index  ${prefix}_accepted_hits.bam
 		"""
 	}
+}
+
+process makeBigWig {
+
+	scratch true
+
+	label 'deeptools'
+
+	publishDir "${params.outdir}/tracks", mode: 'copy'
+
+	input:
+	path bam
+	path bai
+
+	output:
+	path "*.bw"
+
+	script:
+
+	bigwig = bam.getBaseName() + ".bw"
+	bigwig_fw = bam.getBaseName() + ".fw.bw"
+	bigwig_rev = bam.getBaseName() + ".rev.bw"
+
+	if (params.rnaseq_stranded) {
+		"""
+			bamCoverage --filterRNAstrand forward --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig_fw
+        	        bamCoverage --filterRNAstrand reverse --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig_rev
+		"""
+
+	} else {
+		"""
+			bamCoverage --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig
+		"""
+	}
+
 }
 
 // Combine all BAM files for hint generation

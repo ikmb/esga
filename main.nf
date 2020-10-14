@@ -2,6 +2,8 @@
 
 nextflow.preview.dsl=2
 
+params.version = workflow.manifest.version
+
 // this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
 params.utr = (params.reads || params.transcripts) ? "on" : "off"
 
@@ -82,6 +84,41 @@ if (params.help){
 	helpMessage()
 	exit 0
 }
+
+// ****************
+// Collect metadata
+// ****************
+
+def summary = [:]
+
+summary['Assembly'] = params.genome
+if (params.proteins) {
+	summary['Proteins'] = params.proteins
+}
+if (params.transcripts) {
+	summary['Transcripts'] = params.transcripts
+}
+if (params.reads) {
+	summary['Reads'] = params.reads
+}
+if (params.rm_lib) {
+	summary['RepeatLibrary'] = params.rm_lib
+}
+if (params.rm_species) {
+	summary['RepeatSpecies'] = params.rm_species
+}
+summary['EsgaVersion'] = params.version
+summary['RunDate'] = workflow.start
+summary['RunDir'] = workflow.workDir
+summary['Command'] = workflow.commandLine
+
+summary['BlastJobs'] = params.nblast
+summary['ExonerateJobs'] = params.nexonerate
+
+summary['AugustusSpecies'] = params.aug_species
+summary['AugustusOptions'] = params.aug_options
+summary['AugustusConfig'] = params.aug_config
+
 
 // ****************
 // input validation

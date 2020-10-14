@@ -146,6 +146,10 @@ Species model for Augustus. A list of valid identifiers can be found [here](http
 
 #### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
 Location of Augustus configuration file. By default, this pipeline uses config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. 
+
+#### `--aug_options` [ default = "" ]
+Augustus has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
+For example, to allow Augustus to predict overlapping genes (default: no), you could specifiy `--aug_options '--singleStrand=true'`
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
 A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
@@ -187,7 +191,7 @@ Small contigs generally will not contribute anything useful to the annotation, b
 ### 7. Other options 
 
 #### `--fast` [ true | false (default)]
-Will run AUGUSTUS (and in future other tools) in sub-divided chunks to increase parallelization and overall speed. Note that this speed increase tends to mis-annotate some genes in our testing. 
+Will run some of the more time-consuming steps in a stripped-down/alternative fashion to increase speed, but potentially at the cost of accuracy. Changes include: Use diamondx to find protein matches in small sub-sections of the genome, use minimap2 to align transcripts and run Augustus only on regions that contain hints. 
 
 #### `--email` [ you@somewhere.com | false (default)]
 If you specify an Email address, the pipeline will send a notification upon completion. However, for this to work, the node running the nextflow process must have a configured Email server. 

@@ -26,8 +26,8 @@ workflow esthint_slow {
 	main:
 		fastaToBlastnDBMasked(genome_rm)
 		fastaToCdbindex(est)
-		estBlastN( est.splitFasta(by: params.nblast, file: true), fastaToBlastnDBMasked.out.collect() )
-		blastnToTargets(estBlastN.out.collect())
+		estBlastNMasked( est.splitFasta(by: params.nblast, file: true), fastaToBlastnDBMasked.out.collect() )
+		blastnToTargets(estBlastNMasked.out.collect())
 		estExonerate(blastnToTargets.out.splitText(by: params.nexonerate, file:true),genome_rm.collect(),fastaToCdbindex.out.collect(),est.collect())
 		estExonerateToHints( estExonerate.out.collect() )
 	emit:
@@ -54,6 +54,25 @@ process estBlastN {
                 blastn -num_threads ${task.cpus} -evalue ${params.blast_evalue} -outfmt \"${params.blast_options}\" -db $db_name -query $est_chunk > $blast_result
         """
 
+}
+
+process estBlastNMasked {
+
+	input:
+        path est_chunk
+        path blast_db_files
+
+        output:
+        path blast_result
+
+        script:
+        db_name = blast_db_files[0].getBaseName()
+        chunk_name = est_chunk.getName().tokenize('.')[-2]
+        blast_result = "${est_chunk.baseName}.blast"
+
+        """
+                blastn -num_threads ${task.cpus} -db_soft_mask 40 -evalue ${params.blast_evalue} -outfmt \"${params.blast_options}\" -db $db_name -query $est_chunk > $blast_result
+        """
 }
 
 process blastnToTargets {
@@ -96,7 +115,7 @@ process estExonerate {
                 extractMatchTargetsFromIndex.pl --matches $hits_chunk --db $est_db_index
                 exonerate_from_blast_hits.pl --matches $hits_chunk --assembly_index $genome --max_intron_size $params.max_intron_size  --analysis est2genome --outfile $commands
                 parallel -j ${task.cpus} < $commands
-                cat *.exonerate.align | grep -v '#' | grep 'exonerate:est2genome:local' >> merged.${chunk_name}.est.exonerate.out 2>/dev/null
+                cat *.exonerate.align | grep -v '#' | grep 'exonerate:est2genome' >> merged.${chunk_name}.exonerate.out 2>grep.log
                 exonerate_offset2genomic.pl --infile merged.${chunk_name}.exonerate.out --outfile $exonerate_report
                 [ -s $exonerate_report ] || cat "#" > $exonerate_report
 

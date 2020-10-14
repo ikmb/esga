@@ -29,4 +29,3 @@ dependencies:
  - perl-bioperl
  - diamond=0.9.10
  - gffread=0.11.7
- - spaln
