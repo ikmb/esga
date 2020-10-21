@@ -64,7 +64,7 @@ while (<$IN>) {
 	my $acc = $line;
 	my $query_fa = $acc . ".fasta" ;
 	# Run exonerate on these data
-	my $cmd_run = "exonerate --model protein2genome --softmasktarget --percent 70 --bestn 2 --minintron 20 --maxintron $max_intron_size  --showalignment false --showtargetgff true $query_fa $genome > $acc.exonerate.align\n";
+	my $cmd_run = "exonerate --model protein2genome --softmasktarget yes --percent 70 --bestn 1 --minintron 20 --maxintron $max_intron_size  --showalignment false --showtargetgff true $query_fa $genome > $acc.exonerate.align\n";
 	
 	printf($cmd_run);
 

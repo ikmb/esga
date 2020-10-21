@@ -138,13 +138,13 @@ process makeBigWig {
 
 	if (params.rnaseq_stranded) {
 		"""
-			bamCoverage --filterRNAstrand forward --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig_fw
-        	        bamCoverage --filterRNAstrand reverse --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig_rev
+			bamCoverage -of bigwig -bs 10 --filterRNAstrand forward --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_fw
+        	        bamCoverage -of bigwig -bs 10 --filterRNAstrand reverse --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_rev
 		"""
 
 	} else {
 		"""
-			bamCoverage --ignoreDuplicates --minMappingQuality 1 -p ${task.cpus} -b $bam -o $bigwig
+			bamCoverage -of bigwig -bs 10 --ignoreDuplicates -p ${task.cpus} -b $bam -o $bigwig
 		"""
 	}
 

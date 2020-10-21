@@ -13,6 +13,7 @@ include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
 include proteinhint_sensitive from "./modules/proteins/main.nf" params(params)
 include proteinhint_slow from "./modules/proteins/main.nf" params(params)
 include proteinhint from "./modules/proteins/main.nf" params(params)
+include proteinhint_spaln from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint_slow from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
@@ -44,7 +45,7 @@ def helpMessage() {
   Options:
     -profile            Hardware config to use (optional, will default to 'standard')
     Programs to run:
-    --trinity		Run transcriptome assembly with Trinity and produce hints from the transcripts [ true (default) | false ]
+    --trinity		Run transcriptome assembly with Trinity and produce hints from the transcripts [ true (default) | false ]. Requires --reads.
     --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads with --trinity. 
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
  	
@@ -119,6 +120,7 @@ summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
 
+summary['BlastEvalue'] = params.blast_evalue
 
 // ****************
 // input validation
@@ -277,9 +279,9 @@ workflow {
 			protein_hints = proteinhint_slow.out.hints
 			protein_gff = proteinhint_slow.out.gff
 		} else {
-			proteinhint_slow(genome_rm,proteins)
-			protein_hints = proteinhint_slow.out.hints
-			protein_gff = proteinhint_slow.out.gff
+			proteinhint_spaln(genome_rm,proteins)
+			protein_hints = proteinhint_spaln.out.hints
+			protein_gff = proteinhint_spaln.out.gff
 		}
 	} else {
 		protein_hints = Channel.empty()
@@ -289,7 +291,7 @@ workflow {
 	// Generate hints from transcripts (if any)
 	if (params.transcripts) {
 
-		if (params.fast) {
+		if (!params.fast) {
 			esthint(genome_rm,transcripts)
 			est_hints = esthint.out.hints
 			est_gff = esthint.out.gff

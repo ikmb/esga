@@ -64,6 +64,8 @@ print STDERR "Preparing exonerate jobs!\n" ;
 
 open (my $IN, '<', $matches) or die "FATAL: Can't open file: $matches for reading.\n$!\n";
 
+my $job_count = 0;
+
 while (<$IN>) {
 	
 	chomp; 
@@ -87,9 +89,10 @@ while (<$IN>) {
 	my $region_name = $sseqid . "_" . $target_start . "_" . $target_end ;
 	my $cmd_target = "samtools faidx $assembly_index $region > $region_name._target_.fa" ;
 	system($cmd_target);
+	$job_count += 1;
 	
 	# Run exonerate on these data
-	my $cmd_run = "exonerate --model $analysis --softmasktarget yes --percent $percent_id -M 3500 --bestn 1 --minintron 20 --maxintron $max_intron_size --showalignment false --showtargetgff true $fa_clean $region_name._target_.fa > subjob_$query_clean.$region_name.exonerate.align 2>>exonerate.log \n";
+	my $cmd_run = "echo $job_count && exonerate --model $analysis --softmasktarget yes --percent $percent_id -M 3500 --bestn 1 --minintron 20 --maxintron $max_intron_size --showalignment false --showtargetgff true $fa_clean $region_name._target_.fa > subjob_$query_clean.$region_name.exonerate.align 2>>exonerate.log \n";
 	
 	printf($cmd_run);
 

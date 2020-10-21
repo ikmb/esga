@@ -51,6 +51,26 @@ workflow proteinhint_slow {
 
 }
 
+workflow proteinhint_spaln {
+
+	take:
+		genome_rm
+		protein_fa
+
+	main:
+                fastaCleanProteins(protein_fa)
+                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+		spalnMakeIndex(genome_rm)
+		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
+		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out)
+		spalnToHints(spalnMerge.out)
+	
+	emit:
+		hints = spalnToHints.out
+		gff = spalnMerge.out
+
+}
+
 workflow proteinhint_sensitive {
 
 	take:
@@ -231,30 +251,87 @@ process TargetsFindMissing {
 
 }
 
-process spalnBatch {
+process spalnMakeIndex {
+
+	label 'spaln'
+
+	input:
+	path genome
+
+	output:
+	path("genome_spaln*")
+
+	script:
+	
+	"""
+		cp $genome genome_spaln.gf
+		spaln -W -KP -E -t${task.cpus} genome_spaln.gf
+	"""
+	
+}
+
+process spalnAlign {
+
+	label 'spaln'
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
 	input:
-	path protein_index
-	path genome
-	path targets
+	path proteins
+	path spaln_files
 
 	output:
-	path spaln_align
+	path ("${chunk_name}.*")
 
 	script:
-
-	spaln_align = targets.getBaseName() + ".spaln.out"
+	chunk_name = proteins.getBaseName() 
+	spaln_gff = chunk_name + ".gff"
+	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln_from_targets.pl --protein_index $protein_fa --genome $genome --matches $targets > commands.txt
-		parallel -j ${task.cpus} < commands.txt
-		cat *.spaln.out > $spaln_align
+		spaln -o $chunk_name -Q7 -O12 -t${task.cpus} -dgenome_spaln.gf $proteins
 	"""
 
 }
 
+process spalnMerge {
+
+	label 'spaln'
+
+	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+
+	input:
+	path spaln_reports
+	path spaln_files
+
+	output:
+	path spaln_final
+
+	script:
+	spaln_final = spaln_reports[0].getBaseName() + ".merged.final.gff"
+
+	"""
+		 sortgrcd -C70 -J180 -O0 -n0 *.grd > $spaln_final
+	"""
+
+}
+
+process spalnToHints {
+
+	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+
+	input:
+	path gff
+
+	output:
+	path hints
+
+	script:
+	hints = "spaln.proteins.hints.gff"
+	"""
+		spaln2hints.pl --infile $gff --pri ${params.pri_prot} --outfile $hints
+	"""
+}
 
 // Run exonerate on full genomes for select proteins unable to be located using heuristics
 process protExonerateFromList {
@@ -290,7 +367,7 @@ process protExonerateFromList {
 // from a protein database and genome sequence to run exonerate 
 process protExonerateBatch {
 
-	//scratch true
+	scratch true
 
         publishDir "${params.outdir}/logs/exonerate", mode: 'copy'
 
