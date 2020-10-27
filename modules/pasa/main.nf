@@ -47,7 +47,7 @@ workflow pasa_standard {
 // Currently does not work in singularity/conda so we just copy the input until we can fix this
 process runSeqClean {
 
-	label 'short_running'
+	label 'pasa'
 
 	input:
 	path transcripts
@@ -64,6 +64,8 @@ process runSeqClean {
 }
 
 process runPasa {
+
+	label 'pasa'
 
 	input:
 	path genome
@@ -106,9 +108,8 @@ process runPasa {
 
 process PasaToModels {
 
-	//scratch true
 
-        label 'long_running'
+        label 'pasa'
 
         //publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
@@ -168,7 +169,9 @@ process runMinimapSplit {
 
 // Run the PASA pipeline
 process runPasaFromCustom {
-			
+		
+	label 'pasa'
+	
 	scratch true
 			
 	input:
@@ -219,9 +222,7 @@ process runPasaFromCustom {
 // this is not...ideal. 
 process PasaToModelsCustom {
 
-	//scratch true
-
-	label 'long_running'
+	label 'pasa'
 
 	//publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
