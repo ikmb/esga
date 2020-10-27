@@ -83,26 +83,6 @@ process fastaToCdbindex {
         """
 }
 
-// split a fasta file into a number of chunks
-// will delete all empty chunks since no checking of the absolute minimum number of chunks is performed.
-process fastaSplitChunks {
-
-        input:
-        path fasta
-	val nchunks
-
-        output:
-        path "*_chunk_*"
-
-        script:
-        ref_name = fasta.getBaseName() + "_chunk_%3.3d"
-
-        """
-                fastasplitn -in $fasta -n $nchunks -t $ref_name
-		find \$PWD -size -10c -print -delete
-        """
-}
-
 process fastaSplitSize {
 
 	label 'medium_running'
