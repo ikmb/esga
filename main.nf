@@ -10,16 +10,10 @@ params.utr = (params.reads || params.transcripts) ? "on" : "off"
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include proteinhint_sensitive from "./modules/proteins/main.nf" params(params)
-include proteinhint_slow from "./modules/proteins/main.nf" params(params)
-include proteinhint from "./modules/proteins/main.nf" params(params)
-include proteinhint_spaln from "./modules/proteins/main.nf" params(params)
-include esthint from "./modules/transcripts/main.nf" params(params)
-include esthint_slow from "./modules/transcripts/main.nf" params(params)
+include { proteinhint_slow; proteinhint; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
+include { esthint; esthint_slow } from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
-include augustus_prediction from "./modules/augustus/main.nf" params(params)
-include augustus_prediction_slow from "./modules/augustus/main.nf" params(params)
-include augustus_prescan from "./modules/augustus/main.nf" params(params)
+include { augustus_prediction; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa ; augustus_prescan } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
@@ -45,7 +39,6 @@ def helpMessage() {
   Options:
     -profile            Hardware config to use (optional, will default to 'standard')
     Programs to run:
-    --trinity		Run transcriptome assembly with Trinity and produce hints from the transcripts [ true (default) | false ]. Requires --reads.
     --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads with --trinity. 
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
  	
@@ -156,8 +149,16 @@ if (params.rm_species && params.rm_lib) {
 if (!params.rm_species && !params.rm_lib) {
 	log.warn "No repeat data provided, will model repeats de-novo (slow!!!)"
 }
-if (params.pasa && !params.transcripts && !params.trinity) {
-	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --trinity)"
+if (params.aug_training && !params.proteins) {
+	// if no proteins are given, we will try to use pasa for training
+	params.pasa = true
+}
+if (params.pasa && !params.transcripts && !params.reads) {
+	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --reads)"
+}
+if (params.pasa && params.reads) {
+	log.info "Will perform de-novo transcriptome assembly from raw reads to inform PASA annotation"
+	params.trinity = true
 }
 
 // Provide the path to the augustus config folder
@@ -173,9 +174,6 @@ if (!workflow.containerEngine) {
 }
 if (!params.aug_species) {
 	exit 1, "Must provide an AUGUSTUS species name to run this pipeline (--aug_species)"
-}
-if (params.pasa && params.npart_size < 100000000) {
-	log.warn "An npart_size smaller than 100MB is risking PASA to fail - increase in case of a crash..."
 }
 
 // *******************************
@@ -202,6 +200,13 @@ log.info "-----------------------------------------"
 log.info "Program settings:"
 log.info "AUGUSTUS species:		${params.aug_species}"
 log.info "AUGUSTUS config:		${params.aug_config}"
+if (params.aug_training) {
+	if (params.proteins) {
+		log.info "AUGUSTUS training:		Proteins"
+	} else {
+		log.info "AUGUSTUS training:		Transcripts"
+	}
+}
 log.info "Maximum intron size:		${params.max_intron_size}"
 log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
@@ -342,17 +347,30 @@ workflow {
 		pasa_fa = Channel.empty()
 	}
 
+	if (params.aug_training) {
+		// Prefer training from Spaln models since these tend to contain less noise 
+		if (params.proteins) {
+			augustus_train_from_spaln(genome_rm,protein_gff,augustus_config_folder)
+			augustus_conf_folder = augustus_train_from_spaln.out.acf_folder
+		} else if (params.transcripts && params.pasa) {
+			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_folder)
+			augustus_conf_folder = augustus_train_from_pasa.out.acf_folder
+		} 
+	} else {
+		augustus_conf_folder = augustus_config_folder
+	}
+
 	// Merge hints
 	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
 	if (!params.fast) {
-		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_config_folder)
+		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_conf_folder)
                 augustus_gff = augustus_prediction_slow.out.gff
                 augustus_fa = augustus_prediction_slow.out.fasta
 	} else {	
-		augustus_prediction(genome_rm,merge_hints.out,augustus_config_folder)
+		augustus_prediction(genome_rm,merge_hints.out,augustus_conf_folder)
 		augustus_gff = augustus_prediction.out.gff
 		augustus_fa = augustus_prediction.out.fasta
 	}

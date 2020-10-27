@@ -78,7 +78,7 @@ while (<$IN>) {
 		if ($previous_group eq $group) {
 			my $intron_start = $previous_end+1;
 			my $intron_end = $from-1;
-			my $intron = $chr . "\t" . $source . "\tintronpart\t" . $intron_start . "\t" . $intron_end . "\t" . $score . "\t" . $strand . "\t" . $phase . "\t" . "src=$src;grp=$group;pri=$pri" ;
+			my $intron = $chr . "\t" . $source . "\tintron\t" . $intron_start . "\t" . $intron_end . "\t" . $score . "\t" . $strand . "\t" . $phase . "\t" . "src=$src;grp=$group;pri=$pri" ;
 			push(@bucket,$intron);
 		}
 
@@ -87,6 +87,7 @@ while (<$IN>) {
 		# Collect mappings until a new group starts
 		if ($previous_group ne $group) {
 			# only consider multi-hit, i.e. spliced, mappings
+			# a lot of single-exon mappings are noise from sequencing and or mapping
 			if (scalar(@bucket) > 1) {
 				foreach my $e (@bucket){
 					printf $e . "\n" ;

@@ -63,11 +63,11 @@ workflow proteinhint_spaln {
 		spalnMakeIndex(genome_rm)
 		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
 		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out)
-		spalnToHints(spalnMerge.out)
+		spalnToHints(spalnMerge.out[0])
 	
 	emit:
 		hints = spalnToHints.out
-		gff = spalnMerge.out
+		gff = spalnMerge.out[0]
 
 }
 
@@ -289,7 +289,7 @@ process spalnAlign {
 	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln -o $chunk_name -Q7 -O12 -t${task.cpus} -dgenome_spaln.gf $proteins
+		spaln -o $chunk_name -Q6 -O12 -t${task.cpus} -dgenome_spaln.gf $proteins
 	"""
 
 }
@@ -298,7 +298,7 @@ process spalnMerge {
 
 	label 'spaln'
 
-	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+	publishDir "${params.outdir}/logs/spaln" , mode: 'copy'
 
 	input:
 	path spaln_reports
@@ -306,12 +306,15 @@ process spalnMerge {
 
 	output:
 	path spaln_final
+	path spaln_track 
 
 	script:
 	spaln_final = spaln_reports[0].getBaseName() + ".merged.final.gff"
+	spaln_track = spaln_reports[0].getBaseName() + ".merged.final.webapollo.gff"
 
 	"""
-		 sortgrcd -C70 -J180 -O0 -n0 *.grd > $spaln_final
+		sortgrcd -C70 -J180 -O0 -n0 *.grd > $spaln_final
+		sortgrcd -C70 -J180 -O2 -n0 *.grd > $spaln_track
 	"""
 
 }
@@ -329,9 +332,10 @@ process spalnToHints {
 	script:
 	hints = "spaln.proteins.hints.gff"
 	"""
-		spaln2hints.pl --infile $gff --pri ${params.pri_prot} --outfile $hints
+		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=spaln --priority=${params.pri_prot} --out=$hints
 	"""
 }
+
 
 // Run exonerate on full genomes for select proteins unable to be located using heuristics
 process protExonerateFromList {

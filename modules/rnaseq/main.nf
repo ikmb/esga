@@ -12,8 +12,9 @@ workflow rnaseqhint {
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
 		makeBigWig(HisatMap.out[0],HisatMap.out[1])		
 		mergeBams(HisatMap.out[0].collect())
+		BamToExonHint(mergeBams.out)
 		rseqHints(mergeBams.out)
-		filterRseqHints(rseqHints.out)		
+		filterRseqHints(rseqHints.out.concat(BamToExonHint.out).collectFile())		
 
 	emit:
 		bam = mergeBams.out[0]
@@ -169,6 +170,26 @@ process mergeBams {
 	
 	"""
 		samtools merge - $hisat_bams | samtools sort -@ ${task.cpus} -m${avail_ram_per_core}G - > $bam
+	"""
+}
+
+process BamToExonHint {
+
+	scratch true
+
+        publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
+
+	input:
+	path bam
+
+	output:
+	path hints
+
+	script:
+	hints = "rnaseq.merged.exons.gff"
+
+	"""
+		samtools depth $bam | perl -ne 'BEGIN{ print "track type= print wiggle_0 name=merged_reads description=merged_reads\n"}; (\$c, \$start, \$depth) = split;if (\$c ne \$lastC) { print "variableStep chrom=\$c span=10\n"; };\$lastC=\$c;next unless \$. % 10 ==0;print "\$start\t\$depth\n" unless \$depth<3' | wig2hints.pl --width=10 --margin=10 --minthresh=2 --minscore=4 --prune=0.1 --src=W --type=ep --radius=4.5 --pri=4 --strand='.' > $hints
 	"""
 }
 

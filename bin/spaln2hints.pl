@@ -24,7 +24,7 @@ my $outfile = undef;
 my $infile = undef;
 my $pri = 5;
 my $help;
-my $src = "E";
+my $src = "P";
 my $method = "protein2genome";
 
 my $help;
@@ -69,7 +69,7 @@ while (<$IN>) {
 	if ($feature eq "gene") {
 		$GeneID = $attributes{'ID'};
 		my $multi = $attributes{'isoforms'};
-		printf $Chrom."\t".$method."\tgenicpart\t" . ($start-20) . "\t" . ($end+20) . "\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;mult=$multi;pri=$pri\n";
+		printf $Chrom."\t".$method."\tgenicpart\t" . ($start-20) . "\t" . ($end+20) . "\t1000\t".$strand."\t".$frame."\tgrp=".$GeneID.";src=$src;mult=$multi;pri=$pri\n";
 	} elsif ($feature eq "mRNA") {
 		$GeneID = $attributes{'ID'};
 		if ($strand eq "+") {

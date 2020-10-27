@@ -66,12 +66,29 @@ workflow augustus_prescan {
 
 }
 
-workflow augustus_training_from_pasa {
+workflow augustus_train_from_spaln {
+
+	take:
+		genome
+		spaln_gff
+		augustus_config
+
+	main:
+                prepAugustusConfig(augustus_config)
+		SpalnGffToTraining(spaln_gff)
+		trainAugustus(genome,SpalnGffToTraining.out,prepAugustusConfig.out.collect().map{ it[0].toString() },prepAugustusConfig.out)
+
+	emit:
+		acf_folder = trainAugustus.out[0]
+		stats = trainAugustus.out[1]
+
+}
+
+workflow augustus_train_from_pasa {
 
 	take:
 		genome
 		pasa_gff
-		model
 		augustus_config
 
 	main:
@@ -82,6 +99,26 @@ workflow augustus_training_from_pasa {
 	emit:
 		acf_folder = trainAugustus.out[0]
 		stats = trainAugustus.out[1]
+
+}
+
+process SpalnGffToTraining {
+
+
+	label 'short_running'
+
+	input:
+	path spaln_gff
+
+	output:
+	path models
+
+	script:
+	models = spaln_gff.getBaseName() + ".training.gff"
+
+	"""
+		gff_add_exons.pl --infile $spaln_gff >> $models
+	"""
 
 }
 
@@ -108,7 +145,7 @@ process trainAugustus {
 
 	label 'extra_long_running'
 
-	scratch true
+	//scratch true
 
 	//publishDir "${params.outdir}/augustus/training/", mode: 'copy'
 
@@ -192,7 +229,7 @@ process runAugustus {
 	config_file = file(params.aug_config)
 
         """
-		augustus --species=${params.aug_species} ${params.aug_options} --sample=100  --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} ${params.aug_options} --softmasking=on --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
