@@ -17,7 +17,7 @@ workflow augustus_prediction {
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
-
+		AugustusFilterModels(mergeAugustusGff.out[0])
 	emit:
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
@@ -80,6 +80,26 @@ workflow augustus_train_from_pasa {
 		acf_folder = trainAugustus.out[0]
 		stats = trainAugustus.out[1]
 
+}
+
+process AugustusFilterModels {
+
+        publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
+	input:
+	path gff
+
+	output:
+	path gff_good
+	path gff_bad
+
+	script:
+	gff_good = gff.getName() + ".good.gff"
+	gff_bad = gff.getName() + ".bad.gff"
+
+	"""
+		augustus_filter_models.pl --infile $gff 
+	"""
 }
 
 process SpalnGffToTraining {
@@ -166,7 +186,7 @@ process trainAugustus {
 
 process runAugustus {
 
-	label 'long_running'
+	label 'extra_long_running'
 
 	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 

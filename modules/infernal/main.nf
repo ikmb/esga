@@ -1,6 +1,6 @@
 include fastaSplitSize from "./../fasta" params(params)
 
-workflow rnasearch {
+workflow rfamsearch {
 
 	take:
 		genome
@@ -71,7 +71,7 @@ process infernal_search {
 	script:
 
 	rfam_tbl = genome_chunk.getBaseName() + ".rfam.tbl"
-	rfam_txt = genome_chunk.getBaseName() + ".rfa.out"
+	rfam_txt = genome_chunk.getBaseName() + ".rfam.out"
 
 	"""
 		cmsearch --rfam --cpu ${task.cpus} --cut_tc --tblout $rfam_tbl -o $rfam_txt Rfam.cm $genome_chunk

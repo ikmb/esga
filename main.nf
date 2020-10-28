@@ -20,7 +20,7 @@ include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
 include pasa from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
-include rnasearch from "./modules/infernal/main.nf" params(params)
+include rfamsearch from "./modules/infernal/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -268,8 +268,8 @@ workflow {
 
 	// Annotate ncRNAs using RFam
 	if (params.ncrna) {
-		rnasearch(genome_clean)
-		ncrna_gff = rnasearch.out.gff
+		rfamsearch(genome_clean)
+		ncrna_gff = rfamsearch.out.gff
 	} else {
 		ncrna_gff = Channel.empty()
 	}
