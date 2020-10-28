@@ -2,29 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include { fastaToBlastnDBMasked; fastaToList; fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
-
-workflow proteinhint {
-
-	take:
-		genome_rm
-		protein_fa
-
-	main:
-		assemblySplit(genome_rm,params.chunk_size)
-		fastaCleanProteins(protein_fa)
-		fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
-		fastaToDiamondDB(fastaRemoveShort.out)
-		fastaToCdbindex(fastaRemoveShort.out)		
-		runDiamondx(assemblySplit.out[0].splitFasta(by: params.nblast, file: true),fastaToDiamondDB.out.collect())
-		diamondxToTargets(runDiamondx.out.collect(),assemblySplit.out[1])
-		protExonerateBatch(diamondxToTargets.out.splitText(by: params.nexonerate, file: true),fastaRemoveShort.out.collect(),fastaToCdbindex.out.collect(),genome_rm.collect())
-		protExonerateToHints(protExonerateBatch.out.collect())
-
-	emit:
-		hints = protExonerateToHints.out
-		gff = protExonerateBatch.out[0].collectFile()
-}
+include { fastaToBlastnDBMasked; fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 workflow proteinhint_slow {
 
@@ -69,71 +47,6 @@ workflow proteinhint_spaln {
 		hints = spalnToHints.out
 		gff = spalnMerge.out[0]
 
-}
-
-workflow proteinhint_sensitive {
-
-	take:
-                genome_rm
-                protein_fa
-
-        main:
-                fastaCleanProteins(protein_fa)
-                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
-                fastaToCdbindex(fastaRemoveShort.out)
-		fastaToList(fastaRemoveShort.out)
-                protExonerateFromList(fastaToList.out.splitText(by: params.nexonerate_exhaustive, file: true),fastaRemoveShort.out.collect() ,fastaToCdbindex.out.collect() ,genome_rm.collect() )
-                protExonerateToHints(protExonerateFromList.out.collect())
-
-        emit:
-                hints = protExonerateToHints.out
-                gff = protExonerateFromList.out[0].collectFile()
-
-
-
-}
-
-process fastaToDiamondDB {
-
-	label 'medium_running'
-
-        input:
-	path protein_fa   
-
-        output:
-       	path "${dbName}.dmnd"
-
-        script:
-       	dbName = protein_fa.getBaseName()
-        """
-		diamond makedb --in $protein_fa --db $dbName
-       	"""
-}
-// Blast each genome chunk against the protein database
-// This is used to define targets for exhaustive exonerate alignments
-process runDiamondx {
-
-	label 'short_running'
-
-        publishDir "${params.outdir}/logs/diamond", mode: 'copy'
-
-	//scratch true
-
-	input:
-	path genome_chunk
-	path db_files
-
-	output:
-	path protein_blast_report
-
-	script:
-	db_name = db_files[0].getBaseName()
-	chunk_name = genome_chunk.getName().tokenize('.')[-2]
-	protein_blast_report = "${genome_chunk.baseName}.${params.chunk_size}.blast"
-
-	"""
-		diamond blastx --sensitive --threads ${task.cpus} --evalue ${params.blast_evalue} --outfmt ${params.blast_options} --db $db_name --query $genome_chunk --out $protein_blast_report
-	"""
 }
 
 process tblastn {
@@ -201,32 +114,6 @@ process tblastnToTargets {
 	"""
 		cat $blast_reports | sort -k1 -k2 -k3 >> merged.txt
 		tblastn2exonerate_targets.pl --infile merged.txt --max_intron_size $params.max_intron_size --length_percent $params.blast_length_percent --min_id $params.blast_pident > $targets
-	"""
-}
-
-// Parse Protein Blast output for exonerate processing
-process diamondxToTargets {
-
-	label 'short_running'
-
-	publishDir "${params.outdir}/logs/diamond" , mode: 'copy'
-
-	input:
-	path blast_reports
-	path genome_agp
-
-	output:
-	path targets
-
-	script:
-	query_tag = "proteinDB"
-	targets = "${query_tag}.targets"
-	
-	"""
-		cat $blast_reports > merged.txt
-		awk '\$3>80 {print}' merged.txt > merged.filtered.txt
-		blast_chunk_to_toplevel.pl --blast merged.filtered.txt --agp $genome_agp > merged.translated.txt
-		blast2exonerate_targets.pl --infile merged.translated.txt --max_intron_size $params.max_intron_size > $targets
 	"""
 }
 

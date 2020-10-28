@@ -11,32 +11,40 @@ protein or transcriptome sequencing.
 [RefSeq](https://www.ncbi.nlm.nih.gov/protein/) is another useful database. However, sequences here tend to include a lot more computational predictions,
 which runs the risk of perpetuating annotation errors. 
 
-## ESTs
+Failing these options, you can also download annotated proteins from the EnsEMBL [FTP server](ftp://ftp.ensembl.org/pub/current_fasta/) for a growing range of species. However, please keep in mind
+that annotating a genome guided by another annotation risks perpetuation annotation errors. That said, from our experience EnsEMBL gene builds are quite robust and scientifically usable. 
+
+## Transcripts
+
+Transcripts provide information of those genomic region that, under a given condition, are actively transcribed. Depending on the library/sequencing strategy, these sequences will preferentially stem from protein-coding loci or instead represent the entire
+transcriptional landscape. For the purpose of annotation, poly-A (coding) transcrips are to be preferred. Typical sources of this data are either (traditional) EST libraries or, more commonly, RNA-sequencing (see below). 
 
 EST data can be downloaded from [GenBank](https://www.ncbi.nlm.nih.gov/nucleotide) or [ENA](https://www.ebi.ac.uk/ena). 
 Make sure that the sequences are from your species of interest; on the nucleotide level even relatively small evolutionary timescales could
 greatly dimminish the alignment quality/rate. 
 
-An alternative to traditional ESTs are sequence data from de-novo assembled transcriptomes. For this, we recommend genome-guided [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki/Genome-Guided-Trinity-Transcriptome-Assembly).
-Please be advised that this pipeline actually performs this step for you, if you specify both `--reads` and `--trinity true`.
+An alternative to traditional ESTs are sequence data from de-novo assembled transcriptomes. For this, we recommend genome-guided [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki/Genome-Guided-Trinity-Transcriptome-Assembly). However,
+please be advised that the pipeline will prefer raw reads over assembled transcripts as these offer additional information that can help improve the annotation process.  
 
 ## RNA-seq data
 
 This is perhaps the most important type of annotation evidence, as it stems specifically from your organism of interest and should provide
 a good resolution of splice junctions. 
 
-We recommend poly-A selected, strand-specific paired-end RNA-seq libraries for the purpose of annotation (any length is fine, but longer reads
-tend to give better results for de-novo transcriptome assembly). Ideally, these libraries cover different develpomental stages and body parts.
+We recommend poly-A selected, strand-specific paired-end RNA-seq libraries for the purpose of annotation (any length is fine, but longer reads tend to work best as they will map more uniquely). Ideally, these libraries cover different develpomental stages and body parts.
 For mammals, a typical sequencing depth per library is around 25 million PE reads (this is more related to the size of the transcriptome than 
 of the genome!)
+
+While more is often better, the pipeline is designed to process "hundreds or millions" of PE reads at most. So aim for some representative tissues, one library each (no replicates). Especially the generation of exon hints from aligned
+reads takes a very long time if too much data is provided, typically without much noticable gain to the annotation quality. 
 
 ## Repeats
 
 By default, Repeatmasker will run with the built-in DFam hmm profile for (mostly) primates. It is thus generally advisable to instead provide 
-repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler) or curated repeat libraries from 
+repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler - which ESGA will run for you if no other repeat informatino is provided) or curated repeat libraries from 
 GRINST (www.grinst.org, commercial). 
 
-If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like this: 
+If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like so: 
 
 ```
 # Get the Tree of all available species: 
@@ -45,6 +53,10 @@ perl /[...]/RepeatMasker/4.0.8/util/queryRepeatDatabase.pl -tree
 # Select the name of the species (e.g. "Ostreoida") from the output tree and do:
 perl /[...]/RepeatMasker/4.0.8/util/queryRepeatDatabase.pl -species Ostreoida > RMdb_Ostreoida.fa
 ``` 
+
+However, if you choose to let RepeatModeler identify repeat sequences in your assembly, all you need to do is...nothing. If neither rm_lib nor rm_species are defined, repeat modelling will be performed automatically. 
+This will produce a fasta file of candidate repeats that are fed to RepeatMasker. Be advised that the success of this strategy depends on the method of genome sequencing and assembly. Especially short-read based assemblies are 
+prone to collapsing complex repeat structures so that these will be invisible to RepeatModeler and potentially adversely affect the annotation quality down the line. 
 
 ## Training a new Augustus model
 
@@ -72,7 +84,7 @@ AUGUSTUS uses extrinsic hints to guide the gene finding. These hints are produce
 controlled by a config file. 
 
 Please see [here](https://github.com/Gaius-Augustus/Augustus/blob/master/config/extrinsic/extrinsic.cfg) for instructions on how to tweak these parameters for optiomal performance. ESGA uses, by default,
-an extrinsic config file that we have set up to work for our typical projects. You can however pass a modified version from the command line instead using the `--augCfg` option together with `-resume`. 
+an extrinsic config file that we have set up to work for our typical projects. You can however pass a modified version from the command line instead using the `--aug_config` option together with `-resume`. 
 
 ## EVM
 ESGA produces several types of inputs (all of them optional) that are then combined by EVM into a consensus gene buid. The weight given to each type of input is controlled by the [weights.txt](../assets/evm/weights.txt) file. 

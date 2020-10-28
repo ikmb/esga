@@ -29,6 +29,7 @@ reads: "/path/to/*_R{1,2}_001.fastq.gz"
 trinity: false
 pasa: false
 evm: false
+ncrna: false
 aug_species: "human"
 nblast: 400
 blast_evalue: 0.001
@@ -86,6 +87,10 @@ Run the PASA pipeline to build gene models from aligned transcripts (requires --
 
 #### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
+
+#### `--ncrna`[ true | false (default) ]
+Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the head node of your
+cluster must have access to the internet to download the RFam CM file on-the-fly.
 
 ### 3. Search options
 ESGA runs tools such as Blast+ to identify alignment regions for evidence data. We made some of the parameters editable, although we stress that changes to any of these options my produce sub-par results. 

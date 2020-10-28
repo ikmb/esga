@@ -2,29 +2,7 @@ include fastaSplitSize from "./../fasta"  params(params)
 include estMinimap from "./../transcripts/main.nf" params(params)
 include GffToFasta from "./../util" params(params)
 
-workflow pasa_fast {
-
-	take:
-		genome
-		transcripts
-
-	main:
-		fastaSplitSize(genome, params.npart_size)
-		runSeqClean(transcripts)
-		estMinimap(runSeqClean.out[0],genome)
-		runMinimapSplit(fastaSplitSize.out.flatMap(),runSeqClean.out.collect(),estMinimap.out.collect())
-		runPasaFromCustom(runMinimapSplit.out[0],runMinimapSplit.out[1],runMinimapSplit.out[2])
-		PasaToModelsCustom(runPasaFromCustom.out[0].collect(),runPasaFromCustom.out[1].collect())
-		GffToFasta(PasaToModelsCustom.out[1],genome)
-
-	emit:
-		gff = PasaToModelsCustom.out[2]
-		alignments = PasaToModelsCustom.out[1]
-		fasta = GffToFasta.out[0]
-
-}
-
-workflow pasa_standard {
+workflow pasa {
 
 	take:
 		genome
@@ -164,91 +142,5 @@ process runMinimapSplit {
 		minimap_filter_gff_by_genome_index.pl --index $genome_chunk_index --gff $minimap_gff --outfile  $minimap_chunk
 		minimap_gff_to_accs.pl --gff $minimap_chunk | sort -u > list.txt
 		faSomeRecords $transcripts list.txt $transcripts_minimap
-	"""
-}
-
-// Run the PASA pipeline
-process runPasaFromCustom {
-		
-	label 'pasa'
-	
-	scratch true
-			
-	input:
-	path genome_rm
-	path transcripts
-	path custom_gff
-	
-	output:
-	path pasa_assemblies_fasta
-	path pasa_assemblies_gff
-
-	script:
-	trunk = genome_rm.getName()
-	pasa_assemblies_fasta = "pasa_DB_${trunk}.sqlite.assemblies.fasta"
-	pasa_assemblies_gff = "pasa_DB_${trunk}.sqlite.pasa_assemblies.gff3"
-			
-	// optional MySQL support
-	// create a config file with credentials, add config file to pasa execute
-	// and somehow check that the DB doesn't already exists
-	mysql_create_options = ""
-	mysql_config_option = ""
-	mysql_db_name = ""
-	if (params.pasa_mysql_user) {
-		mysql_options = "make_pasa_mysql_config.pl --infile \$PASAHOME/pasa_conf/conf.txt --outfile pasa_mysql_conf.txt --user ${params.pasa_mysql_user} --pass ${params.pasa_mysql_pass} --host ${params.pasa_mysql_host} --port ${params.pasa_mysql_port}"	
-		mysql_config_option = "-C pasa_mysql_conf.txt"
-		mysql_db_name = "--mysql $run_name"
-	}
-
-	// The pasa sqlite file must have a fully qualified path, the script is a workaround as this seems difficult to do inside 
-	// the script statement
-
-	"""
-		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
-		$mysql_create_options
-		\$PASAHOME/Launch_PASA_pipeline.pl \
-			-c pasa_DB.config -C -R \
-			-t $transcripts \
-			-I $params.max_intron_size \
-			-g $genome_rm \
-			--IMPORT_CUSTOM_ALIGNMENTS_GFF3 $custom_gff \
-			--CPU ${task.cpus} \
-			$mysql_config_option
-	"""	
-}
-
-// Extract gene models from PASA database
-// All chunks are merged using a perl script into the base name pasa_db_merged
-// this is not...ideal. 
-process PasaToModelsCustom {
-
-	label 'pasa'
-
-	//publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
-
-	input:
-	path pasa_assemblies_fasta
-	path pasa_assemblies_gff
-
-	output:
-	path pasa_transdecoder_fasta
-	path pasa_transdecoder_gff
-	path merged_gff 
-
-	script:
-	base_name = "pasa_db_merged"
-	merged_fasta = base_name + ".assemblies.fasta"
-	merged_gff = base_name + ".pasa_assemblies.gff"
-	pasa_transdecoder_fasta = merged_fasta + ".transdecoder.pep"
-	pasa_transdecoder_gff = merged_fasta + ".transdecoder.genome.gff3"
-
-	script:
-
-	"""
-		pasa_merge_chunks.pl --base $base_name
-		\$PASAHOME/scripts/pasa_asmbls_to_training_set.dbi \
-		--pasa_transcripts_fasta $merged_fasta \
-		--pasa_transcripts_gff3 $merged_gff \
-                     	
 	"""
 }
