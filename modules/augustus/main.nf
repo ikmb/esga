@@ -203,8 +203,10 @@ process runAugustus {
         augustus_result = "augustus.${chunk_name}.out.gff"
 	config_file = file(params.aug_config)
 
+	utr = (params.utr) ? "on" : "off"	
+
         """
-		augustus --species=${params.aug_species} ${params.aug_options} --softmasking=on --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} ${params.aug_options} --softmasking=on --hintsfile=$hints --gff3=on --UTR=${utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
@@ -228,11 +230,11 @@ process runAugustusBatch {
 	augustus_result = "augustus.${chunk_name}.out.gff"
 	genome_fai = genome_chunk.getName() + ".fai"
 	command_file = "commands." + chunk_name + ".txt"
-
+        utr = (params.utr) ? "on" : "off"
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d . 
-		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${params.utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
+		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
 			cat *augustus.gff > $augustus_result
 		rm *augustus.gff

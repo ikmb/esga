@@ -5,8 +5,6 @@ nextflow.preview.dsl=2
 params.version = workflow.manifest.version
 
 // this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
-params.utr = (params.reads || params.transcripts) ? "on" : "off"
-
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
@@ -43,6 +41,7 @@ def helpMessage() {
     --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads. 
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --ncrna		Annotate ncRNAs using RFam
+    --trinity		Build transcript models from provided RNAseq data
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -156,7 +155,7 @@ if (params.aug_training && !params.proteins) {
 if (params.pasa && !params.transcripts && !params.reads) {
 	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --reads)"
 }
-if (params.pasa && params.reads) {
+if (params.pasa && params.reads && !params.trinity) {
 	log.info "Will perform de-novo transcriptome assembly from raw reads to inform PASA annotation"
 	params.trinity = true
 }

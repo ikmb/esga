@@ -26,8 +26,8 @@ transcripts: "/path/to/ests.fa"
 rm_lib: "/path/to/repeats.fa"
 rm_species: false
 reads: "/path/to/*_R{1,2}_001.fastq.gz"
-trinity: false
 pasa: false
+trinity: false
 evm: false
 ncrna: false
 aug_species: "human"
@@ -65,12 +65,12 @@ Please note the following requirements:
 3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
 
 #### `--transcripts` 
-Location of a single FASTA file with all EST sequences or assembled transcriptome(s) from the species of interest. If you have multiple files, concatenate 
+Location of a single FASTA file with all EST sequences or assembled transcriptome(s) (short reads or IsoSeq) from the species of interest. If you have multiple files, concatenate 
 them into a single file first and make sure that the sequence names are not duplicated (this happens when you try to merge two Trinity assemblies, 
 for example). 
 
 #### `--proteins` 
-Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them before into a single file. 
+Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them into a single file first. 
 
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
@@ -79,41 +79,24 @@ that are always generated when RNA-seq data is available. Likewise, you can sele
 
 The only non-optional part is the AUGUSTUS stage as this is the core around which ESGA was originally built. 
 
-#### `--trinity` [ true | false (default) ] 
-Run transcriptome assembly with Trinity and produce hints from the transcripts. 
-
 #### `--pasa` [ true | false (default) ]
 Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
 
 #### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
+#### `--trinity` [ true | false (default) ]
+Run the de-novo transcriptome assembler Trinity to produce transcript information. Requires --reads. Will be switched on by default if --pasa is requested and --reads are available. 
+
 #### `--ncrna`[ true | false (default) ]
 Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the head node of your
-cluster must have access to the internet to download the RFam CM file on-the-fly.
+cluster must have access to the internet to download the RFam files on-the-fly.
 
-### 3. Search options
-ESGA runs tools such as Blast+ to identify alignment regions for evidence data. We made some of the parameters editable, although we stress that changes to any of these options my produce sub-par results. 
-
-#### `--blast_evalue` [ 0.000001 (default ]
-Evalue cut-off for Blast hits to be reported.
-
-#### `--blast_pident` [ 80 (default) ]
-Hits below this (percentage) identity to the target will be ignored.
-
-#### `--blast_length_percent` [ 0.8 (default) ]
-Hits that cover less than this percentage of the query protein will be ignored. Note that this value is given as a decimal fraction. 
-
-#### `--blast_bitscore` [ 25 (default) ]
-Hits with a bitscore lower than this will be ignored. 
-
-### 5. Within-scaffold parallelization
+### 4. Within-scaffold parallelization
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
-This pipeline will run certain programs not on full scaffolds, but on clusters of data within those scaffolds. The factor determining how to build these evidence clusters is the expected maximum intron size for your organism of interest. 
 The default value is set to 20000 - for something like a nematode, this would be too long, for human it would probably be fine, although 
 a few introns are much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. 
-However, choosing too large values will drastically increase the run time. 
 
 ### 5. Parameters for specific programs 
 To run some of the programs, additional information is required. All options have a (hopfully reasonable) default, but you must check if it is the proper one for your organism and for the output you expect. 
@@ -175,9 +158,6 @@ running specific programs. Then that program can be run on each smaller chunk in
 When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want to tweak one or several of the parameters below. If unsure, 
 leave at the defaults.
 
-#### `--chunk_size` [ default = 50000 ]
-Length of sequence to which break the genome down to for faster Blastx searches. Longer sequences will increase the runtime. This parameter is directly related to `--nblast` - which defines how many sequences are put into each blastx search.
-
 #### `--nblast` [ default = 500 ]
 Number of sequences in each Blast job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
 
@@ -185,7 +165,7 @@ Number of sequences in each Blast job. Larger values will usually create longer 
 Number of alignments to compute in each Exonerate job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system.
 
 #### `--npart_size` [ default = 200000000 ]
-Size of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
+Size in bp of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
 assembly into chunks of this size - some chunks may be bigger, some smaller. This function uses [fasta-splitter.pl](http://kirill-kryukov.com/study/tools/fasta-splitter/).
 
 Setting this to larger values will create fewer parallel jobs, so the run time is likely going to increase. 
@@ -194,9 +174,6 @@ Setting this to larger values will create fewer parallel jobs, so the run time i
 Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
 
 ### 7. Other options 
-
-#### `--fast` [ true | false (default)]
-Will run some of the more time-consuming steps in a stripped-down/alternative fashion to increase speed, but potentially at the cost of accuracy. Changes include: Use diamondx to find protein matches in small sub-sections of the genome, use minimap2 to align transcripts and run Augustus only on regions that contain hints. 
 
 #### `--email` [ you@somewhere.com | false (default)]
 If you specify an Email address, the pipeline will send a notification upon completion. However, for this to work, the node running the nextflow process must have a configured Email server. 
@@ -209,6 +186,9 @@ By default, the pipeline expects paired-end RNA-seq data. If you have single-end
 ```
 
 It is not possible to run a mixture of single-end and paired-end files in one run. 
+
+#### `--rnaseq_stranded` [ true | false (default) ]
+Whether your RNAseq library was sequenced with a strand-specific protocol. Our assumption is that this would be dUTP as is typical for Illumina applications. 
 
 #### `--outdir` [ default = 'annotation_output' ]
 The output directory where the results will be saved. 

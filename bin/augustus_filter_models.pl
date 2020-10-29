@@ -11,13 +11,8 @@ perl my_script.pl
   Input:
     [--infile filename]
 		The name of the file to read. 
-  Ouput:    
-    [--outfile filename]
-        The name of the output file. By default the output is the
-        standard output
 };
 
-my $outfile = undef;
 my $infile = undef;
 my $support = 1.0;
 my $help;
@@ -25,8 +20,7 @@ my $help;
 GetOptions(
     "help" => \$help,
     "infile=s" => \$infile,
-    "support=f" => \$support,
-    "outfile=s" => \$outfile);
+    "support=f" => \$support);
 
 # Print Help and exit
 if ($help) {
@@ -34,11 +28,12 @@ if ($help) {
     exit(0);
 }
 
-if ($outfile) {
-    open(STDOUT, ">$outfile") or die("Cannot open $outfile");
-}
+my $good_models = $infile . ".good.gff";
+my $bad_models = $infile . ".bad.gff";
 
 open (my $IN, '<', $infile) or die "FATAL: Can't open file: $infile for reading.\n$!\n";
+open (my $GOOD, '>', $good_models) or die $! ;
+open (my $BAD, '>', $bad_models) or die $!;
 
 my @bucket;
 
@@ -51,9 +46,14 @@ foreach my $line (<$IN>) {
 		my $this_support = (split " ", $line)[-1] ;
 		if ($this_support >= $support) {
 			foreach my $stored (@bucket) {
-				printf $stored . "\n";
+				print $GOOD $stored . "\n";
 			}
-			printf $line . "\n";
+			print $GOOD $line . "\n";
+		} else {
+			foreach my $stored (@bucket) {
+                                print $BAD $stored . "\n";
+                        }
+                        print $BAD $line . "\n";
 		}
 		@bucket = ();
 	} else {
@@ -63,4 +63,5 @@ foreach my $line (<$IN>) {
 }
 
 close($IN);
-
+close($GOOD);
+close($BAD);
