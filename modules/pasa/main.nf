@@ -22,6 +22,21 @@ workflow pasa {
 
 }
 
+workflow polish_annotation {
+
+	take:
+		genome
+		genes
+		transcripts
+
+	main:
+		runPasaPolish(genome,genes,transcripts)
+
+	emit:
+		gff = runPasaPolish.out
+	
+}
+
 // Currently does not work in singularity/conda so we just copy the input until we can fix this
 process runSeqClean {
 
@@ -115,32 +130,41 @@ process PasaToModels {
 
 }
 		
-// We parallelize PASA by filtering the minimap alignments per genome chunk
-// meaning we select only those alignments present in this part of the assembly
-process runMinimapSplit {
-	
-	label 'short_running'
+process runPasaPolish {
+
+	label 'pasa'
+
+	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
 	input:
-	path genome_chunk
-	path transcripts
+	path genome
+	path genes_gff
 	path minimap_gff
 
 	output:
-	path genome_chunk
-	path transcripts_minimap
-	path minimap_chunk
-			
+        path "*gene_structures_post_PASA_updates*.gff3"
+
 	script:
-	minimap_chunk = genome_chunk.getBaseName() + ".minimap.gff"
-	transcripts_minimap = genome_chunk.getBaseName() + ".transcripts.fasta"
-	genome_chunk_index = genome_chunk + ".fai"
-	// filter the gff file to only contain entries for our scaffolds of interest
-	// then make a list of all transcript ids and extract them from the full transcript fasta
+	
+	trunk = genome.getBaseName + "_pasa"
+
 	"""
-		samtools faidx $genome_chunk
-		minimap_filter_gff_by_genome_index.pl --index $genome_chunk_index --gff $minimap_gff --outfile  $minimap_chunk
-		minimap_gff_to_accs.pl --gff $minimap_chunk | sort -u > list.txt
-		faSomeRecords $transcripts list.txt $transcripts_minimap
+		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.assemble.config
+	
+		\$PASAHOME/scripts/Load_Current_Gene_Annotations.dbi \
+			-P $genes_gff \
+			-g $genome \
+			-c pasa_DB.assemble.config
+
+                make_pasa_config.pl --infile ${params.pasa_update_config} --trunk $trunk --outfile pasa_DB.config
+
+		\$PASAHOME/Launch_PASA_pipeline.pl \
+		        -c pasa_DB.config -A \
+		        -g $genome \
+                        --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \
+                        --CPU ${task.cpus} \
+                        -I $params.max_intron_size \
+		
 	"""
+
 }

@@ -58,7 +58,7 @@ while (<$IN>) {
 		$gene_id = @elements[-1];
 		@elements[-1] = "ID=$gene_id";
 		printf join("\t",@elements) . "\n";
-	} elsif ($feature eq "mRNA" ) {
+	} elsif ($feature eq "mRNA" || $feature eq "transcript") {
 		$cds_counter = 0;
 		$transcript_id = @elements[-1];
 		@elements[-1] = "ID=$transcript_id;Parent=$gene_id";
@@ -67,13 +67,13 @@ while (<$IN>) {
 		$cds_counter += 1;
 		@elements[-1] = "ID=$transcript_id.CDS-$cds_counter;Parent=$transcript_id";
 		my $cds_line = join("\t",@elements);
-		printf $cds_line . "\n";
 		@elements[-1] = "ID=$transcript_id.EXON-$cds_counter;Parent=$transcript_id";
 		@elements[2] = "exon";
 		@elements[7] = ".";
 		my $exon_line = join("\t",@elements);
 		printf $exon_line . "\n";
-		
+		printf $cds_line . "\n";
+	
 	}
 	
 }

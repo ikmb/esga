@@ -40,12 +40,35 @@ workflow proteinhint_spaln {
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
 		spalnMakeIndex(genome_rm)
 		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
-		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out)
-		spalnToHints(spalnMerge.out[0])
+		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,60)
+		spalnToHints(spalnMerge.out[0], params.pri_prot)
 	
 	emit:
 		hints = spalnToHints.out
 		gff = spalnMerge.out[0]
+		track = spalnMerge.out[1]
+
+}
+
+workflow proteinmodels {
+
+	take:
+                genome_rm
+                protein_fa
+
+        main:
+                fastaCleanProteins(protein_fa)
+                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+                spalnMakeIndex(genome_rm)
+                spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
+                spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,90)
+                spalnToHints(spalnMerge.out[0], params.pri_prot_target)
+		spaln2evm(spalnMerge.out[0])
+
+        emit:
+                hints = spalnToHints.out
+                gff = spalnMerge.out[0]
+		track = spalnMerge.out[1]
 
 }
 
@@ -149,10 +172,10 @@ process spalnMakeIndex {
 	path("genome_spaln*")
 
 	script:
-	
+
 	"""
-		cp $genome genome_spaln.gf
-		spaln -W -KP -E -t${task.cpus} genome_spaln.gf
+		cp $genome genome_spaln.fa
+		spaln -W -KP -E -t${task.cpus} genome_spaln.fa
 	"""
 	
 }
@@ -176,7 +199,13 @@ process spalnAlign {
 	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln -o $chunk_name -Q6 -O12 -t${task.cpus} -dgenome_spaln.gf $proteins
+		spaln -o $chunk_name -Q${params.spaln_q} -O12 -t${task.cpus} -dgenome_spaln $proteins
+		
+		if [ -s $spaln_grd ] || [ ! -f $spaln_grd ] 
+		then
+			spaln -o $chunk_name -Q6 -O12 -t${task.cpus} -dgenome_spaln $proteins
+		fi
+			
 	"""
 
 }
@@ -190,20 +219,39 @@ process spalnMerge {
 	input:
 	path spaln_reports
 	path spaln_files
+	val similarity
 
 	output:
 	path spaln_final
 	path spaln_track 
 
 	script:
-	spaln_final = spaln_reports[0].getBaseName() + ".merged.final.gff"
-	spaln_track = spaln_reports[0].getBaseName() + ".merged.final.webapollo.gff"
+	spaln_final = spaln_reports[0].getBaseName() + ".merged.${similarity}.final.gff"
+	spaln_track = spaln_reports[0].getBaseName() + ".merged.${similarity}.final.webapollo.gff"
+	
+	"""
+		sortgrcd -C${similarity} -F2 -I${similarity} -J180 -O0 -n0 *.grd > $spaln_final
+		sortgrcd -C${similarity} -F2 -J180 -O2 -n0 *.grd > $spaln_track
+	"""
+
+}
+
+process spaln2evm {
+
+	input:
+	path spaln_models
+
+	output:
+	path spaln_evm
+
+	script:
+	spaln_evm = spaln_models.getBaseName() + ".evm.gff"
 
 	"""
-		sortgrcd -C70 -J180 -O0 -n0 *.grd > $spaln_final
-		sortgrcd -C70 -J180 -O2 -n0 *.grd > $spaln_track
+		sed 's/ALN/spaln2genome/' $spaln_models > tmp
+		gff_add_exons.pl --infile tmp > $spaln_evm
+		rm tmp
 	"""
-
 }
 
 process spalnToHints {
@@ -212,14 +260,15 @@ process spalnToHints {
 
 	input:
 	path gff
+	val priority
 
 	output:
 	path hints
 
 	script:
-	hints = "spaln.proteins.hints.gff"
+	hints = "spaln.proteins.${priority}.hints.gff"
 	"""
-		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=spaln --priority=${params.pri_prot} --out=$hints
+		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=spaln --priority=${priority} --out=$hints
 	"""
 }
 

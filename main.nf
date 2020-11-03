@@ -8,7 +8,7 @@ params.version = workflow.manifest.version
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include { proteinhint_slow; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
+include { proteinmodels; proteinhint_slow; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
 include { esthint; esthint_slow } from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include { augustus_prediction; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
@@ -16,7 +16,7 @@ include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
-include pasa from "./modules/pasa/main.nf" params(params)
+include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 include rfamsearch from "./modules/infernal/main.nf" params(params)
 
@@ -33,8 +33,10 @@ def helpMessage() {
       
   At least one of:
   --proteins		Proteins from other species
+  --proteins_targeted	Exactly one set of proteins from this or a very closely related species
   --transcripts		ESTs or transcriptome
   --reads		Path to RNA-seq data (must be surrounded with quotes)
+
   Options:
     -profile            Hardware config to use (optional, will default to 'standard')
     Programs to run:
@@ -54,9 +56,11 @@ def helpMessage() {
     --min_prot_length 	Length of proteins in AA to consider when building hints [default = 30]
 
     Evidence tuning
-    --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
+    --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 4)
+    --pri_prot_targeted	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
     --pri_est		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 3)
     --pri_rnaseq	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 4)
+    --pri_wiggle	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 2)
  	
     How to split programs:
     --nblast		Chunks (# of sequences) to divide genome for blastx jobs [ default = 100 ]
@@ -67,7 +71,7 @@ def helpMessage() {
     Other options:
     --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]
     --rnaseq_stranded	Whether the RNAseq reads were sequenced using a strand-specific method (dUTP) [ true | false (default) ]
-    -name		Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
+    --run_name		Name for this pipeline run
     """.stripIndent()
 }
 
@@ -101,9 +105,15 @@ if (params.rm_species) {
 	summary['RepeatSpecies'] = params.rm_species
 }
 summary['EsgaVersion'] = params.version
+summary['EsgaCommitHash'] = workflow.commitId
 summary['RunDate'] = workflow.start
 summary['RunDir'] = workflow.workDir
 summary['Command'] = workflow.commandLine
+summary['Container'] = workflow.container
+
+summary['MinContigSize'] = params.min_contig_size
+summary['MinProteinLength'] = params.min_prot_length
+summary['MaxIntronSize'] = params.max_intron_size
 
 summary['BlastJobs'] = params.nblast
 summary['ExonerateJobs'] = params.nexonerate
@@ -111,8 +121,20 @@ summary['ExonerateJobs'] = params.nexonerate
 summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
+summary['Priority Proteins'] = params.pri_prot
+summary['Priority Transcripts'] = params.pri_est
+summary['Priority RNAseq Introns'] = params.pri_rnaseq
+summary['Priority RNAseq Exons'] = params.pri_wiggle
+
+summary['PredictUTRs'] = params.utr
+
+summary['RunEVM'] = params.evm
+summary['EvmWeights'] = params.evm_weights
 
 summary['BlastEvalue'] = params.blast_evalue
+
+
+run_name = ( params.run_name == false) ? "${workflow.sessionId}" : "${params.run_name}"
 
 // ****************
 // input validation
@@ -130,6 +152,16 @@ if (params.proteins) {
 	proteins = Channel.fromPath(p)
 } else {
 	proteins = Channel.empty()
+}
+
+if (params.proteins_targeted) {
+	pt = file(params.proteins_targeted)
+	if (!pt.exists()) {
+		exit 1, "The specified targeted protein file does not exist!"
+	}
+	proteins_targeted = Channel.from(pt)
+} else {
+	proteins_targeted = Channel.empty()
 }
 
 if (params.transcripts) {
@@ -175,6 +207,8 @@ if (!params.aug_species) {
 	exit 1, "Must provide an AUGUSTUS species name to run this pipeline (--aug_species)"
 }
 
+multiqc_report = Channel.empty()
+
 // *******************************
 // Print run information
 // *******************************
@@ -206,7 +240,6 @@ if (params.aug_training) {
 		log.info "AUGUSTUS training:		Transcripts"
 	}
 }
-log.info "Maximum intron size:		${params.max_intron_size}"
 log.info "Predict ncRNAs			${params.ncrna}"
 log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
@@ -215,7 +248,8 @@ log.info "EVM weights:			${params.evm_weights}"
 log.info "Predict UTRs:			${params.utr}"
 log.info "-----------------------------------------"
 log.info "Evidences:"
-log.info "Proteins:			${params.proteins}"
+log.info "Targeted proteins		${params.proteins_targeted}"
+log.info "Other proteins:			${params.proteins}"
 log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
 log.info "-----------------------------------------"
@@ -275,12 +309,22 @@ workflow {
 
 	// Generate hints from proteins (if any)
 	if (params.proteins) {
-		proteinhint_spaln(genome_rm,proteins)
+		proteinhint_spaln(genome_clean,proteins)
 		protein_hints = proteinhint_spaln.out.hints
-		protein_gff = proteinhint_spaln.out.gff
+		protein_gff = proteinhint_spaln.out.track
 	} else {
 		protein_hints = Channel.empty()
 		protein_gff = Channel.empty()
+	}
+
+	// Construct gene models from species specific proteome
+	if (params.proteins_targeted) {
+		proteinmodels(genome_clean,proteins_targeted)
+		protein_targeted_hints = proteinmodels.out.hints
+                protein_targeted_gff = proteinmodels.out.gff
+	} else {
+		protein_targeted_hints = Channel.empty()
+		protein_targeted_gff = Channel.empty()
 	}
 
 	// Generate hints from transcripts (if any)
@@ -345,7 +389,7 @@ workflow {
 	}
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints)
+	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints,protein_targeted_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
@@ -361,7 +405,7 @@ workflow {
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
-		gene_gffs = augustus_gff.concat(pasa_gff).collect()
+		gene_gffs = augustus_gff.concat(pasa_gff).concat(protein_targeted_gff).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
@@ -372,9 +416,17 @@ workflow {
 		} else {
 			transcript_gff = Channel.empty()
 		}
+
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
 		evm_gff = evm_prediction.out.gff
 		evm_fa = evm_prediction.out.fasta
+		
+		// polish the annotation using pasa is all prerequisites are met
+		if (params.reads && params.trinity || params.transcripts) {
+			polish_annotation(genome_rm,evm_gff,transcript_gff)
+			polished_gff = polish_annotation.out.gff
+		}
+
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
@@ -401,5 +453,89 @@ workflow {
 		
 }
 
+workflow.onComplete {
+  log.info "========================================="
+  log.info "Duration:		$workflow.duration"
+  log.info "========================================="
 
+  def email_fields = [:]
+  email_fields['version'] = workflow.manifest.version
+  email_fields['session'] = workflow.sessionId
+  email_fields['runName'] = run_name
+  email_fields['success'] = workflow.success
+  email_fields['dateStarted'] = workflow.start
+  email_fields['dateComplete'] = workflow.complete
+  email_fields['duration'] = workflow.duration
+  email_fields['exitStatus'] = workflow.exitStatus
+  email_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
+  email_fields['errorReport'] = (workflow.errorReport ?: 'None')
+  email_fields['commandLine'] = workflow.commandLine
+  email_fields['projectDir'] = workflow.projectDir
+  email_fields['script_file'] = workflow.scriptFile
+  email_fields['launchDir'] = workflow.launchDir
+  email_fields['user'] = workflow.userName
+  email_fields['Pipeline script hash ID'] = workflow.scriptId
+  email_fields['genome'] = params.genome
+  email_fields['manifest'] = workflow.manifest
+  email_fields['summary'] = summary
+
+  email_info = ""
+  for (s in email_fields) {
+	email_info += "\n${s.key}: ${s.value}"
+  }
+
+  def output_d = new File( "${params.outdir}/pipeline_info/" )
+  if( !output_d.exists() ) {
+      output_d.mkdirs()
+  }
+
+  def output_tf = new File( output_d, "pipeline_report.txt" )
+  output_tf.withWriter { w -> w << email_info }	
+
+ // make txt template
+  def engine = new groovy.text.GStringTemplateEngine()
+
+  def tf = new File("$baseDir/assets/email_template.txt")
+  def txt_template = engine.createTemplate(tf).make(email_fields)
+  def email_txt = txt_template.toString()
+
+  // make email template
+  def hf = new File("$baseDir/assets/email_template.html")
+  def html_template = engine.createTemplate(hf).make(email_fields)
+  def email_html = html_template.toString()
+  
+  def subject = "ESGA annotation finished ($run_name)."
+
+  if (params.email) {
+
+  	def mqc_report = null
+  	try {
+        	if (workflow.success && !params.skip_multiqc) {
+            		mqc_report = multiqc_report.getVal()
+            		if (mqc_report.getClass() == ArrayList){
+                		log.warn "[ESGA] Found multiple reports from process 'multiqc', will use only one"
+                		mqc_report = mqc_report[0]
+                	}
+        	}
+    	} catch (all) {
+        	log.warn "[ESGA] Could not attach MultiQC report to summary email"
+  	}
+
+	def smail_fields = [ email: params.email, subject: subject, email_txt: email_txt, email_html: email_html, baseDir: "$baseDir", mqcFile: mqc_report, mqcMaxSize: params.maxMultiqcEmailFileSize.toBytes() ]
+	def sf = new File("$baseDir/assets/sendmail_template.txt")	
+    	def sendmail_template = engine.createTemplate(sf).make(smail_fields)
+    	def sendmail_html = sendmail_template.toString()
+
+	try {
+          if( params.plaintext_email ){ throw GroovyException('Send plaintext e-mail, not HTML') }
+          // Try to send HTML e-mail using sendmail
+          [ 'sendmail', '-t' ].execute() << sendmail_html
+        } catch (all) {
+          // Catch failures and try with plaintext
+          [ 'mail', '-s', subject, params.email ].execute() << email_txt
+        }
+
+  }
+
+}
 

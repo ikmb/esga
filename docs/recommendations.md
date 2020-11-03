@@ -2,7 +2,18 @@
 
 Evidence data for annotation can be obtained from a number of sources. Below follow some general suggestions that we found to work well.
 
-## Proteins
+## Targeted proteins
+
+Sources for this could be an existing annotation from your species of interest or a very closely related one. During this stage the proteins will essentially be laminated onto the assembly to define gene loci. So if this set is evolutionarily too distant, 
+this step might produce sub-par results. 
+
+You could either check public databases like Uniprot for curated proteins of your species, or turn to another annotation project such as [EnsEMBL](ftp://ftp.ensembl.org/pub/current_fasta/). However, please keep in mind
+that annotating a genome guided by another annotation risks perpetuation annotation errors. That said, from our experience EnsEMBL gene builds are quite robust and scientifically usable.
+
+## Proteins (other)
+
+Other proteins for annotation should cover a wider taxonomic range to help the pipeline find genes that were perhaps missing from the targeted stage. Since ESGA is aimed for vertebrates specifically, and metazoans at most, we have included a set of reviewed
+metazoan proteins that could be used here. Otherwise, you have some additional options:
 
 [Uniprot](https://www.uniprot.org/) is generally a good place to start. The search interface allows you to limit results by taxnomic group and level of experimental support for 
 each sequence. As a rule of thumb, try to focus on sequences that are flagged as "full length" and that have experimental support from either
@@ -10,9 +21,6 @@ protein or transcriptome sequencing.
 
 [RefSeq](https://www.ncbi.nlm.nih.gov/protein/) is another useful database. However, sequences here tend to include a lot more computational predictions,
 which runs the risk of perpetuating annotation errors. 
-
-Failing these options, you can also download annotated proteins from the EnsEMBL [FTP server](ftp://ftp.ensembl.org/pub/current_fasta/) for a growing range of species. However, please keep in mind
-that annotating a genome guided by another annotation risks perpetuation annotation errors. That said, from our experience EnsEMBL gene builds are quite robust and scientifically usable. 
 
 ## Transcripts
 
@@ -23,8 +31,9 @@ EST data can be downloaded from [GenBank](https://www.ncbi.nlm.nih.gov/nucleotid
 Make sure that the sequences are from your species of interest; on the nucleotide level even relatively small evolutionary timescales could
 greatly dimminish the alignment quality/rate. 
 
-An alternative to traditional ESTs are sequence data from de-novo assembled transcriptomes. For this, we recommend genome-guided [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki/Genome-Guided-Trinity-Transcriptome-Assembly). However,
-please be advised that the pipeline will prefer raw reads over assembled transcripts as these offer additional information that can help improve the annotation process.  
+An alternative to traditional ESTs are sequence data from de-novo assembled transcriptomes. For shrot reads, we recommend genome-guided [Trinity](https://github.com/trinityrnaseq/trinityrnaseq/wiki/Genome-Guided-Trinity-Transcriptome-Assembly). 
+
+For long reads, you might want to check out IsoSeq (PacBio).
 
 ## RNA-seq data
 

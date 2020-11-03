@@ -20,26 +20,28 @@ use `-params-file my_config.yaml`. The revised command could then read:
 The default YAML options file:
 
 ```yaml
-genome: "/path/to/genome.fa"
-proteins: "/path/to/proteins.fa"
-transcripts: "/path/to/ests.fa"
-rm_lib: "/path/to/repeats.fa"
+genome: ""
+proteins: false
+proteins_targeted: false
+transcripts: false
+rm_lib: false
 rm_species: false
-reads: "/path/to/*_R{1,2}_001.fastq.gz"
-pasa: false
-trinity: false
-evm: false
-ncrna: false
+reads: false
 aug_species: "human"
-nblast: 400
-blast_evalue: 0.001
-nexonerate: 200
+aug_options: ""
+utr: false
+trinity: false
+pasa: false
+evm: false
+nevm: 10
+nblast: 200
+nexonerate: 400
 npart_size: 200000000
-chunk_size: 100000
+ax_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
-max_intron_size: 50000
-fast: false
+rnaseq_stranded: false
+email: false
 ```
   
 An explanation of these options follows below.
@@ -47,15 +49,16 @@ An explanation of these options follows below.
 ### 1. Mandatory arguments 
 
 #### `--genome` 
-Location of the genome you want to annotate. It must be in FASTA format. 
+Location of the genome you want to annotate. This file should be in FASTA format. Additionally, we recommend to make sure that you clean the fasta headers in a way that they do not contain any special characters, unnecessary spaces or other "meta" data. 
+Please also be aware that some public databases to not allow the submission of assemblies that have leading or trailing 'N's in any of its scaffolds.  
 
 ### 2. Evidences. At least one of:
 
 #### `--reads` 
-Location of your input FastQ files. For example:
+Location of your input FastQ files. For a set of PE libraries named using typical Illumina naming convention:
 
 ```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
+--reads 'path/to/data/*_R{1,2}_001.fastq.gz'
 ```
 
 Please note the following requirements:
@@ -69,8 +72,11 @@ Location of a single FASTA file with all EST sequences or assembled transcriptom
 them into a single file first and make sure that the sequence names are not duplicated (this happens when you try to merge two Trinity assemblies, 
 for example). 
 
+#### `--proteins_targeted`
+Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one. 
+
 #### `--proteins` 
-Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them into a single file first. 
+Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them into a single file first. The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
 
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
@@ -92,14 +98,11 @@ Run the de-novo transcriptome assembler Trinity to produce transcript informatio
 Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the head node of your
 cluster must have access to the internet to download the RFam files on-the-fly.
 
-### 4. Within-scaffold parallelization
+### 4. Program parameters
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
-The default value is set to 20000 - for something like a nematode, this would be too long, for human it would probably be fine, although 
-a few introns are much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. 
-
-### 5. Parameters for specific programs 
-To run some of the programs, additional information is required. All options have a (hopfully reasonable) default, but you must check if it is the proper one for your organism and for the output you expect. 
+The default value is set to 20000 - for something like a nematode, this would be too long; for some lower vertebrates it would probably be fine, although 
+a few introns may be much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. Information of plausible intron sizes can be obtained from the literature for many taxonomic groups. 
 
 #### `--rm_lib`[ fasta file | false ]
 ESGA can run RepeatMasker using the built-in repeat library (DFam 2.0) - see below. However, given that DFam is quite sparse, especially outside of mammals, we would recommend to instead provide 
@@ -138,6 +141,10 @@ Location of Augustus configuration file. By default, this pipeline uses config f
 #### `--aug_options` [ default = "" ]
 Augustus has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
 For example, to allow Augustus to predict overlapping genes (default: no), you could specifiy `--aug_options '--singleStrand=true'`
+
+#### `--utr` [ true | false (default ]
+Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help produce more acurate gene models. However, this option is best used with available RNA-seq data and should only ever be switched on if the AUGUSTUS profile
+was trained to predict UTRs - else the pipeline will fatally fail (just remove --utr in that case and -resume).
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
 A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
@@ -151,18 +158,18 @@ Priority of transcript-based hints for Augustus gene predictions. Higher priorit
 #### `--pri_rnaseq <int>` [ 4 (default) ]
 Priority of RNAseq-based hints for Augustus gene predictions. Higher priority hints are considered first and override lower-priority hints.
 
-### 6. How to tune the speed of the pipeline - data splitting
+#### `--pri_wiggle <int>` [ 2 (default) ]
+Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particular predict acurate UTRs and/or isoforms.  Higher priority hints are considered first and override lower-priority hints.
+
+### 5. How to tune the speed of the pipeline - data splitting
 
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 
 running specific programs. Then that program can be run on each smaller chunk in parallel in a compute cluster. 
 When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want to tweak one or several of the parameters below. If unsure, 
 leave at the defaults.
 
-#### `--nblast` [ default = 500 ]
-Number of sequences in each Blast job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
-
-#### `--nexonerate` [ default = 200 ]
-Number of alignments to compute in each Exonerate job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system.
+#### `--nblast` [ default = 200 ]
+Number of sequences in each protein alignment job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
 
 #### `--npart_size` [ default = 200000000 ]
 Size in bp of the pieces into which the genome is split for parallelization optimization. By default, this is set to `200000000`, i.e. 200Mb. This function will *not* break scaffolds, but simply tries to distribute the
@@ -173,7 +180,7 @@ Setting this to larger values will create fewer parallel jobs, so the run time i
 #### `--min_contig_size` [ default = 5000 ]
 Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
 
-### 7. Other options 
+### 6. Other options 
 
 #### `--email` [ you@somewhere.com | false (default)]
 If you specify an Email address, the pipeline will send a notification upon completion. However, for this to work, the node running the nextflow process must have a configured Email server. 
@@ -193,16 +200,16 @@ Whether your RNAseq library was sequenced with a strand-specific protocol. Our a
 #### `--outdir` [ default = 'annotation_output' ]
 The output directory where the results will be saved. 
 
-#### `-profile`
-Use this parameter to choose a configuration profile. Each profile is designed for a different combination of compute environment and installation estrategy (see [Installation instructions](../docs/installation.md)). 
+#### `--run_name` [default = a random name ]
+Give this pipeline run a specific name. Otherwise, nextflow will generate a random one. 
 
-### 8. Nextflow parameters (indicate with single dash "-")
+### 7. Nextflow parameters (indicate with single dash "-")
+
+#### `-profile`
+Use this parameter to choose a configuration profile. Each profile is designed for a different combination of compute environment and installation estrategy (see [Installation instructions](../docs/installation.md)).
 
 #### `-params-file config.yaml`
 All the above options can be passed from either the command line or through a configuration file. A suitable template is included under assets/config.yaml.
-
-#### `-name`
-Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
 
 #### `-resume`
 Specify this when restarting a pipeline. Nextflow will used cached results from any pipeline steps where the inputs are the same, continuing from where it got to previously.

@@ -1,5 +1,7 @@
-ABINITIO_PREDICTION      AUGUSTUS       2
+ABINITIO_PREDICTION      AUGUSTUS       7
+OTHER_PREDICTION	spaln2genome	10
+OTHER_PREDICTION	ALN	6
 OTHER_PREDICTION	transdecoder	5
-PROTEIN         protein2genome 8
+PROTEIN         protein2genome 5
 TRANSCRIPT      est2genome      5
-TRANSCRIPT      PASA_transcript_assemblies      4
+TRANSCRIPT      PASA_transcript_assemblies      2

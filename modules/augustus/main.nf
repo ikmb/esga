@@ -17,7 +17,7 @@ workflow augustus_prediction {
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
-		AugustusFilterModels(mergeAugustusGff.out[0])
+		AugustusFilterModels(mergeAugustusGff.out[0],genome)
 	emit:
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
@@ -88,17 +88,21 @@ process AugustusFilterModels {
 
 	input:
 	path gff
+	path genome
 
 	output:
 	path gff_good
 	path gff_bad
+	path proteins
 
 	script:
 	gff_good = gff.getName() + ".good.gff"
 	gff_bad = gff.getName() + ".bad.gff"
+	proteins = "augustus.protein_supported_models.proteins.fa"
 
 	"""
 		augustus_filter_models.pl --infile $gff 
+		gffread -g genome -y augustus.protein_supported_models.proteins.fa $gff_good
 	"""
 }
 
