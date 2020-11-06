@@ -71,7 +71,7 @@ process runPasa {
 
 	script:
 
-        trunk = genome.getName()
+        trunk = genome.getBaseName()
 
 	pasa_assemblies_fasta = "pasa_DB_${trunk}.sqlite.assemblies.fasta"
         pasa_assemblies_gff = "pasa_DB_${trunk}.sqlite.pasa_assemblies.gff3"
@@ -132,8 +132,6 @@ process PasaToModels {
 		
 process runPasaPolish {
 
-	label 'pasa'
-
 	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
 	input:
@@ -146,17 +144,27 @@ process runPasaPolish {
 
 	script:
 	
-	trunk = genome.getBaseName + "_pasa"
+	trunk = genome.getBaseName() + "_pasa"
 
 	"""
+
+		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
+
+                \$PASAHOME/Launch_PASA_pipeline.pl \
+                        -c pasa_DB.config -C -R \
+                        -t $transcripts \
+                        -I $params.max_intron_size \
+                        -g $genome \
+                        --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \
+                        --CPU ${task.cpus} \
+
+
 		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.assemble.config
 	
 		\$PASAHOME/scripts/Load_Current_Gene_Annotations.dbi \
 			-P $genes_gff \
 			-g $genome \
 			-c pasa_DB.assemble.config
-
-                make_pasa_config.pl --infile ${params.pasa_update_config} --trunk $trunk --outfile pasa_DB.config
 
 		\$PASAHOME/Launch_PASA_pipeline.pl \
 		        -c pasa_DB.config -A \

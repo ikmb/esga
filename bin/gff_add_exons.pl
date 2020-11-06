@@ -60,6 +60,7 @@ while (<$IN>) {
 		printf join("\t",@elements) . "\n";
 	} elsif ($feature eq "mRNA" || $feature eq "transcript") {
 		$cds_counter = 0;
+		@elements[2] = "mRNA";
 		$transcript_id = @elements[-1];
 		@elements[-1] = "ID=$transcript_id;Parent=$gene_id";
 		printf join("\t",@elements) . "\n";

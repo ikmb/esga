@@ -12,7 +12,7 @@ that annotating a genome guided by another annotation risks perpetuation annotat
 
 ## Proteins (other)
 
-Other proteins for annotation should cover a wider taxonomic range to help the pipeline find genes that were perhaps missing from the targeted stage. Since ESGA is aimed for vertebrates specifically, and metazoans at most, we have included a set of reviewed
+Other proteins for annotation should cover a wider taxonomic range to help the pipeline find genes that were perhaps missing from the targeted stage. Since ESGA is aimed at vertebrates specifically, and metazoans at most, we have included a set of reviewed
 metazoan proteins that could be used here. Otherwise, you have some additional options:
 
 [Uniprot](https://www.uniprot.org/) is generally a good place to start. The search interface allows you to limit results by taxnomic group and level of experimental support for 

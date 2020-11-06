@@ -76,7 +76,7 @@ for example).
 Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one. 
 
 #### `--proteins` 
-Location of a single FASTA file with protein sequences from related species. If you have multiple files, concatenate them into a single file first. The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
+Location of a single FASTA file with protein sequences from related taxa. If you have multiple files, concatenate them into a single file first. The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
 
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,

@@ -8,8 +8,8 @@ params.version = workflow.manifest.version
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include { proteinmodels; proteinhint_slow; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
-include { esthint; esthint_slow } from "./modules/transcripts/main.nf" params(params)
+include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
+include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include { augustus_prediction; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
@@ -92,6 +92,9 @@ summary['Assembly'] = params.genome
 if (params.proteins) {
 	summary['Proteins'] = params.proteins
 }
+if (params.proteins_targeted) {
+	summary['ProteinsTargeted'] = params.proteins_targeted
+}
 if (params.transcripts) {
 	summary['Transcripts'] = params.transcripts
 }
@@ -115,9 +118,6 @@ summary['MinContigSize'] = params.min_contig_size
 summary['MinProteinLength'] = params.min_prot_length
 summary['MaxIntronSize'] = params.max_intron_size
 
-summary['BlastJobs'] = params.nblast
-summary['ExonerateJobs'] = params.nexonerate
-
 summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
@@ -128,11 +128,10 @@ summary['Priority RNAseq Exons'] = params.pri_wiggle
 
 summary['PredictUTRs'] = params.utr
 
+summary['PredictNcrna'] = params.ncrna
+
 summary['RunEVM'] = params.evm
 summary['EvmWeights'] = params.evm_weights
-
-summary['BlastEvalue'] = params.blast_evalue
-
 
 run_name = ( params.run_name == false) ? "${workflow.sessionId}" : "${params.run_name}"
 
@@ -421,12 +420,6 @@ workflow {
 		evm_gff = evm_prediction.out.gff
 		evm_fa = evm_prediction.out.fasta
 		
-		// polish the annotation using pasa is all prerequisites are met
-		if (params.reads && params.trinity || params.transcripts) {
-			polish_annotation(genome_rm,evm_gff,transcript_gff)
-			polished_gff = polish_annotation.out.gff
-		}
-
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
@@ -440,6 +433,7 @@ workflow {
 		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
+		protein_targeted_gff to: "${params.outdir}/annotation/spaln", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'

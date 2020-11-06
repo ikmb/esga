@@ -13,8 +13,8 @@ workflow rnaseqhint {
 		makeBigWig(HisatMap.out[0],HisatMap.out[1])		
 		mergeBams(HisatMap.out[0].collect())
 		BamToExonHint(mergeBams.out)
-		rseqHints(mergeBams.out)
-		filterRseqHints(rseqHints.out.concat(BamToExonHint.out).collectFile())		
+		BamToIntronHint(mergeBams.out)
+		filterRseqHints(BamToIntronHint.out.concat(BamToExonHint.out).collectFile())		
 			
 	emit:
 		bam = mergeBams.out[0]
@@ -204,7 +204,7 @@ process BamToExonHint {
 /*
  * STEP RNAseq.4 - Hisat2 into Hints
  */	
-process rseqHints {
+process BamToIntronHint {
 
 	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
 

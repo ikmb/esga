@@ -9,5 +9,3 @@ ENV PASAHOME /opt/conda/envs/esga-1.1/opt/pasa-2.4.1
 ENV EVM_HOME /opt/conda/envs/esga-1.1/opt/evidencemodeler-1.1.1
 RUN cp /opt/conda/envs/esga-1.1/opt/pasa-2.4.1/pasa_conf/pasa.CONFIG.template /opt/conda/envs/esga-1.1/opt/pasa-2.4.1/pasa_conf/conf.txt
 RUN mkdir -p /opt/bin && cd /opt/bin && wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/faSomeRecords && chmod +x faSomeRecords
-RUN mkdir -p /opt/blast && cd /opt/blast && wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.2.31/ncbi-blast-2.2.31+-x64-linux.tar.gz && tar -xvf ncbi-blast-2.2.31+-x64-linux.tar.gz && \
-rm ncbi-blast-2.2.31+-x64-linux.tar.gz && mv ncbi-blast-2.2.31+ 2.2.31
