@@ -2,7 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include { fastaToBlastnDBMasked; fastaToCdbindex; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
+include { fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 workflow proteinhint_spaln {
 
@@ -14,7 +14,7 @@ workflow proteinhint_spaln {
                 fastaCleanProteins(protein_fa)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
 		spalnMakeIndex(genome_rm)
-		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
+		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out)
 		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,60)
 		spalnToHints(spalnMerge.out, params.pri_prot)
 		spaln2evm(spalnMerge.out)
@@ -35,7 +35,7 @@ workflow proteinmodels {
                 fastaCleanProteins(protein_fa)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
                 spalnMakeIndex(genome_rm)
-                spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nblast, file: true),spalnMakeIndex.out)
+                spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out)
                 spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,90)
                 spalnToHints(spalnMerge.out, params.pri_prot_target)
 		spaln2evm(spalnMerge.out)

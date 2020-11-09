@@ -63,9 +63,7 @@ def helpMessage() {
     --pri_wiggle	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 2)
  	
     How to split programs:
-    --nblast		Chunks (# of sequences) to divide genome for blastx jobs [ default = 100 ]
-    --nexonerate	Chunks (# of blast hits) to divide Exonerate jobs [ default = 200 ]
-    --nexonerate_exhaustive	Chunks (# of sequences) to divide Exonerate jobs for full-genome alignments [ default = 50]
+    --nproteins		# of sequences to divide protein alignment jobs into [ default = 100 ]
     --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000, i.e. 200MB ]
 
     Other options:
@@ -253,8 +251,7 @@ log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
-log.info "# Sequences per Blast job:		${params.nblast}"
-log.info "# Sequences per Exonerate job:		${params.nexonerate}"
+log.info "# Sequences per protein alignment	${params.nproteins}"
 log.info "Size of genome-level jobs:		${params.npart_size} bp"
 log.info "Max intron length:			${params.max_intron_size}"
 log.info "-----------------------------------------"
@@ -313,7 +310,7 @@ workflow {
 		protein_gff = proteinhint_spaln.out.track
 	} else {
 		protein_hints = Channel.empty()
-		protein_gff = Channel.empty()
+		protein_gff = Channel.from(false)
 	}
 
 	// Construct gene models from species specific proteome
@@ -369,9 +366,11 @@ workflow {
 		pasa(genome_rm,fastaMergeFiles.out[0])
 		pasa_gff = pasa.out.gff
 		pasa_fa = pasa.out.fasta
+		pasa_db = pasa.out.db
 	} else {
 		pasa_gff = Channel.empty()
 		pasa_fa = Channel.empty()
+		pasa_db = Channel.empty()
 	}
 
 	if (params.aug_training) {

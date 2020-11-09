@@ -12,10 +12,9 @@ trinity: false
 pasa: false
 evm: false
 nevm: 10
-nblast: 200
-nexonerate: 400
+nproteins: 200
 npart_size: 200000000
-ax_intron_size: 50000
+max_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
 rnaseq_stranded: false

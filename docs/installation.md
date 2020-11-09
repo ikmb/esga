@@ -21,15 +21,12 @@ Nextflow runs on most systems (Linux, Mac OSX etc). It can be installed by runni
 java -version
 
 # Install Nextflow
-curl -fsSL get.nextflow.io | bash
 
-# Add Nextflow binary to your PATH:
-mv nextflow ~/bin/
-# OR system-wide installation:
-# sudo mv nextflow /usr/local/bin
-```
+You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code.
 
-**You need NextFlow version >= 19.03.0 to run this pipeline.** 
+[Nextflow 20.01](https://github.com/nextflow-io/nextflow/releases/download/v20.01.0/nextflow-20.01.0-all)
+
+Just put the downloaded file into your $PATH and rename it to 'nextflow'
 
 ## Obtaining the code 
 

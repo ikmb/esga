@@ -34,8 +34,7 @@ trinity: false
 pasa: false
 evm: false
 nevm: 10
-nblast: 200
-nexonerate: 400
+nproteins: 200
 npart_size: 200000000
 ax_intron_size: 50000
 min_contig_size: 5000
@@ -168,7 +167,7 @@ running specific programs. Then that program can be run on each smaller chunk in
 When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want to tweak one or several of the parameters below. If unsure, 
 leave at the defaults.
 
-#### `--nblast` [ default = 200 ]
+#### `--nproteins` [ default = 200 ]
 Number of sequences in each protein alignment job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
 
 #### `--npart_size` [ default = 200000000 ]

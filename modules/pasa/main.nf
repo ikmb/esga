@@ -19,6 +19,7 @@ workflow pasa {
 		gff = PasaToModels.out[1]
 		alignments = runPasa.out[1]
 		fasta = GffToFasta.out[0]
+		db = runPasa.out[2]
 
 }
 
@@ -28,6 +29,7 @@ workflow polish_annotation {
 		genome
 		genes
 		transcripts
+		db
 
 	main:
 		runPasaPolish(genome,genes,transcripts)
@@ -68,6 +70,7 @@ process runPasa {
 	output:
 	path pasa_assemblies_fasta
         path pasa_assemblies_gff
+	path db_name
 
 	script:
 
@@ -75,6 +78,7 @@ process runPasa {
 
 	pasa_assemblies_fasta = "pasa_DB_${trunk}.sqlite.assemblies.fasta"
         pasa_assemblies_gff = "pasa_DB_${trunk}.sqlite.pasa_assemblies.gff3"
+	db_name = "pasa_DB_" + trunk + ".sqlite"
 
 	mysql_create_options = ""
         mysql_config_option = ""
@@ -138,6 +142,7 @@ process runPasaPolish {
 	path genome
 	path genes_gff
 	path minimap_gff
+	path pasa_db
 
 	output:
         path "*gene_structures_post_PASA_updates*.gff3"
@@ -147,17 +152,6 @@ process runPasaPolish {
 	trunk = genome.getBaseName() + "_pasa"
 
 	"""
-
-		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
-
-                \$PASAHOME/Launch_PASA_pipeline.pl \
-                        -c pasa_DB.config -C -R \
-                        -t $transcripts \
-                        -I $params.max_intron_size \
-                        -g $genome \
-                        --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \
-                        --CPU ${task.cpus} \
-
 
 		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.assemble.config
 	

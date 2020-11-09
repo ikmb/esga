@@ -3,45 +3,6 @@
 // ******************
 
 
-process fastaToBlastnDBMasked {
-
-        input:
-        path genome_fa
-
-        output:
-        path "${dbName}*.n*"
-
-        script:
-        dbName = genome_fa.getBaseName()
-        mask = dbName + ".asnb"
-        """
-
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
-
-                convert2blastmask -in $genome_fa -parse_seqids -masking_algorithm repeat \
-                        -masking_options "repeatmasker, default" -outfmt maskinfo_asn1_bin \
-                        -out $mask
-
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -mask_data $mask -out $dbName
-        """
-}
-
-process fastaToBlastnDB {
-
-        input:
-        path genome_fa
-
-        output:
-        path "${dbName}*.n*"
-
-        script:
-        dbName = genome_fa.getBaseName()
-
-        """
-                ${params.makeblastdb} -in $genome_fa -parse_seqids -dbtype nucl -out $dbName
-        """
-}
-
 // Get Accession numbers from FASTA file
 
 process fastaToList {
@@ -61,26 +22,6 @@ process fastaToList {
 		grep "^>.*" $fasta | sed 's/^>//'  > $accessions
 	"""
 
-}
-
-// create a cdbtools compatible  index
-// we need this to do very focused exonerate searches later
-process fastaToCdbindex {
-
-        label 'short_running'
-
-        input:
-        path fasta
-
-        output:
-        path fasta_index
-
-        script:
-        fasta_index = fasta.getName()+ ".cidx"
-
-        """
-                cdbfasta $fasta
-        """
 }
 
 process fastaSplitSize {

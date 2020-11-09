@@ -1,8 +1,6 @@
 // **************************
 // Production of annotation hints from EST/transcript FASTA sequences
 // **************************
-include { fastaToBlastnDBMasked; fastaToCdbindex } from "./../fasta" params(params)
-
 workflow esthint {
 
 	take:

@@ -14,6 +14,8 @@ The minimum requirements are a genome file and at least one type of evidence.
 
 From this, the pipeline can run the following processing steps:
 
+* Repeat-mask the assembly
+* align species-specific proteins to build protein-based gene models
 * align proteins against a genome and generate annotation hints
 * align transcripts against a genome and generate annotation hints
 * align RNA-seq reads against a genome and generate annotation hints
@@ -21,10 +23,11 @@ From this, the pipeline can run the following processing steps:
 * Produce evidence-based gene models from aligned transcript sequences (PASA pipeline)
 * Produce ab-initio, hint-supported gene models (AUGUSTUS pipeline)
 * Produce consensus annotation from all of the above (EvidenceModeler pipeline)
+* Predict non-coding RNA loci using RFam 
 
 Optional:
 
-* Train a novel ab-initio prediction profile for AUGUSTUS (using PASA transcripts)
+* Train a novel ab-initio prediction profile for AUGUSTUS (using PASA transcripts or SPALN protein models)
 
 ### Test data
 
