@@ -2,21 +2,23 @@
 
 nextflow.preview.dsl=2
 
+params.version = workflow.manifest.version
+
+// this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include proteinhint_slow from "./modules/proteins/main.nf" params(params)
-include proteinhint from "./modules/proteins/main.nf" params(params)
+include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
-include augustus_prediction from "./modules/augustus/main.nf" params(params)
-include augustus_prediction_slow from "./modules/augustus/main.nf" params(params)
+include { augustus_prediction; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
-include pasa_standard from "./modules/pasa/main.nf" params(params)
+include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
+include rfamsearch from "./modules/infernal/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -31,14 +33,17 @@ def helpMessage() {
       
   At least one of:
   --proteins		Proteins from other species
+  --proteins_targeted	Exactly one set of proteins from this or a very closely related species
   --transcripts		ESTs or transcriptome
   --reads		Path to RNA-seq data (must be surrounded with quotes)
+
   Options:
     -profile            Hardware config to use (optional, will default to 'standard')
     Programs to run:
-    --trinity		Run transcriptome assembly with Trinity and produce hints from the transcripts [ true (default) | false ]
-    --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads with --trinity. 
+    --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads. 
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
+    --ncrna		Annotate ncRNAs using RFam
+    --trinity		Build transcript models from provided RNAseq data
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -51,22 +56,20 @@ def helpMessage() {
     --min_prot_length 	Length of proteins in AA to consider when building hints [default = 30]
 
     Evidence tuning
-    --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
+    --pri_prot		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 4)
+    --pri_prot_targeted	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 5)
     --pri_est		A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 3)
     --pri_rnaseq	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 4)
+    --pri_wiggle	A positive number between 1 and 5 - the higher, the more important the hint is for gene calling (default: 2)
  	
     How to split programs:
-    --nblast		Chunks (# of sequences) to divide genome for blastx jobs [ default = 100 ]
-    --nexonerate	Chunks (# of blast hits) to divide Exonerate jobs [ default = 200 ]
-    --nexonerate_exhaustive	Chunks (# of sequences) to divide Exonerate jobs for full-genome alignments [ default = 50]
-    --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000 ]
-    --chunk_size 	Size of sub-regions of the genome on which to run Blastx jobs [ default = 50000 ]
+    --nproteins		# of sequences to divide protein alignment jobs into [ default = 100 ]
+    --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000, i.e. 200MB ]
 
     Other options:
-    --fast		Runs some tools in fast-mode (less sensitive, but faster)
     --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]
     --rnaseq_stranded	Whether the RNAseq reads were sequenced using a strand-specific method (dUTP) [ true | false (default) ]
-    -name		Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
+    --run_name		Name for this pipeline run
     """.stripIndent()
 }
 
@@ -76,6 +79,59 @@ if (params.help){
 	helpMessage()
 	exit 0
 }
+
+// ****************
+// Collect metadata
+// ****************
+
+def summary = [:]
+
+summary['Assembly'] = params.genome
+if (params.proteins) {
+	summary['Proteins'] = params.proteins
+}
+if (params.proteins_targeted) {
+	summary['ProteinsTargeted'] = params.proteins_targeted
+}
+if (params.transcripts) {
+	summary['Transcripts'] = params.transcripts
+}
+if (params.reads) {
+	summary['Reads'] = params.reads
+}
+if (params.rm_lib) {
+	summary['RepeatLibrary'] = params.rm_lib
+}
+if (params.rm_species) {
+	summary['RepeatSpecies'] = params.rm_species
+}
+summary['EsgaVersion'] = params.version
+summary['EsgaCommitHash'] = workflow.commitId
+summary['RunDate'] = workflow.start
+summary['RunDir'] = workflow.workDir
+summary['Command'] = workflow.commandLine
+summary['Container'] = workflow.container
+
+summary['MinContigSize'] = params.min_contig_size
+summary['MinProteinLength'] = params.min_prot_length
+summary['MaxIntronSize'] = params.max_intron_size
+
+summary['AugustusSpecies'] = params.aug_species
+summary['AugustusOptions'] = params.aug_options
+summary['AugustusConfig'] = params.aug_config
+summary['Priority Proteins'] = params.pri_prot
+summary['Priority Transcripts'] = params.pri_est
+summary['Priority RNAseq Introns'] = params.pri_rnaseq
+summary['Priority RNAseq Exons'] = params.pri_wiggle
+
+summary['PredictUTRs'] = params.utr
+
+summary['PredictNcrna'] = params.ncrna
+
+summary['RunEVM'] = params.evm
+summary['EvmWeights'] = params.evm_weights
+
+run_name = ( params.run_name == false) ? "${workflow.sessionId}" : "${params.run_name}"
 
 // ****************
 // input validation
@@ -95,6 +151,16 @@ if (params.proteins) {
 	proteins = Channel.empty()
 }
 
+if (params.proteins_targeted) {
+	pt = file(params.proteins_targeted)
+	if (!pt.exists()) {
+		exit 1, "The specified targeted protein file does not exist!"
+	}
+	proteins_targeted = Channel.from(pt)
+} else {
+	proteins_targeted = Channel.empty()
+}
+
 if (params.transcripts) {
 	t = file(params.transcripts)
 	if (!t.exists() ) {
@@ -105,15 +171,28 @@ if (params.transcripts) {
 	transcripts = Channel.empty()
 }
 
+if (!params.reads && !params.proteins && !params.proteins_targeted && !params.transcripts) {
+	exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+}
+
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
 if (!params.rm_species && !params.rm_lib) {
 	log.warn "No repeat data provided, will model repeats de-novo (slow!!!)"
 }
-if (params.pasa && !params.transcripts && !params.trinity) {
-	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --trinity)"
+if (params.aug_training && !params.proteins) {
+	// if no proteins are given, we will try to use pasa for training
+	params.pasa = true
 }
+if (params.pasa && !params.transcripts && !params.reads) {
+	exit 1, "Cannot run PASA without transcript data (--transcripts and/or --reads)"
+}
+if (params.pasa && params.reads && !params.trinity) {
+	log.info "Will perform de-novo transcriptome assembly from raw reads to inform PASA annotation"
+	params.trinity = true
+}
+
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
 if (!workflow.containerEngine) {
@@ -122,15 +201,14 @@ if (!workflow.containerEngine) {
         	.set { augustus_config_folder }
 } else {
 // this is a bit dangerous, need to make sure this is updated when we bump to the next release version
-	Channel.from(file("/opt/conda/envs/esga-1.0/config"))
+	Channel.from(file("/opt/conda/envs/esga-1.1/config"))
         	.set { augustus_config_folder }
 }
 if (!params.aug_species) {
 	exit 1, "Must provide an AUGUSTUS species name to run this pipeline (--aug_species)"
 }
-if (params.pasa && params.npart_size < 100000000) {
-	log.warn "An npart_size smaller than 100MB is risking PASA to fail - increase in case of a crash..."
-}
+
+multiqc_report = Channel.empty()
 
 // *******************************
 // Print run information
@@ -156,27 +234,29 @@ log.info "-----------------------------------------"
 log.info "Program settings:"
 log.info "AUGUSTUS species:		${params.aug_species}"
 log.info "AUGUSTUS config:		${params.aug_config}"
-log.info "Maximum intron size:		${params.max_intron_size}"
+if (params.aug_training) {
+	if (params.proteins) {
+		log.info "AUGUSTUS training:		Proteins"
+	} else {
+		log.info "AUGUSTUS training:		Transcripts"
+	}
+}
+log.info "Predict ncRNAs			${params.ncrna}"
 log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
 log.info "Run EVM gene building:		${params.evm}"
 log.info "EVM weights:			${params.evm_weights}"
-if (params.fast) {
-	log.info "Rapid mode:			${params.fast}"
-}
+log.info "Predict UTRs:			${params.utr}"
 log.info "-----------------------------------------"
 log.info "Evidences:"
-log.info "Proteins:			${params.proteins}"
+log.info "Targeted proteins		${params.proteins_targeted}"
+log.info "Other proteins:			${params.proteins}"
 log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
-log.info "# Sequences per Blast job:		${params.nblast}"
-log.info "# Sequences per Exonerate job:		${params.nexonerate}"
+log.info "# Sequences per protein alignment	${params.nproteins}"
 log.info "Size of genome-level jobs:		${params.npart_size} bp"
-if (params.fast) {
-	log.info "Size of BlastX jobs:			${params.chunk_size} bp"
-}
 log.info "Max intron length:			${params.max_intron_size}"
 log.info "-----------------------------------------"
 log.info "Nextflow Version:		$workflow.nextflow.version"
@@ -203,7 +283,8 @@ workflow {
 		repeatmasking_with_species(genome_clean,params.rm_species)
 		genome_rm = repeatmasking_with_species.out.genome_rm
 		repeats = Channel.empty()
-		repeat_gffs = Channel.empty()
+		repeat_gffs = repeatmasking_with_species.out.genome_rm_gffs
+		repeat_hints = repeatmasking_with_species.out.genome_rm_hints
 	// Use a library provided by the user or compute de-novo
 	} else {
 		if (params.rm_lib) {
@@ -215,23 +296,37 @@ workflow {
 	        repeatmasking_with_lib(genome_clean,repeats)
 		genome_rm = repeatmasking_with_lib.out.genome_rm
 		repeat_gffs = repeatmasking_with_lib.out.genome_rm_gffs
+		repeat_hints = repeatmasking_with_lib.out.genome_rm_hints
 	}
-	
+
+	// Annotate ncRNAs using RFam
+	if (params.ncrna) {
+		rfamsearch(genome_clean)
+		ncrna_gff = rfamsearch.out.gff
+	} else {
+		ncrna_gff = Channel.empty()
+	}
+
 	// Generate hints from proteins (if any)
 	if (params.proteins) {
-
-		if (params.fast) {
-			proteinhint(genome_clean,proteins)
-			protein_hints = proteinhint.out.hints
-			protein_gff = proteinhint.out.gff
-		} else {
-			proteinhint_slow(genome_rm,proteins)
-			protein_hints = proteinhint_slow.out.hints
-			protein_gff = proteinhint_slow.out.gff
-		}
+		proteinhint_spaln(genome_clean,proteins)
+		protein_hints = proteinhint_spaln.out.hints
+		protein_evm_align = proteinhint_spaln.out.track
 	} else {
 		protein_hints = Channel.empty()
-		protein_gff = Channel.empty()
+		protein_evm_align = Channel.empty()
+	}
+
+	// Construct gene models from species specific proteome
+	if (params.proteins_targeted) {
+		proteinmodels(genome_clean,proteins_targeted)
+		protein_targeted_hints = proteinmodels.out.hints
+                protein_targeted_gff = proteinmodels.out.gff
+		protein_targeted_evm_align = proteinmodels.out.track
+	} else {
+		protein_targeted_hints = Channel.empty()
+		protein_targeted_gff = Channel.empty()
+		protein_targeted_evm_align = Channel.empty()
 	}
 
 	// Generate hints from transcripts (if any)
@@ -249,6 +344,7 @@ workflow {
 		rnaseqhint(genome_clean,params.reads)
 		rna_hints = rnaseqhint.out.hints
 		rna_bam = rnaseqhint.out.bam
+		// Assembly reads into transcripts for PASA
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_rm,trinity_guided_assembly.out.assembly)
@@ -273,32 +369,47 @@ workflow {
 	if (params.pasa) {
 		transcript_files = trinity_assembly.concat(transcripts)
 		fastaMergeFiles(transcript_files.collect())
-		pasa_standard(genome_rm,fastaMergeFiles.out[0])
-		pasa_gff = pasa_standard.out.gff
-		pasa_fa = pasa_standard.out.fasta
+		pasa(genome_rm,fastaMergeFiles.out[0])
+		pasa_gff = pasa.out.gff
+		pasa_fa = pasa.out.fasta
+		pasa_db = pasa.out.db
 	} else {
 		pasa_gff = Channel.empty()
 		pasa_fa = Channel.empty()
+		pasa_db = Channel.empty()
+	}
+
+	if (params.aug_training) {
+		// Prefer training from Spaln models since these tend to contain less noise 
+		if (params.proteins) {
+			augustus_train_from_spaln(genome_rm,protein_gff,augustus_config_folder)
+			augustus_conf_folder = augustus_train_from_spaln.out.acf_folder
+		} else if (params.transcripts && params.pasa) {
+			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_folder)
+			augustus_conf_folder = augustus_train_from_pasa.out.acf_folder
+		} 
+	} else {
+		augustus_conf_folder = augustus_config_folder
 	}
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints)
+	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints,protein_targeted_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
 	if (!params.fast) {
-		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_config_folder)
+		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_conf_folder)
                 augustus_gff = augustus_prediction_slow.out.gff
                 augustus_fa = augustus_prediction_slow.out.fasta
 	} else {	
-		augustus_prediction(genome_rm,merge_hints.out,augustus_config_folder)
+		augustus_prediction(genome_rm,merge_hints.out,augustus_conf_folder)
 		augustus_gff = augustus_prediction.out.gff
 		augustus_fa = augustus_prediction.out.fasta
 	}
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
-		gene_gffs = augustus_gff.concat(pasa_gff).collect()
+		gene_gffs = augustus_gff.concat(pasa_gff).concat(protein_targeted_gff).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
@@ -309,9 +420,22 @@ workflow {
 		} else {
 			transcript_gff = Channel.empty()
 		}
+
+		// Reconcile optional multi-branch protein evidence into a single channel
+		if (params.proteins && params.protein_targeted_evm_align) {
+			protein_gff = protein_evm_align.concat(protein_targeted_evm_align).collectFile()
+		} else if (params.proteins_targeted) {
+			protein_gff = protein_targeted_evm_align
+		} else if (params.proteins) {
+			protein_gff = protein_evm_align
+		} else {
+			protein_gff = Channel.empty()
+		}
+
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
 		evm_gff = evm_prediction.out.gff
 		evm_fa = evm_prediction.out.fasta
+		
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
@@ -325,6 +449,7 @@ workflow {
 		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
+		protein_targeted_gff to: "${params.outdir}/annotation/spaln", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
@@ -334,8 +459,93 @@ workflow {
 		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
 		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
+		ncrna_gff to : "${params.outdir}/annotation/ncrna", mode: 'copy'
 		
 }
 
+workflow.onComplete {
+  log.info "========================================="
+  log.info "Duration:		$workflow.duration"
+  log.info "========================================="
 
+  def email_fields = [:]
+  email_fields['version'] = workflow.manifest.version
+  email_fields['session'] = workflow.sessionId
+  email_fields['runName'] = run_name
+  email_fields['success'] = workflow.success
+  email_fields['dateStarted'] = workflow.start
+  email_fields['dateComplete'] = workflow.complete
+  email_fields['duration'] = workflow.duration
+  email_fields['exitStatus'] = workflow.exitStatus
+  email_fields['errorMessage'] = (workflow.errorMessage ?: 'None')
+  email_fields['errorReport'] = (workflow.errorReport ?: 'None')
+  email_fields['commandLine'] = workflow.commandLine
+  email_fields['projectDir'] = workflow.projectDir
+  email_fields['script_file'] = workflow.scriptFile
+  email_fields['launchDir'] = workflow.launchDir
+  email_fields['user'] = workflow.userName
+  email_fields['Pipeline script hash ID'] = workflow.scriptId
+  email_fields['genome'] = params.genome
+  email_fields['manifest'] = workflow.manifest
+  email_fields['summary'] = summary
+
+  email_info = ""
+  for (s in email_fields) {
+	email_info += "\n${s.key}: ${s.value}"
+  }
+
+  def output_d = new File( "${params.outdir}/pipeline_info/" )
+  if( !output_d.exists() ) {
+      output_d.mkdirs()
+  }
+
+  def output_tf = new File( output_d, "pipeline_report.txt" )
+  output_tf.withWriter { w -> w << email_info }	
+
+ // make txt template
+  def engine = new groovy.text.GStringTemplateEngine()
+
+  def tf = new File("$baseDir/assets/email_template.txt")
+  def txt_template = engine.createTemplate(tf).make(email_fields)
+  def email_txt = txt_template.toString()
+
+  // make email template
+  def hf = new File("$baseDir/assets/email_template.html")
+  def html_template = engine.createTemplate(hf).make(email_fields)
+  def email_html = html_template.toString()
+  
+  def subject = "ESGA annotation finished ($run_name)."
+
+  if (params.email) {
+
+  	def mqc_report = null
+  	try {
+        	if (workflow.success && !params.skip_multiqc) {
+            		mqc_report = multiqc_report.getVal()
+            		if (mqc_report.getClass() == ArrayList){
+                		log.warn "[ESGA] Found multiple reports from process 'multiqc', will use only one"
+                		mqc_report = mqc_report[0]
+                	}
+        	}
+    	} catch (all) {
+        	log.warn "[ESGA] Could not attach MultiQC report to summary email"
+  	}
+
+	def smail_fields = [ email: params.email, subject: subject, email_txt: email_txt, email_html: email_html, baseDir: "$baseDir", mqcFile: mqc_report, mqcMaxSize: params.maxMultiqcEmailFileSize.toBytes() ]
+	def sf = new File("$baseDir/assets/sendmail_template.txt")	
+    	def sendmail_template = engine.createTemplate(sf).make(smail_fields)
+    	def sendmail_html = sendmail_template.toString()
+
+	try {
+          if( params.plaintext_email ){ throw GroovyException('Send plaintext e-mail, not HTML') }
+          // Try to send HTML e-mail using sendmail
+          [ 'sendmail', '-t' ].execute() << sendmail_html
+        } catch (all) {
+          // Catch failures and try with plaintext
+          [ 'mail', '-s', subject, params.email ].execute() << email_txt
+        }
+
+  }
+
+}
 

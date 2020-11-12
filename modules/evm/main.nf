@@ -11,7 +11,7 @@ workflow evm_prediction {
 		evmMergeGenes(gene_models)
 		evmPartition(genome,evmMergeGenes.out[0],transcript_gff,protein_gff)
 		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
-		evmMerge(runEvm.out.collect(),evmPartition.out[1].collect(),genome.collect())
+		evmMerge(runEvm.out.collect(),evmPartition.out[1],genome)
 		evmToGff(evmMerge.out[0].collect())
 		GffToFasta(evmToGff.out[0],genome)
 
@@ -62,12 +62,8 @@ process evmPartition {
 
 	protein_options = ""
 	transcript_options = ""
-	if (protein_gff) {
-		protein_options = "--protein_alignments $protein_gff "
-	}
-	if (est_gff) {
-		transcript_options = "--transcript_alignments $est_gff "
-	}
+	protein_options = "--protein_alignments $protein_gff "
+	transcript_options = "--transcript_alignments $est_gff "
 
 	"""
 		\$EVM_HOME/EvmUtils/partition_EVM_inputs.pl --genome $genome_rm \
@@ -84,7 +80,7 @@ process evmPartition {
 			
 }
 
-// The outputs doesn't do nothing here, EVM combines the chunks based on the original partition file
+// The outputs don't do nothing here, EVM combines the chunks based on the original partition file
 process runEvm {
 
 	//scratch true

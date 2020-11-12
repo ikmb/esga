@@ -2,11 +2,11 @@
 
 ## (RNA-seq) Input files not found
 
-If only no file, only one input file , or only read one and not read two is picked up then something is wrong with your input file declaration
+If no file, only one input file , or only read one and not read two is picked up then something is wrong with your input file declaration
 
 1. The path must be enclosed in quotes (`'` or `"`)
-2. The path must have at least one `*` wildcard character. This is even if you are only running one paired end sample.
-3. When using the pipeline with paired end data, the path must use `{1,2}` or `{R1,R2}` notation to specify read pairs.
+2. For RNAseq reads, the path must have at least one `*` wildcard character. This is even if you are only running one paired end sample.
+3. When using the pipeline with paired end read data, the path must use `{1,2}` or `R{1,2}` notation to specify read pairs.
 4.  If you are running Single end data make sure to specify `--singleEnd`
 
 If the pipeline can't find your files then you will get the following error
@@ -24,25 +24,36 @@ you may be in a situation where you have to rely on "mixed" RNAseq data - say, s
 this is not easily supported. We want to make sure that the execution of the workflow is "mostly simple", but in order to accomodate a range of RNA-seq types, we'd have to force you to
 use some sort of sample sheet to let the pipeline know about the various characteristics of your input data. For the time being, we have decided to not do that - but would consider adding something
 like this later if there is demand for it. For now, this simply means that you won't be able to feed your "mixed" RNA-seq data into ESGA - but you could devise an assembly strategy with Trinity outside 
-of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. However, please note that Trinity too is not exactly designed to assembly mixed data like that. 
+of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. However, please note that Trinity too is not exactly designed to assembly mixed data like that - so you would likely have to run Trinity separately for differnt types of RNA-seq data and pass them as concatenated transcript hints (note: you'll have to rename the sequences since Trinity may create redundant names across multiple runs). 
 
 ## The annotation is missing many genes
 
 ESGA is driven primarily by annotation hints/evidence, in part to ensure that not too many false positive predictions are produced. However, if the input evidence is incomplete or not quite fitting for the species to be annotated, 
-the resulting gene build will potentially be missing some models (or contain many errors). Another source if problems is the quality of the ab-initio profile used for gene finding with AUGUSTUS. If you organism is taxonomically distant to any of the available 
+the resulting gene build will potentially be missing some models (or contain many errors). Another source of problems is the quality of the ab-initio profile used for gene finding with AUGUSTUS. If you organism is taxonomically distant to any of the available 
 prediction profiles, the resulting models will often not be of high quality. Consider using the built-in training routine to improve this.
 
-## The pipeline is very slow
+## The annotation contains many false models
 
-The performance of the pipeline can be tuned in a number of ways. We have observed long run times for highly fragmented genomes or if the number of sequences
-in blast and exonerate jobs is chosen too large. 
+ESGA depends on a number of sources, including the ab-initio predictor AUGUSTUS. False predictions (let's call them false positives, FP) are a product of a number of factors, including but not limited to:
+
+* lack of specificity of the chosen ab-initio profile
+* noisy input data (especially RNAseq)
+* inadequate repeat masking (some repeat types carry features that can be mistaken for, or are in fact, coding gene loci and seed incorrect predictions)
+
+To mitigate this, ESGA performs an optional filtering on the final ab-initio predictions to remove any model not supported by proteins. For vertebrates, this is not an unreasonable assumption, we find, as there is ample protein data available for most taxonomic groups.
+
+ These files can be found under: results/logs/augustus
+
+We find that this filtered file is a good place to start with your manual curation work.
 
 ### Genome assembly is highly fragmented
+
 Your genome assembly should, at most, contain thousands of scaffolds - ideally much less than that. Modern sequencing approaches such as linked-read sequencing
 or long reads make this a feasible goal for many organisms. It is also advisable to exclude very short scaffolds (<5kb) from your assembly prior to annotation;
 usually these will not contain any useful information but can increase the run time dramatically. 
 
 ### Size of evidence data
+
 Another critical factor is of course the amount of sequence data that is used for annotation. Especially
 the processing of RNA-seq reads can be very demanding on the compute infrastructure. So as a general recommendation, we suggest to work with "tens of
 thousands of proteins", "hundreds of thousands of EST/Transcripts" and "tens of millions of RNA-seq reads".

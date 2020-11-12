@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# This script discards rna-seq hints if they do not have a minimum support 
 
 use strict;
 use Getopt::Long;

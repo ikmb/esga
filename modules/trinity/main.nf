@@ -14,6 +14,8 @@ workflow trinity_guided_assembly {
 
 process runTrinityGuided {
 	
+	label 'trinity'
+
 	scratch true 
 
 	//publishDir "${params.outdir}/transcripts/trinity", mode: 'copy'

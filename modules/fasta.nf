@@ -2,24 +2,26 @@
 // Generic functions for FASTA processing
 // ******************
 
-// split a fasta file into a number of chunks
-// will delete all empty chunks since no checking of the absolute minimum number of chunks is performed.
-process fastaSplitChunks {
 
-        input:
-        path fasta
-	val nchunks
+// Get Accession numbers from FASTA file
 
-        output:
-        path "*_chunk_*"
+process fastaToList {
 
-        script:
-        ref_name = fasta.getBaseName() + "_chunk_%3.3d"
+	label 'short_running'
 
-        """
-                fastasplitn -in $fasta -n $nchunks -t $ref_name
-		find \$PWD -size -10c -print -delete
-        """
+	input:
+	path fasta
+
+	output:
+	path accessions
+
+	script:
+	accessions = fasta.getBaseName() + ".accs.txt"
+
+	"""
+		grep "^>.*" $fasta | sed 's/^>//'  > $accessions
+	"""
+
 }
 
 process fastaSplitSize {
@@ -143,9 +145,8 @@ process fastaCleanProteins {
 	"""
 
 		gaas_fasta_cleaner.pl -f $fasta -o tmp
-		fastaclean -f tmp -p | sed 's/:filter(clean)//' > $fasta_clean
+		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 		rm tmp
 	"""
-
 
 }

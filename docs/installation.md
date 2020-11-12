@@ -20,16 +20,15 @@ Nextflow runs on most systems (Linux, Mac OSX etc). It can be installed by runni
 # Make sure that Java v8+ is installed:
 java -version
 
-# Install Nextflow
-curl -fsSL get.nextflow.io | bash
-
-# Add Nextflow binary to your PATH:
-mv nextflow ~/bin/
-# OR system-wide installation:
-# sudo mv nextflow /usr/local/bin
 ```
 
-**You need NextFlow version >= 19.03.0 to run this pipeline.** 
+# Install Nextflow
+
+You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code.
+
+[Nextflow 20.01](https://github.com/nextflow-io/nextflow/releases/download/v20.01.0/nextflow-20.01.0-all)
+
+Just put the downloaded file into your $PATH and rename it to 'nextflow'
 
 ## Obtaining the code 
 
@@ -61,8 +60,9 @@ Create your own config file and pass it to the pipeline during start-up using th
 
 ```bash
 nextflow -c nextflow.config ikmb/esga -params-file config.yaml`
+```
 
-An example of a simple SLURM config file:
+An example of a simple SLURM config file:`
 
 ```bash
 #!/usr/bin/env nextflow

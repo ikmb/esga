@@ -10,13 +10,15 @@ workflow rnaseqhint {
 		HisatMakeDB(genome)
 		runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
-		mergeBams(HisatMap.out.collect())
-		rseqHints(mergeBams.out)
-		filterRseqHints(rseqHints.out)		
-
+		makeBigWig(HisatMap.out[0],HisatMap.out[1])		
+		mergeBams(HisatMap.out[0].collect())
+		BamToExonHint(mergeBams.out)
+		BamToIntronHint(mergeBams.out)
+		filterRseqHints(BamToIntronHint.out.concat(BamToExonHint.out).collectFile())		
+			
 	emit:
 		bam = mergeBams.out[0]
-		hints = filterRseqHints.out[0]
+		hints = filterRseqHints.out[0]		
 }
 
 
@@ -93,7 +95,8 @@ process HisatMap {
 	
 	output:
 	path "*accepted_hits.bam"
-	
+	path "*.bai"
+
 	script:
 	indexBase = hs2_indices[0].toString() - ~/.\d.ht2/
 	ReadsBase = reads[0].toString() - ~/(_R1)?(_trimmed)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
@@ -103,12 +106,49 @@ process HisatMap {
 	if (params.singleEnd) {
 		"""
 		hisat2 -x $indexBase -U $reads -p ${task.cpus} | samtools view -bS - | samtools sort -m 2G -@ 4 - > ${prefix}_accepted_hits.bam
+		samtools index  ${prefix}_accepted_hits.bam
 		"""
 	} else {
 		"""
 		hisat2 -x $indexBase -1 ${reads[0]} -2 ${reads[1]} -p ${task.cpus} | samtools view -bS - | samtools sort -m 2G -@4 - > ${prefix}_accepted_hits.bam
+		samtools index  ${prefix}_accepted_hits.bam
 		"""
 	}
+}
+
+process makeBigWig {
+
+	scratch true
+
+	label 'deeptools'
+
+	publishDir "${params.outdir}/tracks", mode: 'copy'
+
+	input:
+	path bam
+	path bai
+
+	output:
+	path "*.bw"
+
+	script:
+
+	bigwig = bam.getBaseName() + ".bw"
+	bigwig_fw = bam.getBaseName() + ".fw.bw"
+	bigwig_rev = bam.getBaseName() + ".rev.bw"
+
+	if (params.rnaseq_stranded) {
+		"""
+			bamCoverage -of bigwig -bs 10 --filterRNAstrand forward --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_fw
+        	        bamCoverage -of bigwig -bs 10 --filterRNAstrand reverse --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_rev
+		"""
+
+	} else {
+		"""
+			bamCoverage -of bigwig -bs 10 --ignoreDuplicates -p ${task.cpus} -b $bam -o $bigwig
+		"""
+	}
+
 }
 
 // Combine all BAM files for hint generation
@@ -133,10 +173,38 @@ process mergeBams {
 	"""
 }
 
+// Only make ep hints if utr annotation is active, else we get tons of small genes in UTR regions. 
+process BamToExonHint {
+
+	scratch true
+
+        publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
+
+	input:
+	path bam
+
+	output:
+	path hints
+
+	script:
+	hints = "rnaseq.merged.exons.gff"
+
+	if (params.utr) {
+	 
+		"""
+		samtools depth $bam | perl -ne 'BEGIN{ print "track type= print wiggle_0 name=merged_reads description=merged_reads\n"}; (\$c, \$start, \$depth) = split;if (\$c ne \$lastC) { print "variableStep chrom=\$c span=10\n"; };\$lastC=\$c;next unless \$. % 10 ==0;print "\$start\t\$depth\n" unless \$depth<3' | wig2hints.pl --width=10 --margin=10 --minthresh=2 --minscore=4 --prune=0.1 --src=W --type=ep --radius=4.5 --pri=${params.pri_wiggle} --strand='.' > $hints
+		"""
+	} else {
+		"""
+		echo '##gff-version 3' >> $hints
+		"""
+	}
+}
+
 /*
  * STEP RNAseq.4 - Hisat2 into Hints
  */	
-process rseqHints {
+process BamToIntronHint {
 
 	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
 

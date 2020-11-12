@@ -17,7 +17,7 @@ workflow augustus_prediction {
 		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
-
+		AugustusFilterModels(mergeAugustusGff.out[0],genome)
 	emit:
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
@@ -38,6 +38,7 @@ workflow augustus_prediction_slow {
                 runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() } )
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
+                AugustusFilterModels(mergeAugustusGff.out[0],genome)		
 
         emit:
                 gff = mergeAugustusGff.out
@@ -46,12 +47,29 @@ workflow augustus_prediction_slow {
 
 }
 
-workflow augustus_training_from_pasa {
+workflow augustus_train_from_spaln {
+
+	take:
+		genome
+		spaln_gff
+		augustus_config
+
+	main:
+                prepAugustusConfig(augustus_config)
+		SpalnGffToTraining(spaln_gff)
+		trainAugustus(genome,SpalnGffToTraining.out,prepAugustusConfig.out.collect().map{ it[0].toString() },prepAugustusConfig.out)
+
+	emit:
+		acf_folder = trainAugustus.out[0]
+		stats = trainAugustus.out[1]
+
+}
+
+workflow augustus_train_from_pasa {
 
 	take:
 		genome
 		pasa_gff
-		model
 		augustus_config
 
 	main:
@@ -62,6 +80,50 @@ workflow augustus_training_from_pasa {
 	emit:
 		acf_folder = trainAugustus.out[0]
 		stats = trainAugustus.out[1]
+
+}
+
+process AugustusFilterModels {
+
+        publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
+	input:
+	path gff
+	path genome
+
+	output:
+	path gff_good
+	path gff_bad
+	path proteins
+
+	script:
+	gff_good = gff.getName() + ".good.gff"
+	gff_bad = gff.getName() + ".bad.gff"
+	proteins = "augustus.protein_supported_models.proteins.fa"
+
+	"""
+		augustus_filter_models.pl --infile $gff 
+		gffread -g genome -y augustus.protein_supported_models.proteins.fa $gff_good
+	"""
+}
+
+process SpalnGffToTraining {
+
+
+	label 'short_running'
+
+	input:
+	path spaln_gff
+
+	output:
+	path models
+
+	script:
+	models = spaln_gff.getBaseName() + ".training.gff"
+
+	"""
+		gff_add_exons.pl --infile $spaln_gff >> $models
+	"""
 
 }
 
@@ -88,7 +150,7 @@ process trainAugustus {
 
 	label 'extra_long_running'
 
-	scratch true
+	//scratch true
 
 	//publishDir "${params.outdir}/augustus/training/", mode: 'copy'
 
@@ -129,7 +191,7 @@ process trainAugustus {
 
 process runAugustus {
 
-	label 'long_running'
+	label 'extra_long_running'
 
 	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -146,8 +208,10 @@ process runAugustus {
         augustus_result = "augustus.${chunk_name}.out.gff"
 	config_file = file(params.aug_config)
 
+	utr = (params.utr) ? "on" : "off"	
+
         """
-		augustus --species=${params.aug_species} --alternatives-from-sampling=false --alternatives-from-evidence=false --hintsfile=$hints --gff3=on --UTR=${params.utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
+		augustus --species=${params.aug_species} ${params.aug_options} --softmasking=on --hintsfile=$hints --gff3=on --UTR=${utr} --extrinsicCfgFile=${config_file} --uniqueGeneId=true $genome_chunk > $augustus_result
  
         """
 
@@ -171,13 +235,13 @@ process runAugustusBatch {
 	augustus_result = "augustus.${chunk_name}.out.gff"
 	genome_fai = genome_chunk.getName() + ".fai"
 	command_file = "commands." + chunk_name + ".txt"
-
+        utr = (params.utr) ? "on" : "off"
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d . 
-		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${params.utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
+		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
-		cat *augustus.gff > $augustus_result
+			cat *augustus.gff > $augustus_result
 		rm *augustus.gff
 	"""
 }
