@@ -171,6 +171,10 @@ if (params.transcripts) {
 	transcripts = Channel.empty()
 }
 
+if (!params.reads && !params.proteins && !params.proteins_targeted && !params.transcripts) {
+	exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+}
+
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
 }
@@ -307,10 +311,10 @@ workflow {
 	if (params.proteins) {
 		proteinhint_spaln(genome_clean,proteins)
 		protein_hints = proteinhint_spaln.out.hints
-		protein_gff = proteinhint_spaln.out.track
+		protein_evm_align = proteinhint_spaln.out.track
 	} else {
 		protein_hints = Channel.empty()
-		protein_gff = Channel.from(false)
+		protein_evm_align = Channel.empty()
 	}
 
 	// Construct gene models from species specific proteome
@@ -318,9 +322,11 @@ workflow {
 		proteinmodels(genome_clean,proteins_targeted)
 		protein_targeted_hints = proteinmodels.out.hints
                 protein_targeted_gff = proteinmodels.out.gff
+		protein_targeted_evm_align = proteinmodels.out.track
 	} else {
 		protein_targeted_hints = Channel.empty()
 		protein_targeted_gff = Channel.empty()
+		protein_targeted_evm_align = Channel.empty()
 	}
 
 	// Generate hints from transcripts (if any)
@@ -413,6 +419,17 @@ workflow {
 			transcript_gff = trinity_gff
 		} else {
 			transcript_gff = Channel.empty()
+		}
+
+		// Reconcile optional multi-branch protein evidence into a single channel
+		if (params.proteins && params.protein_targeted_evm_align) {
+			protein_gff = protein_evm_align.concat(protein_targeted_evm_align).collectFile()
+		} else if (params.proteins_targeted) {
+			protein_gff = protein_targeted_evm_align
+		} else if (params.proteins) {
+			protein_gff = protein_evm_align
+		} else {
+			protein_gff = Channel.empty()
 		}
 
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)

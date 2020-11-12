@@ -38,6 +38,7 @@ workflow augustus_prediction_slow {
                 runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() } )
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
+                AugustusFilterModels(mergeAugustusGff.out[0],genome)		
 
         emit:
                 gff = mergeAugustusGff.out

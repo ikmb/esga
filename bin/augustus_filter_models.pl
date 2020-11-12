@@ -21,7 +21,7 @@ perl my_script.pl
 
 my $infile = undef;
 my $support = 1.0;
-my $mode = "P"
+my $mode = "P";
 my $help;
 
 
@@ -110,7 +110,7 @@ foreach my $line (<$IN>) {
 		my $count = @elements[2];
 		if ($source eq "P" && $count > 0) {
 			$p = 1;
-		} elsif ($source eq "E" && count > 0) {
+		} elsif ($source eq "E" && $count > 0) {
 			$e = 1;
 		} elsif ($source eq "T") {
 			$t = 1;

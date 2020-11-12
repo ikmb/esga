@@ -62,12 +62,8 @@ process evmPartition {
 
 	protein_options = ""
 	transcript_options = ""
-	if (protein_gff) {
-		protein_options = "--protein_alignments $protein_gff "
-	}
-	if (est_gff) {
-		transcript_options = "--transcript_alignments $est_gff "
-	}
+	protein_options = "--protein_alignments $protein_gff "
+	transcript_options = "--transcript_alignments $est_gff "
 
 	"""
 		\$EVM_HOME/EvmUtils/partition_EVM_inputs.pl --genome $genome_rm \
