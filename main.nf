@@ -422,7 +422,7 @@ workflow {
 		}
 
 		// Reconcile optional multi-branch protein evidence into a single channel
-		if (params.proteins && params.protein_targeted_evm_align) {
+		if (params.proteins && params.proteins_targeted) {
 			protein_gff = protein_evm_align.concat(protein_targeted_evm_align).collectFile()
 		} else if (params.proteins_targeted) {
 			protein_gff = protein_targeted_evm_align

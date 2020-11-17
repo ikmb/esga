@@ -103,7 +103,7 @@ process AugustusFilterModels {
 
 	"""
 		augustus_filter_models.pl --infile $gff 
-		gffread -g genome -y augustus.protein_supported_models.proteins.fa $gff_good
+		gffread -g $genome -y augustus.protein_supported_models.proteins.fa $gff_good
 	"""
 }
 
