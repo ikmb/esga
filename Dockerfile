@@ -12,4 +12,4 @@ RUN mkdir -p /opt/bin && cd /opt/bin && wget http://hgdownload.cse.ucsc.edu/admi
 RUN apt-get -y update && apt-get -y install make gcc g++ zlib1g-dev zlib1g
 RUN mkdir -p /opt/spaln && cd /opt/spaln && wget https://github.com/ogotoh/spaln/archive/ver.2.4.10.tar.gz && tar -xvf ver.2.4.10.tar.gz \
 	&& mv spaln-ver.2.4.10 2.4.1 && rm ver.2.4.10.tar.gz \
-	&& cd 2.4.1/src && ./configure --use_zlib=0 && make && make install
+	&& cd 2.4.1/src && ./configure --use_zlib=1 && make && make install
