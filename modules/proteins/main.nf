@@ -87,7 +87,7 @@ process spalnAlign {
 	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} -O12 -t${task.cpus} -Dgenome_spaln $proteins		
+		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} -O12 -t${task.cpus} -Dgenome_spaln $proteins
 			
 	"""
 
