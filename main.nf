@@ -331,7 +331,7 @@ workflow {
 
 	// Generate hints from transcripts (if any)
 	if (params.transcripts) {
-		esthint(genome_rm,transcripts)
+		esthint(genome_clean,transcripts)
 		est_hints = esthint.out.hints
 		est_gff = esthint.out.gff
 	} else {
@@ -347,7 +347,7 @@ workflow {
 		// Assembly reads into transcripts for PASA
 		if (params.trinity) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
-			trinity_esthint(genome_rm,trinity_guided_assembly.out.assembly)
+			trinity_esthint(genome_clean,trinity_guided_assembly.out.assembly)
 			trinity_gff = trinity_esthint.out.gff
 			trinity_hints = trinity_esthint.out.hints
 			trinity_assembly = trinity_guided_assembly.out.assembly
@@ -369,7 +369,7 @@ workflow {
 	if (params.pasa) {
 		transcript_files = trinity_assembly.concat(transcripts)
 		fastaMergeFiles(transcript_files.collect())
-		pasa(genome_rm,fastaMergeFiles.out[0])
+		pasa(genome_clean,fastaMergeFiles.out[0])
 		pasa_gff = pasa.out.gff
 		pasa_fa = pasa.out.fasta
 		pasa_db = pasa.out.db
@@ -422,7 +422,7 @@ workflow {
 		}
 
 		// Reconcile optional multi-branch protein evidence into a single channel
-		if (params.proteins && params.protein_targeted_evm_align) {
+		if (params.proteins && params.proteins_targeted) {
 			protein_gff = protein_evm_align.concat(protein_targeted_evm_align).collectFile()
 		} else if (params.proteins_targeted) {
 			protein_gff = protein_targeted_evm_align

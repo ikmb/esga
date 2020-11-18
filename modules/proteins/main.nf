@@ -61,7 +61,7 @@ process spalnMakeIndex {
 
 	"""
 		cp $genome genome_spaln.fa
-		spaln -W -KP -E -t${task.cpus} genome_spaln.fa
+		spaln -W -KP -t${task.cpus} genome_spaln.fa
 	"""
 	
 }
@@ -69,6 +69,8 @@ process spalnMakeIndex {
 process spalnAlign {
 
 	label 'spaln'
+
+	scratch true
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
@@ -85,12 +87,7 @@ process spalnAlign {
 	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln -o $chunk_name -Q${params.spaln_q} -O12 -t${task.cpus} -dgenome_spaln $proteins
-		
-		if [ ! -s $spaln_grd ] || [ ! -f $spaln_grd ] 
-		then
-			spaln -o $chunk_name -Q6 -O12 -t${task.cpus} -dgenome_spaln $proteins
-		fi
+		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} -O12 -t${task.cpus} -Dgenome_spaln $proteins
 			
 	"""
 

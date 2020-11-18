@@ -160,6 +160,12 @@ Priority of RNAseq-based hints for Augustus gene predictions. Higher priority hi
 #### `--pri_wiggle <int>` [ 2 (default) ]
 Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particular predict acurate UTRs and/or isoforms.  Higher priority hints are considered first and override lower-priority hints.
 
+#### `--spaln_q <int>` [ 7 (default) ]
+Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details.
+
+#### `--spaln_taxon` [ default = "Tetrapod" ]
+Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. The default, 'Tetrapod', should work for all tetrapods.
+
 ### 5. How to tune the speed of the pipeline - data splitting
 
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 
