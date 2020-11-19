@@ -49,8 +49,6 @@ workflow proteinmodels {
 
 process spalnMakeIndex {
 
-	label 'spaln'
-
 	input:
 	path genome
 
@@ -68,9 +66,7 @@ process spalnMakeIndex {
 
 process spalnAlign {
 
-	label 'spaln'
-
-	scratch true
+	//scratch true
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
@@ -94,8 +90,6 @@ process spalnAlign {
 }
 
 process spalnMerge {
-
-	label 'spaln'
 
 	publishDir "${params.outdir}/logs/spaln" , mode: 'copy'
 

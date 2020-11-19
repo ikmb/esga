@@ -30,7 +30,7 @@ my $genome_fai = undef;
 my $bed = undef;
 my $hints = undef;
 my $aug_conf = undef;
-my $isof = undef;
+my $options = "";
 my $utr = undef;
 my %dictionary;
 my $model = undef;
@@ -43,7 +43,7 @@ GetOptions(
     "genome_fai=s" => \$genome_fai,
     "hints=s" => \$hints,
     "utr=s" => \$utr,
-    "isof=s" => \$isof,
+    "options=s" => \$options,
     "bed=s" => \$bed,
     "aug_conf=s" => \$aug_conf,
     "outfile=s" => \$outfile);
@@ -102,7 +102,7 @@ while (<$BED>) {
 			$direction = "--strand=backward";
 		}
 		
-		my $command = "augustus --species=$model $direction --softmasking=1 --alternatives-from-sampling=false --alternatives-from-evidence=false --gff3=on --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$from --predictionEnd=$to --uniqueGeneId=true $chr.fa > $outfile" ;
+		my $command = "augustus --species=$model $direction --softmasking=1 $options --gff3=on --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$from --predictionEnd=$to --uniqueGeneId=true $chr.fa > $outfile" ;
 		printf $command . "\n" ;
 	}
 }

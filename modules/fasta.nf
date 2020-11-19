@@ -150,3 +150,20 @@ process fastaCleanProteins {
 	"""
 
 }
+
+process fastaCleanNames {
+
+	input:
+	path fasta
+	
+	output:
+	path fasta_clean
+
+	script:
+	fasta_clean = fasta.getBaseName() + ".clean.fa"
+
+	"""
+		sed 's/ .*//' $fasta > $fasta_clean		
+	"""
+
+}
