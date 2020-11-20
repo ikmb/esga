@@ -25,8 +25,8 @@ my $help;
 
 GetOptions(
     "help" => \$help,
-    "ref=s" => \$ref,
-    "query=s" => \$query,
+    "ref_fa=s" => \$ref_fa,
+    "query_fa=s" => \$query_fa,
     "chain=s" => \$chain,
     "outfile=s" => \$outfile);
 
@@ -43,9 +43,9 @@ if ($outfile) {
 
 printf "[genomes]\n";
 
-printf "REF\t$ref\n";
-printf "QUERY\t$query\n";
+printf "REF\t$ref_fa\n";
+printf "QUERY\t$query_fa\n";
 printf "\n";
-printf "[pairwise-maps]"
+printf "[pairwise-maps]\n";
 printf "REF\tQUERY\t$chain\n";
 

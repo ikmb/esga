@@ -1,4 +1,6 @@
 
+include { fastaCleanNames } from "./../fasta" params(params)
+
 workflow assembly_preprocessing {
 
 	take:
@@ -8,10 +10,11 @@ workflow assembly_preprocessing {
 
 		AssemblyStats(genome)
 		AssemblyFilterSize(genome,params.min_contig_size)
+		fastaCleanNames(AssemblyFilterSize.out)
 
 	emit:
 		stats = AssemblyStats.out[0]
-		fasta = AssemblyFilterSize.out[0]
+		fasta = fastaCleanNames.out[0]
 }
 
 process AssemblyStats {

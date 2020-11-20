@@ -1,7 +1,7 @@
 include { gtf2hints } from "./../gtf" params(params)
 include { fastaSplitSize } from "./../fasta" params(params)
 
-// note that ref below is [ genome, gtf ]
+// note that ref below is [ name, genome, gtf ]
 workflow map_annotation {
 
 	take:
@@ -10,13 +10,36 @@ workflow map_annotation {
 
 	main:
 		fastaSplitSize(query_genome,params.npart_size)
-		align_genomes(ref.collect(),fastaSplitSize.out.flatMap())
-		map_gtf(align_genomes.out.collectFile(),query_genome,ref)
+		fastaCleanNames(ref)
+		align_genomes(fastaCleanNames.out.combine(fastaSplitSize.out.flatMap()) )
+		
+		grouped_chains = align_genomes.out.groupTuple()
+
+		grouped_input = fastaCleanNames.out.join(grouped_chains)
+
+		map_gtf(grouped_input,query_genome)
 		gtf2hints(map_gtf.out.collectFile())
 
 	emit:
 		mapped_gtf = map_gtf.out
 		hints = gtf2hints.out
+
+}
+
+process fastaCleanNames {
+
+        input:
+        tuple val(name),path(fasta),path(gtf)
+
+        output:
+        tuple val(name),path(fasta_clean),path(gtf)
+
+        script:
+        fasta_clean = fasta.getBaseName() + ".clean.fa"
+
+        """
+                sed 's/ .*//' $fasta > $fasta_clean
+        """
 
 }
 
@@ -27,40 +50,41 @@ process align_genomes {
 	tag "${ref_genome}"
 
 	input:
-	tuple path(ref_genome),path(gtf)
-	path query_genome
+	tuple val(ref_name),path(ref_genome),path(gtf),path(query_genome)
 
 	output:
-	path satsuma_chain
+	tuple val(ref_name),path(satsuma_chain_chunk)
 
 	script:
-	satsuma_chain = "satsuma_summary.chained.out"
+	query_chunk = query_genome.getBaseName()
+	satsuma_chain_chunk = "satsuma_summary.chained.out_" + query_chunk
 
 	"""
 		SatsumaSynteny2 -q $query_genome -t $ref_genome -threads ${task.cpus} -o align 2>&1 >/dev/null
-		mv align/satsuma_summary.chained.out satsuma_summary.chained.out
+		cp align/satsuma_summary.chained.out $satsuma_chain_chunk
 	"""
 }
 
 process map_gtf {
 
+
 	label 'satsuma'
 
 	input:
-	path satsuma_chain
+	tuple val(ref_name), path(ref_genome),path(ref_gtf),path(satsuma_chunks)
 	path query_genome
-	tuple path(ref_genome),path(ref_gtf)
 
 	output:
 	path mapped_gtf
 
 	script:
 
-	mapped_gtf = ref_gtf.getBaseName() + "." + ref_genome.getBaseName() + ".mapped.gtf"
+	mapped_gtf = ref_gtf.getBaseName() + "." + query_genome.getBaseName() + ".mapped.gtf"
 
 	"""
-		kraken_build_config.pl --ref_fa $ref_genome --query_fa $query_genome --chain $satsuma_chain > kraken.config
-		runKraken -c kraken.config -T QUERY -S REF -s $ref_gtf
+		cat $satsuma_chunks > satsuma_summary.chained.out
+		kraken_build_config.pl --ref_fa $ref_genome --query_fa $query_genome --chain satsuma_summary.chained.out > kraken.config
+		RunKraken -c kraken.config -T QUERY -S REF -s $ref_gtf -o $mapped_gtf
 	"""
 
 }

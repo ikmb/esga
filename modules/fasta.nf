@@ -154,10 +154,10 @@ process fastaCleanProteins {
 process fastaCleanNames {
 
 	input:
-	path fasta
+	path(fasta)
 	
 	output:
-	path fasta_clean
+	path(fasta_clean)
 
 	script:
 	fasta_clean = fasta.getBaseName() + ".clean.fa"

@@ -5,6 +5,7 @@ transcripts: false
 rm_lib: false
 rm_species: false
 reads: false
+references: false
 aug_species: "human"
 aug_options: ""
 utr: false

@@ -24,6 +24,7 @@ genome: ""
 proteins: false
 proteins_targeted: false
 transcripts: false
+references: false
 rm_lib: false
 rm_species: false
 reads: false
@@ -36,7 +37,7 @@ evm: false
 nevm: 10
 nproteins: 200
 npart_size: 200000000
-ax_intron_size: 50000
+max_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
 rnaseq_stranded: false
@@ -81,6 +82,18 @@ Location of a single FASTA file with protein sequences from related taxa. If you
 This option points to one or more genome sequences in FASTA format, accompanied by a gene annotation in GTF format. The genome and the annotation need to share a base name for this to work. 
 
 For example, if you point to the human genome in FASTA format, named homo_sapiens.fa , this option expects there to be an annotation file called homo_sapiens.gtf right next to it. 
+
+```bash
+
+nextflow run ikmb/esga --references /path/to/ref_genome/my_genome.fa [...]
+
+```
+
+```bash
+
+nextflow run ikmb/esga --refefences /path/to/ref_genomes/*.fa [...]
+
+```
 
 Each genome sequence will be aligned to the target assembly using [Satsuma2](https://github.com/bioinfologics/satsuma2) to produce a pairwise chain file. This chain file is then used by [Kraken](https://github.com/GrabherrGroup/kraken) to lift the original annotation onto the target genome. The resulting mapped models will not be
 corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.

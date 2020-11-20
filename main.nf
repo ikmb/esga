@@ -209,7 +209,7 @@ if (params.references) {
 
 	reference_species = Channel.fromPath(params.references)
 			.ifEmpty { exit 1, "Could not find the specified reference species..." }
-			.map { r -> [ r , file(r.getParent().toString() + "/" + r.getBaseName().toString() + ".gtf") ] }
+			.map { r -> [ r.getBaseName().toString(), r , file(r.getParent().toString() + "/" + r.getBaseName().toString() + ".gtf") ] }
 
 } else {
 	reference_species = Channel.empty()
@@ -275,6 +275,7 @@ log.info "Targeted proteins		${params.proteins_targeted}"
 log.info "Other proteins:			${params.proteins}"
 log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
+log.info "References:			${params.references}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
 log.info "# Sequences per protein alignment	${params.nproteins}"
