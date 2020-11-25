@@ -108,7 +108,7 @@ process PasaToModels {
 
         label 'pasa'
 
-        //publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
+        publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
         input:
         path pasa_assemblies_fasta

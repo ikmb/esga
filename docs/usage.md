@@ -183,6 +183,9 @@ Priority of RNAseq-based hints for Augustus gene predictions. Higher priority hi
 #### `--pri_wiggle <int>` [ 2 (default) ]
 Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particular predict acurate UTRs and/or isoforms.  Higher priority hints are considered first and override lower-priority hints.
 
+#### `--pri_trans <int>` [ 4 (default) ]
+Priority for trans-mapped annotations (i.e. lift-over gene models, converted to CDS and exon hints).
+
 #### `--spaln_q <int>` [ 7 (default) ]
 Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details.
 

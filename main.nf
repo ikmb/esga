@@ -419,8 +419,10 @@ workflow {
         if (params.references) {
                 map_annotation(reference_species,genome_clean)
                 trans_hints = map_annotation.out.hints
+		liftovers = map_annotation.out.mapped_gff
         } else {
                 trans_hints = Channel.empty()
+		liftovers = Channel.empty()
         }
 
 	// Merge hints
@@ -443,7 +445,8 @@ workflow {
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff).concat(protein_targeted_gff).collect()
+	
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff).concat(protein_targeted_gff).concat(liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
@@ -493,8 +496,10 @@ workflow {
 		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
 		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
-		ncrna_gff to : "${params.outdir}/annotation/ncrna", mode: 'copy'
-		
+		ncrna_gff to: "${params.outdir}/annotation/ncrna", mode: 'copy'
+		protein_targeted_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
+		protein_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
+		transcript_gff to: "${params.outdir}/evidence_modeler", mode: 'copy'
 }
 
 workflow.onComplete {

@@ -46,6 +46,9 @@ if ($outfile) {
 
 open (my $IN, '<', $gtf) or die "FATAL: Can't open file: $gtf for reading.\n$!\n";
 
+my $is_first_cds;
+my $is_last_cds;
+
 while (<$IN>) {
 
         my $line = $_;
@@ -60,7 +63,7 @@ while (<$IN>) {
 		$is_first_cds = 0;
 		$is_last_cds = 0;
 	} elsif ($feature eq "CDS") {
-		$hint_type = "CDS";
+		$hint_type = "CDSpart";
 	} elsif ($feature eq "exon") {
 		$hint_type = "exon";
 	} else {
@@ -80,7 +83,7 @@ while (<$IN>) {
 
 	$group =~ s/\"//g ;
 	
-	printf $seq . "\t" . $src . "\t" . $hint_type . "\t" . $start . "\t" . $stop . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;source=$source;pri=$pri\n";
+	printf $seq . "\t" . "transmapped" . "\t" . $hint_type . "\t" . $start . "\t" . $stop . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;source=$source;pri=$pri\n";
 
 	
 }
