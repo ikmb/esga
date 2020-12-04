@@ -426,7 +426,7 @@ workflow {
         }
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints,protein_targeted_hints,trans_hints)
+	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
@@ -487,6 +487,7 @@ workflow {
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
 		protein_targeted_gff to: "${params.outdir}/annotation/spaln", mode: 'copy'
+		protein_targeted_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'

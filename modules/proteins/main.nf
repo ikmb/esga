@@ -49,6 +49,8 @@ workflow proteinmodels {
 
 process spalnMakeIndex {
 
+	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+
 	input:
 	path genome
 
@@ -105,7 +107,7 @@ process spalnMerge {
 	spaln_final = spaln_reports[0].getBaseName() + ".merged.${similarity}.final.gff"
 	
 	"""
-		sortgrcd -C${similarity} -F2 -I${similarity} -J180 -O0 -n0 *.grd > merged.gff
+		sortgrcd  -I${similarity} -O0 -n0 *.grd > merged.gff
 		spaln_add_exons.pl --infile merged.gff > $spaln_final
 		rm merged.gff
 	"""

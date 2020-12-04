@@ -58,14 +58,20 @@ while (<$IN>) {
 
 	
 	my $hint_type = "" ;
+	my $margin = 0;
 
 	if ($feature eq "transcript") {
 		$is_first_cds = 0;
 		$is_last_cds = 0;
 	} elsif ($feature eq "CDS") {
 		$hint_type = "CDSpart";
+		if ($stop-$start > 5) {
+			$margin = 5;
+		}
 	} elsif ($feature eq "exon") {
-		$hint_type = "exon";
+		$hint_type = "exonpart";
+	} elsif ($feature =~ /.*UTR.*/) {
+		$hint_type = "UTRpart";
 	} else {
 		next;
 	}
@@ -83,7 +89,7 @@ while (<$IN>) {
 
 	$group =~ s/\"//g ;
 	
-	printf $seq . "\t" . "transmapped" . "\t" . $hint_type . "\t" . $start . "\t" . $stop . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;source=$source;pri=$pri\n";
+	printf $seq . "\t" . "transmapped" . "\t" . $hint_type . "\t" . $start+$margin . "\t" . $stop-$margin . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;source=$source;pri=$pri\n";
 
 	
 }

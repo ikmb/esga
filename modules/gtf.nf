@@ -17,6 +17,8 @@ process gtf2hints {
 // The sed command here is to fix an issue with malformed kraken output
 process kraken2gff {
 
+	publishDir "${params.outdir}/logs/kraken", mode: 'copy'
+
 	label 'gaas'
 
 	input:
