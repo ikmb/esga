@@ -57,6 +57,8 @@ while (<$IN>) {
 
 	my ($seq,$source,$feature,$start,$stop,$phase,$strand,$score,$info) = split("\t",$line);	
 
+	next if ($source eq "repeatmasker");
+
 	# printf $seq . "\t" . $start .  "\n";
 
 	if ($strand eq ".") {

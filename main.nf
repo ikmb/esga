@@ -19,6 +19,7 @@ include evm_prediction from "./modules/evm/main.nf" params(params)
 include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 include rfamsearch from "./modules/infernal/main.nf" params(params)
+include map_annotation from "./modules/satsuma/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -192,6 +193,27 @@ if (params.pasa && params.reads && !params.trinity) {
 	log.info "Will perform de-novo transcriptome assembly from raw reads to inform PASA annotation"
 	params.trinity = true
 }
+if (params.aug_config) {
+	aug_config_file = file(params.aug_config)
+	if (aug_config_file.exists()) {
+		aug_extrinsic_config = Channel.fromPath(params.aug_config)
+	} else {
+		exit 1, "The specified Augustus extrinsic config file does not seem to exist..."
+	}
+} else {
+	exit 1, "Augustus extrinsic config not defined, cannot proceed..."
+}
+
+// Path to one or more reference genomes; gtf file is assumed to share the same base name as the genome sequence...
+if (params.references) {
+
+	reference_species = Channel.fromPath(params.references)
+			.ifEmpty { exit 1, "Could not find the specified reference species..." }
+			.map { r -> [ r.getBaseName().toString(), r , file(r.getParent().toString() + "/" + r.getBaseName().toString() + ".gtf") ] }
+
+} else {
+	reference_species = Channel.empty()
+}
 
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
@@ -253,6 +275,7 @@ log.info "Targeted proteins		${params.proteins_targeted}"
 log.info "Other proteins:			${params.proteins}"
 log.info "Transcripts:			${params.transcripts}"
 log.info "RNA-seq:			${params.reads}"
+log.info "References:			${params.references}"
 log.info "-----------------------------------------"
 log.info "Parallelization settings"
 log.info "# Sequences per protein alignment	${params.nproteins}"
@@ -392,24 +415,38 @@ workflow {
 		augustus_conf_folder = augustus_config_folder
 	}
 
+	// map existing gene models from related organisms using Kraken/Satsuma
+        if (params.references) {
+                map_annotation(reference_species,genome_clean)
+                trans_hints = map_annotation.out.hints
+		liftovers = map_annotation.out.mapped_gff
+        } else {
+                trans_hints = Channel.empty()
+		liftovers = Channel.empty()
+        }
+
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,repeat_hints,protein_targeted_hints)
+	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
 	if (!params.fast) {
-		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_conf_folder)
+		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_conf_folder,aug_extrinsic_config)
                 augustus_gff = augustus_prediction_slow.out.gff
                 augustus_fa = augustus_prediction_slow.out.fasta
+		augustus_filtered_gff = augustus_prediction_slow.out.gff_filtered
 	} else {	
-		augustus_prediction(genome_rm,merge_hints.out,augustus_conf_folder)
+		augustus_prediction(genome_rm,merge_hints.out,augustus_conf_folder,aug_extrinsic_config)
 		augustus_gff = augustus_prediction.out.gff
 		augustus_fa = augustus_prediction.out.fasta
+		augustus_filtered_gff = augustus_prediction.out.gff_filtered
+
 	}
 
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
-		gene_gffs = augustus_gff.concat(pasa_gff).concat(protein_targeted_gff).collect()
+	
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff).concat(protein_targeted_gff).concat(liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
@@ -450,6 +487,7 @@ workflow {
 		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
 		protein_targeted_gff to: "${params.outdir}/annotation/spaln", mode: 'copy'
+		protein_targeted_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
@@ -459,8 +497,10 @@ workflow {
 		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
 		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
-		ncrna_gff to : "${params.outdir}/annotation/ncrna", mode: 'copy'
-		
+		ncrna_gff to: "${params.outdir}/annotation/ncrna", mode: 'copy'
+		protein_targeted_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
+		protein_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
+		transcript_gff to: "${params.outdir}/evidence_modeler", mode: 'copy'
 }
 
 workflow.onComplete {

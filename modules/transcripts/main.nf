@@ -45,6 +45,8 @@ process estMinimap {
 // Combine exonerate hits and generate hints
 process estMinimapToHints {
 
+        publishDir "${params.outdir}/logs/minimap2", mode: 'copy'
+
 	label 'short_running'
 
 	input:

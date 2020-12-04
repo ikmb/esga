@@ -22,6 +22,8 @@ workflow evm_prediction {
 
 process evmMergeGenes {
 
+	publishDir "${params.outdir}/logs/evidence_modeler", mode: 'copy'
+
 	label 'short_running'
 
 	input:

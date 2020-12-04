@@ -24,6 +24,7 @@ genome: ""
 proteins: false
 proteins_targeted: false
 transcripts: false
+references: false
 rm_lib: false
 rm_species: false
 reads: false
@@ -36,7 +37,7 @@ evm: false
 nevm: 10
 nproteins: 200
 npart_size: 200000000
-ax_intron_size: 50000
+max_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
 rnaseq_stranded: false
@@ -76,6 +77,28 @@ Location of a single FASTA file with exactly one proteome from your species of i
 
 #### `--proteins` 
 Location of a single FASTA file with protein sequences from related taxa. If you have multiple files, concatenate them into a single file first. The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
+
+#### `--references` 
+This option points to one or more genome sequences in FASTA format, accompanied by a gene annotation in GTF format. The genome and the annotation need to share a base name for this to work. 
+
+For example, if you point to the human genome in FASTA format, named homo_sapiens.fa , this option expects there to be an annotation file called homo_sapiens.gtf right next to it. 
+
+```bash
+
+nextflow run ikmb/esga --references /path/to/ref_genome/my_genome.fa [...]
+
+```
+
+```bash
+
+nextflow run ikmb/esga --refefences /path/to/ref_genomes/*.fa [...]
+
+```
+
+Each genome sequence will be aligned to the target assembly using [Satsuma2](https://github.com/bioinfologics/satsuma2) to produce a pairwise chain file. This chain file is then used by [Kraken](https://github.com/GrabherrGroup/kraken) to lift the original annotation onto the target genome. The resulting mapped models will not be
+corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.
+
+Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) (>100GB for vertebrates). 
 
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
@@ -159,6 +182,9 @@ Priority of RNAseq-based hints for Augustus gene predictions. Higher priority hi
 
 #### `--pri_wiggle <int>` [ 2 (default) ]
 Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particular predict acurate UTRs and/or isoforms.  Higher priority hints are considered first and override lower-priority hints.
+
+#### `--pri_trans <int>` [ 4 (default) ]
+Priority for trans-mapped annotations (i.e. lift-over gene models, converted to CDS and exon hints).
 
 #### `--spaln_q <int>` [ 7 (default) ]
 Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details.

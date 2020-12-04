@@ -49,7 +49,7 @@ workflow proteinmodels {
 
 process spalnMakeIndex {
 
-	label 'spaln'
+	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
 	input:
 	path genome
@@ -68,9 +68,7 @@ process spalnMakeIndex {
 
 process spalnAlign {
 
-	label 'spaln'
-
-	scratch true
+	//scratch true
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
@@ -95,8 +93,6 @@ process spalnAlign {
 
 process spalnMerge {
 
-	label 'spaln'
-
 	publishDir "${params.outdir}/logs/spaln" , mode: 'copy'
 
 	input:
@@ -111,12 +107,16 @@ process spalnMerge {
 	spaln_final = spaln_reports[0].getBaseName() + ".merged.${similarity}.final.gff"
 	
 	"""
-		sortgrcd -C${similarity} -F2 -I${similarity} -J180 -O0 -n0 *.grd > $spaln_final
+		sortgrcd  -I${similarity} -O0 -n0 *.grd > merged.gff
+		spaln_add_exons.pl --infile merged.gff > $spaln_final
+		rm merged.gff
 	"""
 
 }
 
 process spaln2evm {
+
+        publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
 	input:
 	path spaln_models

@@ -85,7 +85,7 @@ process HisatMakeDB {
 
 process HisatMap {
 
-	//publishDir "${params.outdir}/evidence/rnaseq/Hisat2/libraries", mode: 'copy'
+	publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
 	
 	scratch true
 

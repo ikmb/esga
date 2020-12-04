@@ -9,12 +9,13 @@ workflow augustus_prediction {
 		genome
 		hints
 		augustus_config_dir
+		aug_extrinsic_config
 
 	main:
 		fastaSplitSize(genome,params.npart_size)
                 prepHintsToBed(hints)
 		prepAugustusConfig(augustus_config_dir)
-		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() } )
+		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
 		AugustusFilterModels(mergeAugustusGff.out[0],genome)
@@ -22,7 +23,7 @@ workflow augustus_prediction {
 		gff = mergeAugustusGff.out
 		config = prepAugustusConfig.out
 		fasta = GffToFasta.out[0]
-
+		gff_filtered = AugustusFilterModels.out[0]
 }
 
 workflow augustus_prediction_slow {
@@ -31,11 +32,12 @@ workflow augustus_prediction_slow {
                 genome
                 hints
                 augustus_config_dir
+		aug_extrinsic_config
 
         main:
                 fastaSplitSize(genome,params.npart_size)
                 prepAugustusConfig(augustus_config_dir)
-                runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() } )
+                runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)		
@@ -44,6 +46,7 @@ workflow augustus_prediction_slow {
                 gff = mergeAugustusGff.out
                 config = prepAugustusConfig.out
                 fasta = GffToFasta.out[0]
+		gff_filtered = AugustusFilterModels.out[0]
 
 }
 
@@ -199,6 +202,7 @@ process runAugustus {
         path genome_chunk
         path hints
         env AUGUSTUS_CONFIG_PATH
+	path aug_extrinsic_config
 
         output:
         path augustus_result
@@ -239,7 +243,7 @@ process runAugustusBatch {
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d . 
-		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --isof false --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
+		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
 			cat *augustus.gff > $augustus_result
 		rm *augustus.gff

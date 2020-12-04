@@ -98,7 +98,7 @@ my $intron_threshold;  # Threshold for current programme
 my $intron_threshold_gth
     = 0.7;    # introns from gth with a score below this are discarded
 my $intron_threshold_spn
-    = 200;    # introns from spaln with a score below this are discarded
+    = 150;    # introns from spaln with a score below this are discarded
 my $maxintronlen = 350000;    # maximal intron length
 my $minintronlen = 41;        # default minimal intron length
 my $parent;                   # current parent
@@ -236,6 +236,9 @@ if ($CDS) {
 open( ALN,   "<$alignfile" )     or die("Cannot open file: $alignfile\n");
 open( HINTS, ">$hintsfilename" ) or die("Cannot open file: $hintsfilename");
 
+my $mrna_start = undef;
+my $mrna_end = undef;
+
 while (<ALN>) {
     chomp;
     my @f = split( /\t/, $_ );
@@ -322,6 +325,11 @@ while (<ALN>) {
         }
     }
     elsif ( $prgsrc eq "spn2h" || $prgsrc eq "gth2h" ) {
+
+	if ( $type eq "mRNA") {
+		$mrna_start = $start;
+		$mrna_end = $end;
+	}
         if ((      $type eq "cds"
                 && $f[8] =~ m/Target=.* (\d+) \d+ (\+|-)/
                 && $prgsrc eq "spn2h"
@@ -333,7 +341,7 @@ while (<ALN>) {
         {
             if ( $1 == 1 ) {
                 print_start( $seqname, $strand, $start, $end );
-                print_stop( $seqname, $strand, $start, $end );
+                print_stop( $seqname, $strand, $mrna_start, $mrna_end );
             }
         }
     }
