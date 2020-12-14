@@ -98,7 +98,15 @@ nextflow run ikmb/esga --refefences /path/to/ref_genomes/*.fa [...]
 Each genome sequence will be aligned to the target assembly using [Satsuma2](https://github.com/bioinfologics/satsuma2) to produce a pairwise chain file. This chain file is then used by [Kraken](https://github.com/GrabherrGroup/kraken) to lift the original annotation onto the target genome. The resulting mapped models will not be
 corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.
 
-Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) (>100GB for vertebrates). 
+Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) (>>100GB for vertebrates). We have had this part
+crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster to successfully use this part of ESGA when working on larger vertebrates. 
+
+#### `--prothint_gff`
+Use hints already computed with the [ProtHint](https://github.com/gatech-genemark/ProtHint) pipeline. This option is incompatible with "--proteins". Please note that ESGA will not be able to sanity check the prothint-derived data. It must match your assembly version to the "t"! This is especially critical with regards to the sequence names - ESGA will strip any decoration from your sequence names, like white spaces and any characters thereafter. 
+
+ProtHint is great! Why is ESGA not offering ProtHint as an integrated option?
+
+Unfortunately, the licenses for ProtHint and the required GeneMark-ET/ES are not compatible with a free and open use/distribution in the spirit of academic research. However, the installation is easy so you should be able to get this up and running in no time!
 
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
@@ -139,6 +147,7 @@ perl /[...]/RepeatMasker/4.0.8/util/queryRepeatDatabase.pl -tree
 # Select the name of the species (e.g. "Ostreoida") from the output tree and do:
 perl /[...]/RepeatMasker/4.0.8/util/queryRepeatDatabase.pl -species Ostreoida > RMdb_Ostreoida.fa
 ``` 
+You will need to delete the first line of the resulting FASTA file since RepeatMasker prints some basic information into it for no clear reason - but this otherwise breaks any FASTA parser. 
 
 Then run the pipeline with the option "--rm_lib RMdb_Ostreoida.fa". 
 
@@ -171,7 +180,10 @@ was trained to predict UTRs - else the pipeline will fatally fail (just remove -
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
 A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
 
-#### `--pri_prot <int>` [ 5 (default ]
+#### `--pri_prot_targeted <int>` [ 5 (default ]
+Priority of protein-based hints for Augustus gene predictions from the closest reference proteome. Higher priority hints are considered first and override lower-priority hints.
+
+#### `--pri_prot <int>` [ 4 (default ]
 Priority of protein-based hints for Augustus gene predictions. Higher priority hints are considered first and override lower-priority hints. 
 
 #### `--pri_est <int>` [ 3 (default) ]

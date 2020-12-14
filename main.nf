@@ -204,6 +204,17 @@ if (params.aug_config) {
 	exit 1, "Augustus extrinsic config not defined, cannot proceed..."
 }
 
+// Allow input of external hints generated with ProtHint pipelines
+if (params.prothint_gff && params.proteins) {
+	exit 1, "Only one source of proteins allowed - please choose either --prothint_gff or --proteins"
+} else if (params.prothint_gff) {
+	prothint_file = file(params.prothint_gff)
+	if (!prothint_file.exists()) {
+		exit 1, "ProtHint file does not seem to exist..."
+	}
+	protein_hints= Channel.fromPath(params.prothint_gff)
+}
+
 // Path to one or more reference genomes; gtf file is assumed to share the same base name as the genome sequence...
 if (params.references) {
 
@@ -455,7 +466,7 @@ workflow {
 		} else if (params.reads && params.trinity) {
 			transcript_gff = trinity_gff
 		} else {
-			transcript_gff = Channel.empty()
+			transcript_gff = Channel.fromPath(params.empty_gff)
 		}
 
 		// Reconcile optional multi-branch protein evidence into a single channel

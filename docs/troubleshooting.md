@@ -26,6 +26,10 @@ use some sort of sample sheet to let the pipeline know about the various charact
 like this later if there is demand for it. For now, this simply means that you won't be able to feed your "mixed" RNA-seq data into ESGA - but you could devise an assembly strategy with Trinity outside 
 of our pipeline and feed the resulting FASTA file as EST (--ESTs) evidence. However, please note that Trinity too is not exactly designed to assembly mixed data like that - so you would likely have to run Trinity separately for differnt types of RNA-seq data and pass them as concatenated transcript hints (note: you'll have to rename the sequences since Trinity may create redundant names across multiple runs). 
 
+## The spaln protein step crashes
+
+Spaln appears a little flakey in some situations. By default, spaln is run with the option "-Q7". You can modify this by using the --spaln_q option (or "spaln_q:" when using a yaml file) - try setting it to 6, or 5, and resume the pipeline run with "-resume". 
+
 ## The annotation is missing many genes
 
 ESGA is driven primarily by annotation hints/evidence, in part to ensure that not too many false positive predictions are produced. However, if the input evidence is incomplete or not quite fitting for the species to be annotated, 

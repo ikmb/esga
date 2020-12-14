@@ -63,7 +63,7 @@ while (<$IN>) {
 
 	if ($feature eq "mRNA") {
 		$counter += 1 ;
-	} elsif ($feature eq "cds") {
+	} elsif ($feature eq "cds" || $feature eq "CDS") {
 		printf $seq . "\t" . "SPALN_OTHER" . "\t" . "nucleotide_to_protein_match" . "\t" . $start .  "\t" . $stop . "\t" . $score . "\t" . $strand . "\t" . "." . "\tID=TranscriptAlign." . $counter . ";Target=" . $attributes{"Parent"} . "\n";
 	}	
 
