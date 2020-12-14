@@ -14,7 +14,7 @@ workflow proteinhint_spaln {
                 fastaCleanProteins(protein_fa)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
 		spalnMakeIndex(genome_rm)
-		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out)
+		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out,1)
 		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,60)
 		spalnToHints(spalnMerge.out, params.pri_prot)
 		spaln2evm(spalnMerge.out)
@@ -35,7 +35,7 @@ workflow proteinmodels {
                 fastaCleanProteins(protein_fa)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
                 spalnMakeIndex(genome_rm)
-                spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out)
+                spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out,1)
                 spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,90)
                 spalnToHints(spalnMerge.out, params.pri_prot_target)
 		spaln2evm(spalnMerge.out)
@@ -66,15 +66,17 @@ process spalnMakeIndex {
 	
 }
 
+// the comp_para parameter defines whether an alignment is intra (0) or inter-species (1). For targeted proteins, we use 0
 process spalnAlign {
 
-	//scratch true
+	scratch true
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
 	input:
 	path proteins
 	path spaln_files
+	val comp_para
 
 	output:
 	path ("${chunk_name}.*")
@@ -85,7 +87,7 @@ process spalnAlign {
 	spaln_grd = chunk_name + ".grd"
 
 	"""
-		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} -O12 -t${task.cpus} -Dgenome_spaln $proteins
+		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} ${params.spaln_options} -yX ${comp_para} -O12 -t${task.cpus} -Dgenome_spaln $proteins
 			
 	"""
 

@@ -50,6 +50,25 @@ workflow augustus_prediction_slow {
 
 }
 
+workflow augustus_prescan {
+
+	take:
+		genome
+		augustus_config_dir
+
+	main:
+                fastaSplitSize(genome,params.npart_size)
+                prepAugustusConfig(augustus_config_dir)
+                runAugustusScan(fastaSplitSize.out.flatMap(),prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+                mergeAugustusGff(runAugustusScan.out.collect())
+                GffToFasta(mergeAugustusGff.out[0],genome)
+
+        emit:
+                gff = mergeAugustusGff.out
+                fasta = GffToFasta.out[0]
+		
+}
+
 workflow augustus_train_from_spaln {
 
 	take:
@@ -192,11 +211,41 @@ process trainAugustus {
 	"""
 }
 
+process runAugustusScan {
+
+	label 'extra_long_running'
+
+        publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
+	scratch true
+
+        input:
+        path genome_chunk
+        env AUGUSTUS_CONFIG_PATH
+        path aug_extrinsic_config
+
+        output:
+        path augustus_result
+
+        script:
+        chunk_name = genome_chunk.getName().tokenize("_")[-1]
+        augustus_result = "augustus.${chunk_name}.prescan.out.gff"
+        config_file = file(params.aug_config)
+
+        """
+                augustus --species=${params.aug_species} ${params.aug_options} --softmasking=on --gff3=on --uniqueGeneId=true $genome_chunk > $augustus_result
+
+        """
+
+}
+
 process runAugustus {
 
 	label 'extra_long_running'
 
 	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
+	scratch true
 
 	input:
         path genome_chunk
