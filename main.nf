@@ -379,7 +379,7 @@ workflow {
 		rna_hints = rnaseqhint.out.hints
 		rna_bam = rnaseqhint.out.bam
 		// Assembly reads into transcripts for PASA
-		if (params.trinity) {
+		if (params.trinity || !params.transcripts && params.reads && params.pasa ) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_clean,trinity_guided_assembly.out.assembly)
 			trinity_gff = trinity_esthint.out.gff
@@ -487,6 +487,7 @@ workflow {
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
+		protein_gff = Channel.empty()
 	}
 
 	publish:
