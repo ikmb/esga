@@ -457,7 +457,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff).concat(protein_targeted_gff).concat(liftovers).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
