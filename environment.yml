@@ -12,10 +12,9 @@ dependencies:
  - repeatmasker=4.0.7
  - cdbtools
  - exonerate=2.4.0 
- - fastp=0.20.1
  - augustus=3.3.3
  - hisat2=2.2.1
- - multiqc=1.9
  - evidencemodeler=1.1.1
  - minimap2=2.17
  - gffread=0.11.7
+ - pasa=2.4.1
