@@ -60,8 +60,6 @@ process runSeqClean {
 
 process runPasa {
 
-	label 'pasa'
-
 	input:
 	path genome
 	path transcripts
