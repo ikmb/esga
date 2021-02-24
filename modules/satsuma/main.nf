@@ -64,6 +64,7 @@ process align_genomes {
 	"""
 		SatsumaSynteny2 -q $query_genome -t $ref_genome -threads ${task.cpus} -o align 2>&1 >/dev/null
 		cp align/satsuma_summary.chained.out $satsuma_chain_chunk
+		rm -Rf align
 	"""
 }
 

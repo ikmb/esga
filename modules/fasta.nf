@@ -112,7 +112,7 @@ process fastaMergeFiles {
 }
 
 process fastaRemoveShort {
-
+	
 	input:
 	path fasta
 	val min_len

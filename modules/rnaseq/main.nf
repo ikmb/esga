@@ -25,6 +25,8 @@ workflow rnaseqhint {
 // trim reads
 process runFastp {
 
+	label 'fastp'
+
 	//publishDir "${params.outdir}/evidence/rnaseq/fastp", mode: 'copy'
 
 	scratch true 

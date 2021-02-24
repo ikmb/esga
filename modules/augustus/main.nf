@@ -272,13 +272,14 @@ process runAugustus {
 
 process runAugustusBatch {
 
-	label 'medium_running'
+	label 'extra_long_running'
 
 	input:
 	path genome_chunk
 	path hints
 	path regions
 	env AUGUSTUS_CONFIG_PATH
+        path aug_extrinsic_config
 
 	output:
 	path augustus_result

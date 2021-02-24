@@ -379,7 +379,7 @@ workflow {
 		rna_hints = rnaseqhint.out.hints
 		rna_bam = rnaseqhint.out.bam
 		// Assembly reads into transcripts for PASA
-		if (params.trinity) {
+		if (params.trinity || !params.transcripts && params.reads && params.pasa ) {
 			trinity_guided_assembly(rnaseqhint.out.bam)
 			trinity_esthint(genome_clean,trinity_guided_assembly.out.assembly)
 			trinity_gff = trinity_esthint.out.gff
@@ -457,7 +457,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff).concat(protein_targeted_gff).concat(liftovers).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff).collectFile()
@@ -487,6 +487,7 @@ workflow {
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
+		protein_gff = Channel.empty()
 	}
 
 	publish:
