@@ -3,8 +3,9 @@
 # ESGA - Genome Annotation (v2)
 
 [![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/)
-[![Docker Container available]((https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
-or [![Singularity Container available]((https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
+
+[![Docker Container available](https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
+or [![Singularity Container available](https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
 
 
 
