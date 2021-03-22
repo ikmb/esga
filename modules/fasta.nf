@@ -45,6 +45,7 @@ process fastaSplitSize {
 
 process assemblySplit {
 
+	publishDir "${params.results}", mode: 'copy'
 	label 'short_running'
 
 	input:
@@ -144,7 +145,8 @@ process fastaCleanProteins {
 
 	"""
 
-		gaas_fasta_cleaner.pl -f $fasta -o tmp
+		sed 's/[.]\$//' $fasta > cleaned.fa
+		gaas_fasta_cleaner.pl -f cleaned.fa -o tmp
 		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 		rm tmp
 	"""
@@ -152,6 +154,8 @@ process fastaCleanProteins {
 }
 
 process fastaCleanNames {
+
+	publishDir "${params.results}", mode: 'copy'
 
 	input:
 	path(fasta)

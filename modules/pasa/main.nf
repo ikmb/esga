@@ -103,9 +103,6 @@ process runPasa {
 
 process PasaToModels {
 
-
-        label 'pasa'
-
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
         input:

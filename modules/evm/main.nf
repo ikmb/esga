@@ -1,5 +1,6 @@
 include GffToFasta from "./../util" params(params)
 
+// Use EVM to reconsile gene model predictions and evidences
 workflow evm_prediction {
 
 	take:
@@ -20,6 +21,7 @@ workflow evm_prediction {
 		fasta = GffToFasta.out[0]
 }
 
+// Merge gene models across processing chunks
 process evmMergeGenes {
 
 	publishDir "${params.outdir}/logs/evidence_modeler", mode: 'copy'
@@ -41,6 +43,7 @@ process evmMergeGenes {
 
 }
 
+// Produce EVM data partitions for parallel processing
 process evmPartition {
 
 	label 'long_running'

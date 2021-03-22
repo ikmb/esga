@@ -45,6 +45,16 @@ Documentation about the pipeline can be found in the `docs/` directory or under 
 6. [Troubleshooting](docs/troubleshooting.md)
 7. [What's next](docs/whatsnext.md)
 
+### Why ESGA?
+
+ESGAs' implementation was motivated by our need for a "fully contained" annotation solution that uses current programming paradigms and structures to rapidly annotate a metazoan genome. For us, this means: modular, open code as well as support
+for a range of popular schedulers to translate the workflow to a compute farm. In addition, we wanted to support input data that is missing from some other available solutions - including raw RNAseq reads and related genomes/annotations to lift-over
+annotations from other model systems. Finally, we wanted all of this to be usable without having to go through lengthy (and often rather painful) installation procedures for a host of software tools. ESGA uses a small number of docker 
+containers to deliver all the required dependencies. 
+
+All you need to do is write a small config file and provide singularity/docker support on your cluster. Done. 
+
+
 ### Credits
 
 This pipeline was written by Dr. Montserrat Torres ([MontseTor](https://github.com/MontseTor)) and Dr. Marc Höppner ([marchoeppner](https://github.com/marchoeppner)) at [IKMB](http://www.ikmb.uni-kiel.de).

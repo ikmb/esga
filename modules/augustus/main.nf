@@ -26,6 +26,7 @@ workflow augustus_prediction {
 		gff_filtered = AugustusFilterModels.out[0]
 }
 
+// Run an AUGUSTUS annotation using the most exhaustive settings
 workflow augustus_prediction_slow {
 
 	take:
@@ -50,6 +51,8 @@ workflow augustus_prediction_slow {
 
 }
 
+// Search for putative genic regions with AUGUSTUS
+// Does not require evidences, just an existing profile
 workflow augustus_prescan {
 
 	take:
@@ -69,6 +72,7 @@ workflow augustus_prescan {
 		
 }
 
+// Train a novel AUGUSTUS profile from SPALN alignments
 workflow augustus_train_from_spaln {
 
 	take:
@@ -87,6 +91,7 @@ workflow augustus_train_from_spaln {
 
 }
 
+// Train novel AUGUSTUS profile from PASA gene models
 workflow augustus_train_from_pasa {
 
 	take:
@@ -105,6 +110,7 @@ workflow augustus_train_from_pasa {
 
 }
 
+// Filter a set of augustus predictions to remove spurious models
 process AugustusFilterModels {
 
         publishDir "${params.outdir}/logs/augustus", mode: 'copy'
@@ -129,8 +135,9 @@ process AugustusFilterModels {
 	"""
 }
 
+// Convert a SPALN alignment to full GFF format
+// Can then be used for training AUGUSTUS
 process SpalnGffToTraining {
-
 
 	label 'short_running'
 
@@ -149,6 +156,8 @@ process SpalnGffToTraining {
 
 }
 
+// Extract full length models from PASA gff
+// Can then be used for training AUGUSTUS
 process PasaGffToTraining {
 
 	label 'short_running'
@@ -172,9 +181,9 @@ process trainAugustus {
 
 	label 'extra_long_running'
 
-	//scratch true
+	scratch true
 
-	//publishDir "${params.outdir}/augustus/training/", mode: 'copy'
+	publishDir "${params.outdir}/augustus/training/", mode: 'copy'
 
 	input:
 	path genome
@@ -201,7 +210,6 @@ process trainAugustus {
 	}
 
 	"""
-		echo ${acf_folder.toString()} >> training.txt
 		gff2gbSmallDNA.pl $complete_models $genome 1000 $complete_gb
 		split_training.pl --infile $complete_gb --percent 90
 		$options
@@ -211,6 +219,8 @@ process trainAugustus {
 	"""
 }
 
+// runs a naked augustus prediction on the genome 
+// can be used to find regions of potential interest for e.g. targeted alignments
 process runAugustusScan {
 
 	label 'extra_long_running'
@@ -239,6 +249,8 @@ process runAugustusScan {
 
 }
 
+// Runs AUGUSTUS on a genome or chunk thereof
+// Exposes several parameters and accepts hints etc
 process runAugustus {
 
 	label 'extra_long_running'
@@ -270,6 +282,8 @@ process runAugustus {
 
 }
 
+// RUns AUGUSTUS on a genome or chunk thereof
+// Speeds up  the search by limiting AUGUSTUS to regions that hold evidences +/- flanks
 process runAugustusBatch {
 
 	label 'extra_long_running'

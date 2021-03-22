@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
 nextflow.preview.dsl=2
+//nextflow.enable.dsl=2
 
 params.version = workflow.manifest.version
 
@@ -451,7 +452,6 @@ workflow {
 		augustus_gff = augustus_prediction.out.gff
 		augustus_fa = augustus_prediction.out.fasta
 		augustus_filtered_gff = augustus_prediction.out.gff_filtered
-
 	}
 
 	// Combine all inputs into consensus annotation
@@ -488,6 +488,7 @@ workflow {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
 		protein_gff = Channel.empty()
+		transcript_gff = Channel.fromPath(params.empty_gff)
 	}
 
 	publish:

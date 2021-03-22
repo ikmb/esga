@@ -1,5 +1,5 @@
 
-include { fastaCleanNames } from "./../fasta" params(params)
+include { fastaCleanNames } from "./../fasta" addParams(results: "${params.outdir}/logs/fasta")
 
 workflow assembly_preprocessing {
 
