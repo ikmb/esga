@@ -282,7 +282,7 @@ process runAugustus {
 
 }
 
-// RUns AUGUSTUS on a genome or chunk thereof
+// Runs AUGUSTUS on a genome or chunk thereof
 // Speeds up  the search by limiting AUGUSTUS to regions that hold evidences +/- flanks
 process runAugustusBatch {
 
@@ -314,7 +314,7 @@ process runAugustusBatch {
 	"""
 }
 
-// Merge all the chunk GFF files into one file
+// Merge all the chunk GFF files into one file and make new IDs
 process mergeAugustusGff {
 
 	label 'short_running'
@@ -338,6 +338,7 @@ process mergeAugustusGff {
 
 
 // containerized AUGUSTUS_CONFIG_PATH does not work, need to move into work/
+// folder must be editable!
 process prepAugustusConfig {
 
 	input:

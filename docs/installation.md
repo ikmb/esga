@@ -9,7 +9,7 @@ While smaller nodes will probably work, it may require some tweaking on your end
 assembly branch of the pipeline, available memory may become limiting (however, 128GB Ram should be fine for typical datasets; 256GB are perhaps 
 necessary if you plan on using a larger sample size). 
 
-## Installing Nextflow 
+## Installing Nextflow
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a bioinformatics workflow tool to run tasks across 
 distributed compute systems in a very portable manner. Therefore the first thing to do is to install Nextflow. 
@@ -17,12 +17,12 @@ distributed compute systems in a very portable manner. Therefore the first thing
 Nextflow runs on most systems (Linux, Mac OSX etc). It can be installed by running the following commands:
 
 ```
-# Make sure that Java v8+ is installed:
+### Make sure that Java v8+ is installed:
 java -version
 
 ```
 
-# Install Nextflow
+### Install Nextflow
 
 You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code (we will eventually get around to it...).
 

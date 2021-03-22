@@ -3,8 +3,10 @@
 # ESGA - Genome Annotation (v2)
 
 [![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/)
-[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
-[![Singularity Container available](https://img.shields.io/badge/singularity-available-7E4C74.svg)](http://singularity.lbl.gov)
+[![Docker Container available]((https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
+or [![Singularity Container available]((https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
+
+
 
 This pipeline peforms annotation of novel genomes using a combination of evidence alignments, evidence-based gene building and ab-initio gene building.
 

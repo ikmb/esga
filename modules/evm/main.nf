@@ -44,6 +44,7 @@ process evmMergeGenes {
 }
 
 // Produce EVM data partitions for parallel processing
+// segment and overlap size are set to defaults, this may need tweaking!
 process evmPartition {
 
 	label 'long_running'

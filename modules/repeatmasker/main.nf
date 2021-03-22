@@ -1,5 +1,6 @@
 include { fastaSplitSize; fastaMergeChunks } from "./../fasta" params(params)
 
+// Repeatmasking using a library in Fasta format
 workflow repeatmasking_with_lib {
 
 	take:
@@ -21,6 +22,7 @@ workflow repeatmasking_with_lib {
 
 }
 
+//Repeatmasking providing a defined taxonomic group (use with care!)
 workflow repeatmasking_with_species {
 
 	take:
@@ -66,6 +68,7 @@ process repeatLib {
 	"""	
 }
 
+// trigger one-time repeat database formatting before running parallel masking steps
 process repeatLibSpecies {
 
 	input:
@@ -96,6 +99,8 @@ process repeatLibSpecies {
 process repeatMaskLib {
 
 	label 'long_running'
+
+	publishDir "${params.outdir}/logs/repeatmasker", mode: 'copy'
 
 	scratch true
 
@@ -156,6 +161,7 @@ process repeatMaskSpecies {
         """
 }
 
+// Convert repeat annotations to AUGUSTUS hints
 process repeats_to_hints {
 
 	scratch true

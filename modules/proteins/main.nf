@@ -4,6 +4,7 @@
 
 include { fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
+// Used for related protein sequences
 workflow proteinhint_spaln {
 
 	take:
@@ -25,6 +26,7 @@ workflow proteinhint_spaln {
 		track = spaln2evm.out
 }
 
+// Used for targeted proteins to make a gene build from
 workflow proteinmodels {
 
 	take:
@@ -47,6 +49,7 @@ workflow proteinmodels {
 
 }
 
+// Create a genome index for spaln
 process spalnMakeIndex {
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
@@ -93,6 +96,7 @@ process spalnAlign {
 
 }
 
+// Merge spaln output across chunks using the companion tool sortgrcd
 process spalnMerge {
 
 	publishDir "${params.outdir}/logs/spaln" , mode: 'copy'
@@ -116,6 +120,7 @@ process spalnMerge {
 
 }
 
+// Convert spaln models into EVM compatible format
 process spaln2evm {
 
         publishDir "${params.outdir}/logs/spaln", mode: 'copy'
@@ -134,6 +139,7 @@ process spaln2evm {
 	"""
 }
 
+// Convert spaln models into AUGUSTUS compatible hint format
 process spalnToHints {
 
 	publishDir "${params.outdir}/logs/spaln", mode: 'copy'

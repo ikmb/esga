@@ -1,7 +1,6 @@
 // this is currently super simplistic and should be made a bit smarter down the line
 process merge_hints {
 
-
 	input:
 	path all_hints
 
@@ -18,6 +17,7 @@ process merge_hints {
 
 }
 
+// Convert a set of hints into hint-covered regions in BED format
 process prepHintsToBed {
 
         label 'short_running'
@@ -41,6 +41,7 @@ process prepHintsToBed {
         """
 }
 
+// Use StringTies gffread tool to extract protein sequences from genomes and gtf files
 process GffToFasta {
 
 	label 'short_running'

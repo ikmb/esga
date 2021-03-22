@@ -17,6 +17,7 @@ workflow esthint {
 		hints = estMinimapToHints.out
 }
 
+// Map transcripts onto a genome using Minimap2
 process estMinimap {
 
 	//scratch true
