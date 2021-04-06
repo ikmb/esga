@@ -70,6 +70,7 @@ process spalnMakeIndex {
 }
 
 // the comp_para parameter defines whether an alignment is intra (0) or inter-species (1). For targeted proteins, we use 0
+// output can be empty if no alignments are found - hence it is optional
 process spalnAlign {
 
 	scratch true
@@ -82,7 +83,7 @@ process spalnAlign {
 	val comp_para
 
 	output:
-	path ("${chunk_name}.*")
+	path ("${chunk_name}.*") optional true
 
 	script:
 	chunk_name = proteins.getBaseName() 
@@ -91,7 +92,7 @@ process spalnAlign {
 
 	"""
 		spaln -o $chunk_name -Q${params.spaln_q} -T${params.spaln_taxon} ${params.spaln_options} -O12 -t${task.cpus} -Dgenome_spaln $proteins
-			
+
 	"""
 
 }
@@ -153,7 +154,86 @@ process spalnToHints {
 
 	script:
 	hints = "spaln.proteins.${priority}.hints.gff"
+
 	"""
 		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=spaln --priority=${priority} --out=$hints
+	"""
+}
+
+// make a blast index 
+process blast_index {
+
+	publishDir "${params.outdir}/blast/", mode: 'copy'
+
+	input:
+	path genome_fa
+	
+	output:
+	path "${dbName}*.n*"
+
+	script:
+	dbName = genome_fa.getBaseName()
+
+	"""
+		makeblastdb -in $fasta -dbtype nucl -parse_seqids -out $dbName
+	"""
+}
+
+process blast_proteins {
+
+	input:
+	path protein_chunk
+	path blast_files
+
+	output:
+	path blast_results
+
+	script:
+	blast_results = protein_chunk.getBaseName() + ".blast"
+	db_name = blastdb_files[0].baseName
+
+	"""
+		tblastn -num_threads ${task.cpus} \
+			-evalue ${params.blast_evalue} \
+			-max_intron_length ${params.max_intron_size} \
+			-db $db_name -query $protein_chunk > $blast_results
+	"""
+
+}
+
+process blast2targets {
+
+	input:
+	path blast_results
+
+	output:
+	path targets
+
+	script:
+	targets = "blast_targets.bed"
+
+	"""
+		tblastn2exonerate_targets.pl --infile merged.txt > $targets
+	"""
+}	
+
+process blast2exonerate {
+
+	input:
+	path genome
+	path targets
+	
+	output:
+	path exonerate_out
+
+	script:
+	exonerate_out = blast_result.getBaseName() + ".exonerate.out"
+
+	"""
+		exonerate_from_blast_hits.pl --matches $targets \
+			--genome_index $genome \
+			--max_intron_size $params.max_intron_size \
+			--protein_index $protein_db_index \
+			--outfile $commands
 	"""
 }

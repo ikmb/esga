@@ -20,6 +20,7 @@ workflow pasa {
 		alignments = runPasa.out[1]
 		fasta = GffToFasta.out[0]
 		db = runPasa.out[2]
+		transcript_gff = estMinimap.out[0]
 
 }
 

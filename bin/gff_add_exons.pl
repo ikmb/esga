@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# Adds exon features to GFF files that lack them (e.g. AUGUSTUS predictions). 
 
 use strict;
 use Getopt::Long;

@@ -10,9 +10,9 @@ workflow evm_prediction {
 		gene_models
 	main:
 		evmMergeGenes(gene_models)
-		evmPartition(genome,evmMergeGenes.out[0],transcript_gff,protein_gff)
+		evmPartition(genome,evmMergeGenes.out[0],transcript_gff.collectFile(),protein_gff.collectFile())
 		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
-		evmMerge(runEvm.out.collect(),evmPartition.out[1],genome)
+		evmMerge(runEvm.out.collect(),evmPartition.out[1].collect(),genome.collect())
 		evmToGff(evmMerge.out[0].collect())
 		GffToFasta(evmToGff.out[0],genome)
 
@@ -64,7 +64,7 @@ process evmPartition {
 	script:
 
 	partitions = "partitions_list.out"
-	evm_commands = "commands.list"
+	evm_commands = "commands.evm.list"
 
 	protein_options = ""
 	transcript_options = ""
@@ -92,7 +92,6 @@ process runEvm {
 	//scratch true
 
 	label 'long_running'
-
 
 	input:
 	path evm_chunk	

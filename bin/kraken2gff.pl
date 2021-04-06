@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+# Convert a lift-over GTF file from Kraken to a valid GFF3 format
+# This includes dealing with models split across contigs
+
 use strict;
 use Getopt::Long;
 use Scalar::Util qw(openhandle);

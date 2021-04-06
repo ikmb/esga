@@ -194,6 +194,10 @@ if (params.pasa && params.reads && !params.trinity) {
 	log.info "Will perform de-novo transcriptome assembly from raw reads to inform PASA annotation"
 	params.trinity = true
 }
+if (params.polish && !params.pasa) {
+	exit 1, "Cannot polish an annotation without running Pasa (--pasa, --transcripts or --trinity & reads)"
+}
+
 if (params.aug_config) {
 	aug_config_file = file(params.aug_config)
 	if (aug_config_file.exists()) {
@@ -408,10 +412,12 @@ workflow {
 		pasa_gff = pasa.out.gff
 		pasa_fa = pasa.out.fasta
 		pasa_db = pasa.out.db
+		pasa_transcript_gff = pasa.out.transcript_gff
 	} else {
 		pasa_gff = Channel.empty()
 		pasa_fa = Channel.empty()
 		pasa_db = Channel.empty()
+		pasa_transcript_gff = Channel.empty()
 	}
 
 	if (params.aug_training) {
@@ -460,7 +466,7 @@ workflow {
 		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
-			transcript_gff = est_gff.concat(trinity_gff).collectFile()
+			transcript_gff = est_gff.concat(trinity_gff)
 		} else if (params.transcripts) {
 			transcript_gff = est_gff
 		} else if (params.reads && params.trinity) {
@@ -483,12 +489,21 @@ workflow {
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
 		evm_gff = evm_prediction.out.gff
 		evm_fa = evm_prediction.out.fasta
+
+		if (params.polish) {
+			polish_annotation(genome,evm_gff,pasa_transcript_gff,pasa_db)
+			polish_gff = polish_annotation.gff
+		} else {
+			polish_gff = Channel.empty()
+		}
+		
 		
 	} else {
 		evm_gff = Channel.empty()
 		evm_fa = Channel.empty()
 		protein_gff = Channel.empty()
 		transcript_gff = Channel.fromPath(params.empty_gff)
+		polish_gff = Channel.empty()
 	}
 
 	publish:
@@ -510,6 +525,7 @@ workflow {
 		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
 		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
 		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
+		polish_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
 		ncrna_gff to: "${params.outdir}/annotation/ncrna", mode: 'copy'
 		protein_targeted_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
 		protein_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
