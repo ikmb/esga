@@ -8,8 +8,9 @@
 or [![Singularity Container available](https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
 
 
-
 This pipeline peforms annotation of novel genomes using a combination of evidence alignments, evidence-based gene building and ab-initio gene building.
+
+It does not constitute a novel algorithm but combines many well-established tools into an easy-to-use "one click" solution that is accessible even to inexperienced users. 
 
 ### Pipeline main steps
 

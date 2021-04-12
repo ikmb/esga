@@ -3,31 +3,29 @@
 workflow get_software_versions {
 
 	main:
-		base_container_versions
-		trinity_version
-		fastp_version		
-		combine_versions(base_container_versions.out.concat(trinity_version,fastp_version) )
+		base_container_versions()
+		combine_versions(base_container_versions.out.collect()) 
 
 	emit:
-
-		versions = combine_versions.out
+		yaml = combine_versions.out
 		
-
 }
 
 process base_container_versions {
 
+	publishDir "${params.outdir}/logs/versions", mode: 'copy'
+
 	output:
-	path "v*.txt"
+	path "*.txt"
 
 	script:
 
 	"""
-		exonerate -version > v_exonerate.txt
-		minimap2 --version > v_minimap2.txt
-		RepeatMasker -v > v_repeatmasker.txt
-		spaln 2> v_spaln.txt
-		augustus 2> v_augustus.txt
+		minimap2 --version &> v_minimap2.txt || true
+		RepeatMasker -v &> v_repeatmasker.txt || true
+		augustus | head -n1 &> v_augustus.txt || true
+                spaln &> v_spaln.txt || true
+
 	"""
 }
 
@@ -57,12 +55,7 @@ process fastp_version {
 
 }
 
-process satsuma_version {
-
-}
-
 process combine_versions {
-
 
 	input:
 	path versions

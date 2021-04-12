@@ -11,8 +11,9 @@ process merge_hints {
 	hints = "hints.merged.gff"
 
 	"""
-
-		cat $all_hints >> $hints
+		cat $all_hints > merged.txt
+		cat merged.txt | sort -n -k 4,4 | sort -s -n -k 5,5 | sort -s -k 3,3 | sort -s -k 1,1 | join_mult_hints.pl > $hints
+		rm merged.txt
 	"""
 
 }

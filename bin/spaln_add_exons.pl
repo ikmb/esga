@@ -44,6 +44,10 @@ my $gene_id;
 my $transcript_id;
 my $cds_counter = 0;
 
+my @cds_bucket;
+my @exon_bucket;
+
+
 while (<$IN>) {
 	chomp; 
 	my $line = $_; 
@@ -51,6 +55,7 @@ while (<$IN>) {
 	next if ($line =~ /^#.*/ );
 	
 	my @elements = split("\t", $line);
+	my $strand = @elements[6];
 	
 	my $feature = @elements[2];
 
@@ -61,8 +66,23 @@ while (<$IN>) {
 		my ($key,$value) = split "=", $a;
 		$attribs{$key} = $value ;
 	}	
-		
+
+
+	if ($feature eq "gene" || $feature eq "mRNA" || $feature eq "transcript") {
+
+		if (scalar @cds_bucket > 0) {
+                        printf STDERR "Printing in reversed order...\n";
+                        while (scalar @cds_bucket > 0) {
+                                my $this_cds = shift @cds_bucket;
+                                my $this_exon = shift @exon_bucket;
+                                printf $this_cds . "\n";
+                                printf $this_exon . "\n";
+                        }
+                }
+
+	}		
 	if ($feature eq "gene") {
+
 		printf $line . "\n" ;
 		$gene_id = $attribs{"ID"};
 	} elsif ($feature eq "mRNA" || $feature eq "transcript" ) {
@@ -83,8 +103,14 @@ while (<$IN>) {
 		@elements[2] = "exon" ; 
 		@elements[-1] = $string ; 
 
-		printf join( "\t" , @elements ) . "\n";
-		printf $cds_line . "\n";
+		if ($strand eq "+") {
+
+			printf join( "\t" , @elements ) . "\n";
+			printf $cds_line . "\n";
+		} else {
+			push @exon_bucket, join("\t",@elements);
+			push @cds_bucket, $cds_line;
+		}
 		
 	}
 	

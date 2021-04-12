@@ -1,8 +1,18 @@
 # Recommendations
 
+## Assembly pre-processing and quality
+
+Your assembly should ideally be very contiguous (scaffold N50 > 1MB), else the run time will be quite long and genes are more likely to be fragmented and mis-annotated. Make sure that the scaffold names do not contain "weird" special 
+characters (like colons, semicolons, etc). Ideally, a scaffold should be named ">scaffold1", not "scaffold:1 cov129X-blabla". In addition, public databases tend to not like assemblies that contain leading or trailing Ns in their scaffolds - so consider
+removing those if they exist and you plan on submitting your data to e.g. GenBank. Otherwise it will be quite painful to do this later and re-compute all feature coordinates. 
+
+Finally, if your assembly contains the *mitchondrial genome* (or any other organelle), you should consider removing it. ESGA will not correctly deal with organellar genomes due to difference in the genetic code used. 
+
+## Evidence data 
+
 Evidence data for annotation can be obtained from a number of sources. Below follow some general suggestions that we found to work well.
 
-## Targeted proteins
+### Targeted proteins
 
 Sources for this could be an existing annotation from your species of interest or a very closely related one. During this stage the proteins will essentially be laminated onto the assembly to define gene loci. So if this set is evolutionarily too distant, 
 this step might produce sub-par results. 
@@ -10,7 +20,7 @@ this step might produce sub-par results.
 You could either check public databases like Uniprot for curated proteins of your species, or turn to another annotation project such as [EnsEMBL](ftp://ftp.ensembl.org/pub/current_fasta/). However, please keep in mind
 that annotating a genome guided by another annotation risks perpetuation annotation errors. That said, from our experience EnsEMBL gene builds are quite robust and scientifically usable.
 
-## Proteins (other)
+### Proteins (other)
 
 Other proteins for annotation should cover a wider taxonomic range to help the pipeline find genes that were perhaps missing from the targeted stage. Since ESGA is aimed at vertebrates specifically, and metazoans at most, we have included a set of reviewed
 metazoan proteins that could be used here. Otherwise, you have some additional options:
@@ -22,7 +32,7 @@ protein or transcriptome sequencing.
 [RefSeq](https://www.ncbi.nlm.nih.gov/protein/) is another useful database. However, sequences here tend to include a lot more computational predictions,
 which runs the risk of perpetuating annotation errors. 
 
-## Transcripts
+### Transcripts
 
 Transcripts provide information of those genomic region that, under a given condition, are actively transcribed. Depending on the library/sequencing strategy, these sequences will preferentially stem from protein-coding loci or instead represent the entire
 transcriptional landscape. For the purpose of annotation, poly-A (coding) transcrips are to be preferred. Typical sources of this data are either (traditional) EST libraries or, more commonly, RNA-sequencing (see below). 
@@ -35,7 +45,7 @@ An alternative to traditional ESTs are sequence data from de-novo assembled tran
 
 For long reads, you might want to check out IsoSeq (PacBio).
 
-## RNA-seq data
+### RNA-seq data
 
 This is perhaps the most important type of annotation evidence, as it stems specifically from your organism of interest and should provide
 a good resolution of splice junctions. 

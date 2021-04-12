@@ -12,7 +12,7 @@ include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
 include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
-include { augustus_prediction; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
+include { augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
@@ -21,6 +21,7 @@ include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
 include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 include rfamsearch from "./modules/infernal/main.nf" params(params)
 include map_annotation from "./modules/satsuma/main.nf" params(params)
+include get_software_versions from "./modules/logging/main.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -45,13 +46,14 @@ def helpMessage() {
     --pasa 		Run the transcriptome-based gene builder PASA (also required when running --training). [ true | false (default) ]. Requires --ESTs and/or --reads. 
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --ncrna		Annotate ncRNAs using RFam
-    --trinity		Build transcript models from provided RNAseq data
+    --trinity		Assemble transcripts from provided RNAseq data
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
     --rm_species	Perform repeatmasking using the built-in DFam library for a given species/taxonomic group (overrides rm_lib) [ default = 'false' ]
     --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
     --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
+    --aug_training	Enable AUGUSTUS training - if the aug_species already exists, only re-training will performed.
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
     --min_contig_size   Discard all contigs from the assembly smaller than this [ default = 5000 ]
@@ -233,13 +235,19 @@ if (params.references) {
 
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
-if (!workflow.containerEngine) {
+if (params.aug_config_folder) {
+	folder_path = file(params.aug_config_folder)
+	if (!folder_path.exists()) {
+		exit 1, "Custom Augustus config path does not exist..."
+	}
+	augustus_config_folder = Channel.from(folder_path)
+} else if (!workflow.containerEngine) {
 	Channel.from(file(System.getenv('AUGUSTUS_CONFIG_PATH')))
 		.ifEmpty { exit 1; "Looks like the Augustus config path is not set? This shouldn't happen!" }
         	.set { augustus_config_folder }
 } else {
 // this is a bit dangerous, need to make sure this is updated when we bump to the next release version
-	Channel.from(file("/opt/conda/envs/esga-1.1/config"))
+	Channel.from(file("/opt/conda/envs/esga-${params.version}/config"))
         	.set { augustus_config_folder }
 }
 if (!params.aug_species) {
@@ -310,6 +318,10 @@ log.info "========================================="
 workflow {
 
 	main:
+
+	// Get aa MultiQC compatible YAML file of software versions
+	get_software_versions()
+	software_yaml = get_software_versions.out.yaml
 
 	// Pre-process the assembly
 	// Generate assembly stats and remove small contigs
@@ -422,8 +434,8 @@ workflow {
 
 	if (params.aug_training) {
 		// Prefer training from Spaln models since these tend to contain less noise 
-		if (params.proteins) {
-			augustus_train_from_spaln(genome_rm,protein_gff,augustus_config_folder)
+		if (params.proteins_targeted) {
+			augustus_train_from_spaln(genome_rm,protein_targeted_gff,augustus_config_folder)
 			augustus_conf_folder = augustus_train_from_spaln.out.acf_folder
 		} else if (params.transcripts && params.pasa) {
 			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_folder)
@@ -454,10 +466,10 @@ workflow {
                 augustus_fa = augustus_prediction_slow.out.fasta
 		augustus_filtered_gff = augustus_prediction_slow.out.gff_filtered
 	} else {	
-		augustus_prediction(genome_rm,merge_hints.out,augustus_conf_folder,aug_extrinsic_config)
-		augustus_gff = augustus_prediction.out.gff
-		augustus_fa = augustus_prediction.out.fasta
-		augustus_filtered_gff = augustus_prediction.out.gff_filtered
+		augustus_parallel(genome_rm,merge_hints.out,augustus_conf_folder,aug_extrinsic_config)
+		augustus_gff = augustus_parallel.out.gff
+		augustus_fa = augustus_parallel.out.fasta
+		augustus_filtered_gff = augustus_parallel.out.gff_filtered
 	}
 
 	// Combine all inputs into consensus annotation
