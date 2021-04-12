@@ -205,7 +205,7 @@ process PasaGffToTraining {
 // Run one of two training routines for model training
 process trainAugustus {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	//scratch true
 
@@ -255,7 +255,7 @@ process trainAugustus {
 // can be used to find regions of potential interest for e.g. targeted alignments
 process runAugustusScan {
 
-	label 'extra_long_running'
+	label 'augustus'
 
         publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -285,7 +285,7 @@ process runAugustusScan {
 // Exposes several parameters and accepts hints etc
 process runAugustus {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -318,7 +318,7 @@ process runAugustus {
 // Speeds up  the search by limiting AUGUSTUS to regions that hold evidences +/- flanks
 process runAugustusBatch {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	input:
 	path genome_chunk
@@ -350,7 +350,7 @@ process runAugustusBatch {
 // Assemblies are pre-split and each chunk is then broken up and parallized
 process runAugustusChunks {
 
-	label 'extra_long_running'
+	label 'augustus'
 
         publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -381,7 +381,7 @@ process runAugustusChunks {
 
 process joinAugustusChunks {
 
-	label 'short_running'
+	label 'augustus'
 
 	input:
 	path chunks
