@@ -232,6 +232,12 @@ process trainAugustus {
 	aug_folder = "augustus_config/species/${params.aug_species}"
 	options = "new_species.pl --species=${params.aug_species}"
 
+	// Re-training and optimization is quite slow and yields minimal gains. Disable if a fast annotation is requested. 
+	retrain_options = ""
+	if (!params.fast) {
+		retrain_options = "optimize_augustus.pl --species=${params.aug_species} ${train_gb} --cpus=${task.cpus} --UTR=off && etraining --species=${params.aug_species} --stopCodonExcludedFromCDS=true ${train_gb}"
+	}
+		
 	"""
 		echo $aug_folder > test.txt
 		gff2gbSmallDNA.pl $complete_models $genome 1000 $complete_gb
@@ -240,8 +246,8 @@ process trainAugustus {
 			$options
 		fi
 		etraining --species=$params.aug_species --stopCodonExcludedFromCDS=true $train_gb
-		optimize_augustus.pl --species=$params.aug_species $train_gb --cpus=${task.cpus} --UTR=off 
-		augustus --stopCodonExcludedFromCDS=false --species=$params.aug_species $test_gb | tee $training_stats
+		$retrain_options
+		augustus --stopCodonExcludedFromCDS=true --species=$params.aug_species $test_gb | tee $training_stats
 	"""
 }
 

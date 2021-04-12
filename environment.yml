@@ -19,4 +19,3 @@ dependencies:
  - gffread=0.11.7
  - pasa=2.4.1
  - gaas
- - perl-uri=1.76
