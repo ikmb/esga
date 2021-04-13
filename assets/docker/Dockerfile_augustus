@@ -2,6 +2,5 @@ FROM nfcore/base
 LABEL authors="Marc Hoeppner" \
       description="Docker image containing all requirements for ESGA annotation pipeline"
 
-COPY assets/docker/environment.yml /
+COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/esga-1.1/bin:/opt/conda/envs/esga-1.1/opt/pasa-2.4.1:/opt/bin:/opt/spaln/2.4.3/bin:$PATH
