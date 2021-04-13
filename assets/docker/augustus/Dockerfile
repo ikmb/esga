@@ -34,12 +34,13 @@ RUN mkdir -p /opt/augustus \
 	&& cd /opt/augustus \
 	&& git clone https://github.com/Gaius-Augustus/Augustus.git 3.4.0 \
 	&& cd 3.4.0 \
-	&& git checkout v3.4.0
-RUN make clean
-RUN make
-RUN make install
+	&& git checkout v3.4.0 \
+	&& make clean \
+	&& make \
+	&& make install
+
 ENV PATH="/opt/augustus/3.4.0/bin:/opt/augustus/3.4.0/scripts:${PATH}"
 ENV AUGUSTUS_CONFIG_PATH=/opt/augustus/3.4.0/config"
 
 # Test AUGUSTUS
-RUN make unit_test
+RUN cd /opt/augustus/3.4.0 && make unit_test
