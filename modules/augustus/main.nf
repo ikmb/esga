@@ -338,7 +338,7 @@ process runAugustusBatch {
         utr = (params.utr) ? "on" : "off"
 	"""
 		samtools faidx $genome_chunk
-		awk '\$0 ~ "^>" { match(\$1, /^>([^:]+)/, id); filename=id[1]} {print >> filename".fa"}' $genome_chunk
+		split_fasta.sh $genome_chunk
 		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
 		cat *augustus.gff > $augustus_result
@@ -371,7 +371,7 @@ process runAugustusChunks {
 
 	"""
 		samtools faidx $genome_chunk
-		awk '\$0 ~ "^>" { match(\$1, /^>([^:]+)/, id); filename=id[1]} {print >> filename".fa"}' $genome_chunk
+		split_fasta.sh $genome_chunk
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
 		parallel -j ${task.cpus} < $command_file
 		for i in \$(ls *.out | sort -n ); do cat \$i >> $augustus_result ; done;

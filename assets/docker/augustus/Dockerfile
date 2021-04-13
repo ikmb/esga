@@ -24,7 +24,7 @@ RUN apt-get install -y samtools libhts-dev
 RUN apt-get install -y libboost-all-dev
 
 # Install additional dependencies for scripts
-RUN apt-get install -y cdbfasta diamond-aligner libfile-which-perl libparallel-forkmanager-perl libyaml-perl libdbd-mysql-perl git parallel
+RUN apt-get install -y cdbfasta diamond-aligner libfile-which-perl libparallel-forkmanager-perl libyaml-perl libdbd-mysql-perl git parallel exonerate
 RUN apt-get install -y --no-install-recommends python3-biopython
 
 # Clone AUGUSTUS repository
