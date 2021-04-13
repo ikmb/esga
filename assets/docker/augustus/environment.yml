@@ -6,6 +6,4 @@ channels:
  - conda-forge
  - bioconda
 dependencies:
- - parallel
  - augustus=3.4.0
- - samtools=1.12
