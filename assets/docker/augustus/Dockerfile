@@ -40,7 +40,7 @@ RUN mkdir -p /opt/augustus \
 	&& make install
 
 ENV PATH="/opt/augustus/3.4.0/bin:/opt/augustus/3.4.0/scripts:${PATH}"
-ENV AUGUSTUS_CONFIG_PATH=/opt/augustus/3.4.0/config"
+ENV AUGUSTUS_CONFIG_PATH="/opt/augustus/3.4.0/config"
 
 # Test AUGUSTUS
 RUN cd /opt/augustus/3.4.0 && make unit_test
