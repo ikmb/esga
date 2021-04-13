@@ -427,6 +427,8 @@ process mergeAugustusGff {
 // folder must be editable!
 process prepAugustusConfig {
 
+	label 'augustus'
+
 	input:
 	path augustus_config_dir
 

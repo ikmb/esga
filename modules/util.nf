@@ -1,6 +1,8 @@
 // this is currently super simplistic and should be made a bit smarter down the line
 process merge_hints {
 
+	label 'augustus' 
+
 	input:
 	path all_hints
 

@@ -210,6 +210,7 @@ process BamToExonHint {
 process BamToIntronHint {
 
 	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
+	label 'augustus'
 
 	input:
 	path bam
