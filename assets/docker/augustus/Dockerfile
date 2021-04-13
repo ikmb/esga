@@ -34,7 +34,7 @@ RUN mkdir -p /opt/augustus \
 	&& cd /opt/augustus \
 	&& git clone https://github.com/Gaius-Augustus/Augustus.git 3.4.0 \
 	&& cd 3.4.0 \
-	&& git pull 3.4.0
+	&& git checkout v3.4.0
 RUN make clean
 RUN make
 RUN make install
