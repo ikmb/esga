@@ -26,6 +26,7 @@ workflow augustus_prediction {
 		gff_filtered = AugustusFilterModels.out[0]
 }
 
+// Run an AUGUSTUS annotation using the most exhaustive settings
 workflow augustus_prediction_slow {
 
 	take:
@@ -50,6 +51,32 @@ workflow augustus_prediction_slow {
 
 }
 
+workflow augustus_parallel {
+
+	take:
+		genome
+		hints
+		augustus_config_dir
+		aug_extrinsic_config
+
+	main:
+		fastaSplitSize(genome,params.npart_size)
+                prepAugustusConfig(augustus_config_dir)
+                runAugustusChunks(fastaSplitSize.out.flatMap(),hints.collect(),prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+                joinAugustusChunks(runAugustusChunks.out)
+		mergeAugustusGff(joinAugustusChunks.out.collect())
+                GffToFasta(mergeAugustusGff.out[0],genome)
+                AugustusFilterModels(mergeAugustusGff.out[0],genome)
+	emit:
+		gff = joinAugustusChunks.out
+                config = prepAugustusConfig.out
+                fasta = GffToFasta.out[0]
+                gff_filtered = AugustusFilterModels.out[0]
+
+}
+
+// Search for putative genic regions with AUGUSTUS
+// Does not require evidences, just an existing profile
 workflow augustus_prescan {
 
 	take:
@@ -69,6 +96,7 @@ workflow augustus_prescan {
 		
 }
 
+// Train a novel AUGUSTUS profile from SPALN alignments
 workflow augustus_train_from_spaln {
 
 	take:
@@ -87,6 +115,7 @@ workflow augustus_train_from_spaln {
 
 }
 
+// Train novel AUGUSTUS profile from PASA gene models
 workflow augustus_train_from_pasa {
 
 	take:
@@ -105,6 +134,7 @@ workflow augustus_train_from_pasa {
 
 }
 
+// Filter a set of augustus predictions to remove spurious models
 process AugustusFilterModels {
 
         publishDir "${params.outdir}/logs/augustus", mode: 'copy'
@@ -129,10 +159,13 @@ process AugustusFilterModels {
 	"""
 }
 
+// Convert a SPALN alignment to full GFF format
+// Can then be used for training AUGUSTUS
 process SpalnGffToTraining {
 
-
 	label 'short_running'
+
+        publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
 	input:
 	path spaln_gff
@@ -144,11 +177,13 @@ process SpalnGffToTraining {
 	models = spaln_gff.getBaseName() + ".training.gff"
 
 	"""
-		gff_add_exons.pl --infile $spaln_gff >> $models
+		spaln_add_exons.pl --infile $spaln_gff > $models
 	"""
 
 }
 
+// Extract full length models from PASA gff
+// Can then be used for training AUGUSTUS
 process PasaGffToTraining {
 
 	label 'short_running'
@@ -163,18 +198,18 @@ process PasaGffToTraining {
 	training_gff = "transdec.complete.gff3"
 
 	"""
-		pasa_select_training_models.pl --nmodels $params.aug_training_models --infile $pasa_transdecoder_gff >> $training_gff
+		pasa_select_training_models.pl --nmodels $params.aug_training_models --infile $pasa_gff >> $training_gff
         """
 }
 
 // Run one of two training routines for model training
 process trainAugustus {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	//scratch true
 
-	//publishDir "${params.outdir}/augustus/training/", mode: 'copy'
+	publishDir "${params.outdir}/augustus/training/", mode: 'copy'
 
 	input:
 	path genome
@@ -193,27 +228,34 @@ process trainAugustus {
         training_stats = "training_accuracy.out"
 
         // If the model already exists, do not run new_species.pl
-        //model_path = "${acf_training_path}/species/${params.aug_species}"
-        model_file = file("${acf_folder}/species/${params.aug_species}")
-	options = ""
-	if (!model_file.exists()) {
-		options = "new_species.pl --species=${params.aug_species}"
-	}
+	// Need to use bash for this as the config folder does not yet exist at this point of the process so can't use Groovy...
+	aug_folder = "augustus_config/species/${params.aug_species}"
+	options = "new_species.pl --species=${params.aug_species}"
 
+	// Re-training and optimization is quite slow and yields minimal gains. Disable if a fast annotation is requested. 
+	retrain_options = ""
+	if (!params.fast) {
+		retrain_options = "optimize_augustus.pl --species=${params.aug_species} ${train_gb} --cpus=${task.cpus} --UTR=off && etraining --species=${params.aug_species} --stopCodonExcludedFromCDS=true ${train_gb}"
+	}
+		
 	"""
-		echo ${acf_folder.toString()} >> training.txt
+		echo $aug_folder > test.txt
 		gff2gbSmallDNA.pl $complete_models $genome 1000 $complete_gb
-		split_training.pl --infile $complete_gb --percent 90
-		$options
-		etraining --species=$params.aug_species --stopCodonExcludedFromCDS=false $train_gb
-		optimize_augustus.pl --species=$params.aug_species $train_gb --cpus=${task.cpus} --UTR=off 
-		augustus --stopCodonExcludedFromCDS=false --species=$params.aug_species $test_gb | tee $training_stats
+		randomSplit.pl $complete_gb 250
+		if [ ! -d $aug_folder ]; then
+			$options
+		fi
+		etraining --species=$params.aug_species --stopCodonExcludedFromCDS=true $train_gb
+		$retrain_options
+		augustus --stopCodonExcludedFromCDS=true --species=$params.aug_species $test_gb | tee $training_stats
 	"""
 }
 
+// runs a naked augustus prediction on the genome 
+// can be used to find regions of potential interest for e.g. targeted alignments
 process runAugustusScan {
 
-	label 'extra_long_running'
+	label 'augustus'
 
         publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -239,9 +281,11 @@ process runAugustusScan {
 
 }
 
+// Runs AUGUSTUS on a genome or chunk thereof
+// Exposes several parameters and accepts hints etc
 process runAugustus {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
@@ -270,9 +314,11 @@ process runAugustus {
 
 }
 
+// Runs AUGUSTUS on a genome or chunk thereof
+// Speeds up  the search by limiting AUGUSTUS to regions that hold evidences +/- flanks
 process runAugustusBatch {
 
-	label 'extra_long_running'
+	label 'augustus'
 
 	input:
 	path genome_chunk
@@ -292,20 +338,74 @@ process runAugustusBatch {
         utr = (params.utr) ? "on" : "off"
 	"""
 		samtools faidx $genome_chunk
-		fastaexplode -f $genome_chunk -d . 
+		fastaexplode -f $genome_chunk -d . 		
 		augustus_from_regions.pl --genome_fai $genome_fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints --bed $regions > $command_file
 		parallel -j ${task.cpus} < $command_file
-			cat *augustus.gff > $augustus_result
+		cat *augustus.gff > $augustus_result
 		rm *augustus.gff
 	"""
 }
 
-// Merge all the chunk GFF files into one file
+// Implements are more parallelized version of the Braker parallelization scheme
+// Assemblies are pre-split and each chunk is then broken up and parallized
+process runAugustusChunks {
+
+	label 'augustus'
+
+        publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+
+	input:
+	path genome_chunk
+	path hints
+	env AUGUSTUS_CONFIG_PATH
+	path augustus_extrinsic_config
+
+	output:
+	path augustus_result
+
+	script:
+	chunk_name = genome_chunk.getName().tokenize("_")[-1]
+	augustus_result = "augustus.${chunk_name}.out.gff"
+	command_file = "commands." + chunk_name + ".txt"
+	utr = (params.utr) ? "on" : "off"
+
+	"""
+		samtools faidx $genome_chunk
+		fastaexplode -f $genome_chunk -d .
+		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
+		parallel -j ${task.cpus} < $command_file
+		for i in \$(ls *.out | sort -n ); do cat \$i >> $augustus_result ; done;
+	"""
+	
+}
+
+process joinAugustusChunks {
+
+	label 'augustus'
+
+	input:
+	path chunks
+
+	output:
+	path augustus_models
+
+	script:
+	chunk_name = chunks.getBaseName() 
+	augustus_models = chunk_name + ".merged.gff"
+
+	"""
+		cat $chunks > merged.txt
+		join_aug_pred.pl < merged.txt > $augustus_models 
+		rm merged.txt
+	"""
+}
+
+// Merge all the chunk GFF files into one file and make new IDs
 process mergeAugustusGff {
 
 	label 'short_running'
 
-	// publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
 
 	input:
 	path augustus_gffs
@@ -324,7 +424,10 @@ process mergeAugustusGff {
 
 
 // containerized AUGUSTUS_CONFIG_PATH does not work, need to move into work/
+// folder must be editable!
 process prepAugustusConfig {
+
+	label 'augustus'
 
 	input:
 	path augustus_config_dir

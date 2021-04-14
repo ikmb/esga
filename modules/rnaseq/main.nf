@@ -22,7 +22,7 @@ workflow rnaseqhint {
 }
 
 
-// trim reads
+// trim RNAseq reads
 process runFastp {
 
 	label 'fastp'
@@ -59,6 +59,7 @@ process runFastp {
 }
 
 // Generate an alignment index from the genome sequence
+// We use HiSat so we don't need to know the read length during index construction, unlike STAR
 process HisatMakeDB {
 
 	label 'long_running'
@@ -209,6 +210,7 @@ process BamToExonHint {
 process BamToIntronHint {
 
 	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
+	label 'augustus'
 
 	input:
 	path bam
@@ -224,6 +226,7 @@ process BamToIntronHint {
 	"""
 }
 
+// Remove  hints that only have little multi support (spurious!)
 process filterRseqHints {
 
 	input:

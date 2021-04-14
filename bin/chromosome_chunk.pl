@@ -2,6 +2,9 @@
 use strict;
 use warnings;
 
+# This script was originally part of the EnsEMBL gene build pipeline and was co-opted to be used by ESGA. 
+# Credit belongs to the EnsEMBL team!
+
 =head1 NAME
 
 chunk_chromosome.pl

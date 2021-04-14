@@ -12,10 +12,10 @@ This will run all the steps in the pipeline (Proteins, ESTs/Transcriptome, RNAse
 ### Parameters file
 
 In the next section, you will find a list of all user-configurable pipeline options. 
-You can of course provide each option as a command line parameter. But this can get a bit tedious. As an alterantive, you can provide a configuration file using the YAML format. An example is included under [../assets/config.yaml](../assist/config.yaml). To provide a config file as an option, 
-use `-params-file my_config.yaml`. The revised command could then read:
+You can of course provide each option as a command line parameter. But this can get a bit tedious. As an alterantive, you can provide a configuration file using the YAML format. An example is included under [../assets/config.yaml](../assist/config.yaml). 
+To provide a config file as an option, use `-params-file my_config.yaml`. The revised command will then read:
 
-`nextflow run ikmb/esga -params-file config.yaml -profile your_profile`
+`nextflow -c nextflow.config run ikmb/esga -params-file config.yaml`
 
 The default YAML options file:
 
@@ -30,6 +30,8 @@ rm_species: false
 reads: false
 aug_species: "human"
 aug_options: ""
+spaln_taxon: "Tetrapod"
+spaln_q: 7
 utr: false
 trinity: false
 pasa: false
@@ -48,9 +50,9 @@ An explanation of these options follows below.
 
 ### 1. Mandatory arguments 
 
-#### `--genome` 
+#### `--genome`
 Location of the genome you want to annotate. This file should be in FASTA format. Additionally, we recommend to make sure that you clean the fasta headers in a way that they do not contain any special characters, unnecessary spaces or other "meta" data. 
-Please also be aware that some public databases to not allow the submission of assemblies that have leading or trailing 'N's in any of its scaffolds.  
+Please also be aware that some public databases to not allow the submission of assemblies that have leading or trailing 'N's in any of its scaffolds.
 
 ### 2. Evidences. At least one of:
 
@@ -69,17 +71,17 @@ Please note the following requirements:
 
 #### `--transcripts` 
 Location of a single FASTA file with all EST sequences or assembled transcriptome(s) (short reads or IsoSeq) from the species of interest. If you have multiple files, concatenate 
-them into a single file first and make sure that the sequence names are not duplicated (this happens when you try to merge two Trinity assemblies, 
-for example). 
+them into a single file first and make sure that the sequence names are not duplicated (this happens when you try to merge two Trinity assemblies, for example). 
 
 #### `--proteins_targeted`
-Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one. 
+Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one.
 
 #### `--proteins` 
-Location of a single FASTA file with protein sequences from related taxa. If you have multiple files, concatenate them into a single file first. The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
+Location of a single FASTA file with protein sequences from related taxa. If you have multiple files, concatenate them into a single file first. 
+The [included](../assets/Eumetazoa_UniProt_reviewed_evidence.fa) set of curated eumetazoan proteins set would be appropriate for this. 
 
 #### `--references` 
-This option points to one or more genome sequences in FASTA format, accompanied by a gene annotation in GTF format. The genome and the annotation need to share a base name for this to work. 
+This option points to one or more genome sequences in FASTA format, accompanied by a gene annotation in GTF format. The genome and the annotation need to share a base name for this to work.
 
 For example, if you point to the human genome in FASTA format, named homo_sapiens.fa , this option expects there to be an annotation file called homo_sapiens.gtf right next to it. 
 
@@ -95,14 +97,16 @@ nextflow run ikmb/esga --refefences /path/to/ref_genomes/*.fa [...]
 
 ```
 
-Each genome sequence will be aligned to the target assembly using [Satsuma2](https://github.com/bioinfologics/satsuma2) to produce a pairwise chain file. This chain file is then used by [Kraken](https://github.com/GrabherrGroup/kraken) to lift the original annotation onto the target genome. The resulting mapped models will not be
-corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.
+Each genome sequence will be aligned to the target assembly using [Satsuma2](https://github.com/bioinfologics/satsuma2) to produce a pairwise chain file. This chain file is then used by [Kraken](https://github.com/GrabherrGroup/kraken) to lift the original 
+annotation onto the target genome. The resulting mapped models will not be corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.
 
-Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) (>>100GB for vertebrates). We have had this part
-crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster to successfully use this part of ESGA when working on larger vertebrates. 
+Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) 
+(>>100GB for vertebrates). We have had this part crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster 
+to successfully use this part of ESGA when working on larger vertebrates. 
 
 #### `--prothint_gff`
-Use hints already computed with the [ProtHint](https://github.com/gatech-genemark/ProtHint) pipeline. This option is incompatible with "--proteins". Please note that ESGA will not be able to sanity check the prothint-derived data. It must match your assembly version to the "t"! This is especially critical with regards to the sequence names - ESGA will strip any decoration from your sequence names, like white spaces and any characters thereafter. 
+Use hints already computed with the [ProtHint](https://github.com/gatech-genemark/ProtHint) pipeline. This option is incompatible with "--proteins". Please note that ESGA will not be able to sanity check the prothint-derived data. It must match your 
+assembly version to the "t"! This is especially critical with regards to the sequence names - ESGA will strip any decoration from your sequence names, like white spaces and any characters thereafter. 
 
 ProtHint is great! Why is ESGA not offering ProtHint as an integrated option?
 
@@ -122,11 +126,12 @@ Run the PASA pipeline to build gene models from aligned transcripts (requires --
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
 
 #### `--trinity` [ true | false (default) ]
-Run the de-novo transcriptome assembler Trinity to produce transcript information. Requires --reads. Will be switched on by default if --pasa is requested and --reads are available. 
+Run the de-novo transcriptome assembler Trinity to produce transcript information. Requires --reads. Will be switched on by default if --pasa is requested and --reads are available. Note that Trinity may consume large amounts of RAM, depending
+on the size of the input data. However, we suspect that 120GB RAM will be fine in most instances - a typical minimum spec for a modern cluster node. 
 
 #### `--ncrna`[ true | false (default) ]
-Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the head node of your
-cluster must have access to the internet to download the RFam files on-the-fly.
+Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the node executing the nextflow process
+must have access to the internet to download the RFam files on-the-fly (some clusters do not allow internet connections from compute or even login nodes).
 
 ### 4. Program parameters
 
@@ -138,7 +143,7 @@ a few introns may be much longer. Genes containing such extraordinarily large in
 ESGA can run RepeatMasker using the built-in repeat library (DFam 2.0) - see below. However, given that DFam is quite sparse, especially outside of mammals, we would recommend to instead provide 
 repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler) or curated repeat libraries from 
 GRINST (www.grinst.org, commercial). 
-If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like this: 
+If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like so: 
 
 ```
 # Get the Tree of all available species: 
@@ -208,8 +213,8 @@ Name of the taxonomic group to choose the internal SPALN parameters. See column 
 
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 
 running specific programs. Then that program can be run on each smaller chunk in parallel in a compute cluster. 
-When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want to tweak one or several of the parameters below. If unsure, 
-leave at the defaults.
+When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want 
+to tweak one or several of the parameters below. If unsure, leave at the defaults.
 
 #### `--nproteins` [ default = 200 ]
 Number of sequences in each protein alignment job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
@@ -238,7 +243,7 @@ By default, the pipeline expects paired-end RNA-seq data. If you have single-end
 It is not possible to run a mixture of single-end and paired-end files in one run. 
 
 #### `--rnaseq_stranded` [ true | false (default) ]
-Whether your RNAseq library was sequenced with a strand-specific protocol. Our assumption is that this would be dUTP as is typical for Illumina applications. 
+Whether your RNAseq library was sequenced with a fw strand-specific protocol. Our assumption is that this would be dUTP as is typical for Illumina applications. 
 
 #### `--outdir` [ default = 'annotation_output' ]
 The output directory where the results will be saved. 

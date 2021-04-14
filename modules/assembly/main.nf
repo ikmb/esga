@@ -1,6 +1,7 @@
 
-include { fastaCleanNames } from "./../fasta" params(params)
+include { fastaCleanNames } from "./../fasta" addParams(results: "${params.outdir}/logs/fasta")
 
+// Clean up the assembly and generate some basic stats
 workflow assembly_preprocessing {
 
 	take:
@@ -17,6 +18,7 @@ workflow assembly_preprocessing {
 		fasta = fastaCleanNames.out[0]
 }
 
+// Get basic stats for the assembly
 process AssemblyStats {
 
 	//publishDir "${params.outdir}/assembly", mode: 'copy'
@@ -38,6 +40,7 @@ process AssemblyStats {
 
 }
 
+// Remove contigs below a certain length
 process AssemblyFilterSize {
 
         //publishDir "${params.outdir}/assembly", mode: 'copy'

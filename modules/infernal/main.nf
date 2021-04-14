@@ -10,7 +10,7 @@ workflow rfamsearch {
 		download_rfam(genome)
 		infernal_press(download_rfam.out[0])
 		infernal_search(infernal_press.out.collect(),fastaSplitSize.out.flatMap())
-		infernal2gff(infernal_search.out.collectFile(),download_rfam.out[1])
+		infernal2gff(infernal_search.out.collectFile(),download_rfam.out[1].collect())
 	emit:
 		gff = infernal2gff.out
 	

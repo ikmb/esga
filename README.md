@@ -3,10 +3,14 @@
 # ESGA - Genome Annotation (v2)
 
 [![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/)
-[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
-[![Singularity Container available](https://img.shields.io/badge/singularity-available-7E4C74.svg)](http://singularity.lbl.gov)
+
+[![Docker Container available](https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
+or [![Singularity Container available](https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
+
 
 This pipeline peforms annotation of novel genomes using a combination of evidence alignments, evidence-based gene building and ab-initio gene building.
+
+It does not constitute a novel algorithm but combines many well-established tools into an easy-to-use "one click" solution that is accessible even to inexperienced users. 
 
 ### Pipeline main steps
 
@@ -44,6 +48,16 @@ Documentation about the pipeline can be found in the `docs/` directory or under 
 5. [Output](docs/output.md)
 6. [Troubleshooting](docs/troubleshooting.md)
 7. [What's next](docs/whatsnext.md)
+
+### Why ESGA?
+
+ESGAs' implementation was motivated by our need for a "fully contained" annotation solution that uses current programming paradigms and structures to rapidly annotate a metazoan genome. For us, this means: modular, open code as well as support
+for a range of popular schedulers to translate the workflow to a compute farm. In addition, we wanted to support input data that is missing from some other available solutions - including raw RNAseq reads and related genomes/annotations to lift-over
+annotations from other model systems. Finally, we wanted all of this to be usable without having to go through lengthy (and often rather painful) installation procedures for a host of software tools. ESGA uses a small number of docker 
+containers to deliver all the required dependencies. In our experience, this solves some of the main issues people typically experience when trying to annotate a genome.
+
+All you need to do is write a small config file and provide singularity/docker support on your cluster. Done. 
+
 
 ### Credits
 

@@ -68,6 +68,7 @@ process align_genomes {
 	"""
 }
 
+// run Kraken to map the annotation from the reference to our genome of interest
 process map_gtf {
 
 	publishDir "${params.outdir}/logs/satsuma", mode: 'copy'

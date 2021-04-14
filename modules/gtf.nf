@@ -34,6 +34,8 @@ process kraken2gff {
 		sed -i.bak 's/;\"/\"/g' $gtf
 		sed -i.bak2 's/\t\t/\tensembl\t/' $gtf
 		kraken2gff.pl --infile $gtf > $gff
+
+		rm *.bak*
 	"""
 
 }

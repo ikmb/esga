@@ -20,6 +20,7 @@ workflow pasa {
 		alignments = runPasa.out[1]
 		fasta = GffToFasta.out[0]
 		db = runPasa.out[2]
+		transcript_gff = estMinimap.out[0]
 
 }
 
@@ -58,6 +59,8 @@ process runSeqClean {
 	"""
 }
 
+// Run the PASA pipeline from pre-aligned sequences (estMinimap)
+// Using the built-in alignment is way too slow!
 process runPasa {
 
 	input:
@@ -101,10 +104,8 @@ process runPasa {
 
 }
 
+// Turn the pasa results into full gff3 file
 process PasaToModels {
-
-
-        label 'pasa'
 
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
@@ -129,9 +130,10 @@ process PasaToModels {
 
         """
 
-
 }
 		
+// Use Pasa to polish a gene build with transcript data
+// requires a gene build in gff3 format, aligned transcripts and the genome
 process runPasaPolish {
 
 	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'

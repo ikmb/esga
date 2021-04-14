@@ -9,7 +9,7 @@ While smaller nodes will probably work, it may require some tweaking on your end
 assembly branch of the pipeline, available memory may become limiting (however, 128GB Ram should be fine for typical datasets; 256GB are perhaps 
 necessary if you plan on using a larger sample size). 
 
-## Installing Nextflow 
+## Installing Nextflow
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a bioinformatics workflow tool to run tasks across 
 distributed compute systems in a very portable manner. Therefore the first thing to do is to install Nextflow. 
@@ -17,35 +17,28 @@ distributed compute systems in a very portable manner. Therefore the first thing
 Nextflow runs on most systems (Linux, Mac OSX etc). It can be installed by running the following commands:
 
 ```
-# Make sure that Java v8+ is installed:
+### Make sure that Java v8+ is installed:
 java -version
 
 ```
 
-# Install Nextflow
+### Install Nextflow
 
-You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code.
+You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code (we will eventually get around to it...).
 
 [Nextflow 20.01](https://github.com/nextflow-io/nextflow/releases/download/v20.01.0/nextflow-20.01.0-all)
 
 Just put the downloaded file into your $PATH and rename it to 'nextflow'
 
-## Obtaining the code 
+## Running the code directly from github
 
-You can check out the code to a location on your system (i.e. $HOME/git/). This is recommended as you will have to make some minor changes 
-so the pieline knows how to run on your system (see below). 
-
-``` 
-cd $HOME/git/ 
-
-git clone git@github.com:ikmb-denbi/genome-annotation.git
-``` 
- 
-Launching the pipeline then works as follows:
+In order to run the pipeline from github directly, you can do the following:
 
 ```bash
-nextflow run $HOME/git/genome-annotation/main.nf <run options>
+nextflow -c nextflow.config ikmb/esga -params-file config.yaml
 ```
+
+Please see the section on how to create a custom config file for your cluster below. 
 
 ## Creating a config file for your cluster
 
@@ -53,7 +46,7 @@ This pipeline uses at minimum two configuration files. The file [conf/base.confi
 of the individual stages of the pipeline. Normally, you do not have to touch this.
 
 In addition, you will need a config file that specifies which resource manager your cluster uses. An example for a Slurm cluster which uses 
-Singularity (see below) is included as [conf/slurm_ikmba.config](../conf/slurm_ikmba.config). Detailed instructions about resource managers and 
+Singularity (see below) is included as [conf/ccga_medcluster.config](../conf/ccga_medcluster.config). Detailed instructions about resource managers and 
 available options can be found [here](https://www.nextflow.io/docs/latest/executor.html).
 
 Create your own config file and pass it to the pipeline during start-up using the `-c` flag
@@ -111,7 +104,7 @@ file [environment.yml](../environment.yml). You won't have to install any of the
 ### Singularity
 
 Make sure you have [Singularity](https://github.com/sylabs/singularity). If Singularity is not available on 
-your cluster, please ask your admins to install it. 
+your cluster, please ask your admins to install it - you will likely need version 3.0 or later. 
 
 To enable use of singularity, simply add the following to your custom config file (see below):
 

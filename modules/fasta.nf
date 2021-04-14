@@ -2,28 +2,6 @@
 // Generic functions for FASTA processing
 // ******************
 
-
-// Get Accession numbers from FASTA file
-
-process fastaToList {
-
-	label 'short_running'
-
-	input:
-	path fasta
-
-	output:
-	path accessions
-
-	script:
-	accessions = fasta.getBaseName() + ".accs.txt"
-
-	"""
-		grep "^>.*" $fasta | sed 's/^>//'  > $accessions
-	"""
-
-}
-
 process fastaSplitSize {
 
 	label 'medium_running'
@@ -45,6 +23,7 @@ process fastaSplitSize {
 
 process assemblySplit {
 
+	publishDir "${params.results}", mode: 'copy'
 	label 'short_running'
 
 	input:
@@ -144,14 +123,17 @@ process fastaCleanProteins {
 
 	"""
 
-		gaas_fasta_cleaner.pl -f $fasta -o tmp
+		sed 's/[.]\$//' $fasta > cleaned.fa
+		gaas_fasta_cleaner.pl -f cleaned.fa -o tmp
 		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
-		rm tmp
+		rm tmp cleaned.fa
 	"""
 
 }
 
 process fastaCleanNames {
+
+	publishDir "${params.results}", mode: 'copy'
 
 	input:
 	path(fasta)
