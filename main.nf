@@ -247,7 +247,7 @@ if (params.aug_config_folder) {
         	.set { augustus_config_folder }
 } else {
 // this is a bit dangerous, need to make sure this is updated when we bump to the next release version
-	Channel.from(file("/opt/conda/envs/esga-1.1/config"))
+	Channel.from(file("/opt/augustus/3.4.0/config"))
         	.set { augustus_config_folder }
 }
 if (!params.aug_species) {
