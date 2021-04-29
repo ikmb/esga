@@ -93,7 +93,7 @@ foreach my  $key  (@chromosomes) {
 	
 		my $output = $counter . "_" . "augustus_chunk.out" ;
 
-		my $command = "augustus --species=$model --softmasking=1 $options --gff3=on --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=1 --predictionEnd=$len  $key.fa > $output" ;
+		my $command = "augustus --species=$model --softmasking=1 $options --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=1 --predictionEnd=$len  $key.fa > $output" ;
 		printf $command . "\n" ;
 
 	} else {
@@ -117,7 +117,7 @@ foreach my  $key  (@chromosomes) {
 			#my $output = "augustus_chunk_" . $counter . ".out" ;
 			my $output = $counter . "_" . "augustus_chunk.out" ;
 
-			my $command = "augustus --species=$model --softmasking=1 $options --gff3=on --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$start --predictionEnd=$end $key.fa > $output" ;
+			my $command = "augustus --species=$model --softmasking=1 $options --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=$start --predictionEnd=$end $key.fa > $output" ;
                 	printf $command . "\n" ;	
 		
 			$start += ($chunk_length-$overlap);

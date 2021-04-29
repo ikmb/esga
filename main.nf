@@ -69,6 +69,7 @@ def helpMessage() {
     How to split programs:
     --nproteins		# of sequences to divide protein alignment jobs into [ default = 100 ]
     --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000, i.e. 200MB ]
+    --aug_chunk_length	Length of the individual AUGUSTUS processing chunks, overlapping by 1/6 of the chunk length
 
     Other options:
     --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]

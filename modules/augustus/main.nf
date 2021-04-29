@@ -68,7 +68,7 @@ workflow augustus_parallel {
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)
 	emit:
-		gff = joinAugustusChunks.out
+		gff = mergeAugustusGff.out
                 config = prepAugustusConfig.out
                 fasta = GffToFasta.out[0]
                 gff_filtered = AugustusFilterModels.out[0]
@@ -374,7 +374,9 @@ process runAugustusChunks {
 		fastaexplode -f $genome_chunk -d .
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
 		parallel -j ${task.cpus} < $command_file
-		for i in \$(ls *.out | sort -n ); do cat \$i >> $augustus_result ; done;
+		for i in \$(ls *.out | sort -n ); do echo \$i >> files.txt ; done;
+		joingenes -f files.txt -o ${augustus_result}
+		rm files.txt
 	"""
 	
 }
@@ -382,6 +384,8 @@ process runAugustusChunks {
 process joinAugustusChunks {
 
 	label 'augustus'
+
+        publishDir "${params.outdir}/logs/augustus/chunks", mode: 'copy'
 
 	input:
 	path chunks
@@ -394,9 +398,7 @@ process joinAugustusChunks {
 	augustus_models = chunk_name + ".merged.gff"
 
 	"""
-		cat $chunks > merged.txt
-		join_aug_pred.pl < merged.txt > $augustus_models 
-		rm merged.txt
+		fix_joingenes_gtf.pl < $chunks > $augustus_models
 	"""
 }
 

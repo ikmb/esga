@@ -16,6 +16,7 @@ You can also see the output of each intermediate step, which is saved in specifi
   * each separate type of evidence and resulting hints file. 
 * `<OUTDIR>/pipeline_info/` 
   * reports on pipeline performance. 
-
+* `<OUTDOR>/logs`
+  * Various intermediate outputs
 
 ![](../images/Pipeline_dag.svg)

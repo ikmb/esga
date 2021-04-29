@@ -216,6 +216,10 @@ running specific programs. Then that program can be run on each smaller chunk in
 When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want 
 to tweak one or several of the parameters below. If unsure, leave at the defaults.
 
+#### `--aug_chunk_length`[default = 3000000]
+The length of genomic sequence to run individual AUGUSTUS jobs on. Chunks are overlapped by 1/6*aug_chunk_length. The aug_chunk_length should be chosen so that the longest expected gene will fit in it. The default of 3MB should be sufficient for most metazoans. 
+Decreasing this number will (likely) create more parallel jobs.
+
 #### `--nproteins` [ default = 200 ]
 Number of sequences in each protein alignment job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 
 
