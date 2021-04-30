@@ -13,3 +13,4 @@ RUN apt-get -y update && apt-get -y install make gcc g++ zlib1g-dev zlib1g
 RUN mkdir -p /opt/spaln && cd /opt/spaln && wget https://github.com/ogotoh/spaln/archive/refs/tags/Ver2.4.3.tar.gz && tar -xvf Ver2.4.3.tar.gz \
 	&& mv spaln-Ver2.4.3 2.4.3 && rm Ver2.4.3.tar.gz \
 	&& cd 2.4.3/src && ./configure --use_zlib=1 && make && make install
+cpan -i URI::Encode
