@@ -14,14 +14,12 @@ workflow augustus_prediction {
 	main:
 		fastaSplitSize(genome,params.npart_size)
                 prepHintsToBed(hints)
-		prepAugustusConfig(augustus_config_dir)
-		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+		runAugustusBatch(fastaSplitSize.out.flatMap(),prepHintsToBed.out,augustus_config_dir.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
 		AugustusFilterModels(mergeAugustusGff.out[0],genome)
 	emit:
 		gff = mergeAugustusGff.out
-		config = prepAugustusConfig.out
 		fasta = GffToFasta.out[0]
 		gff_filtered = AugustusFilterModels.out[0]
 }
@@ -37,15 +35,13 @@ workflow augustus_prediction_slow {
 
         main:
                 fastaSplitSize(genome,params.npart_size)
-                prepAugustusConfig(augustus_config_dir)
-                runAugustus(fastaSplitSize.out.flatMap(),hints,prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+                runAugustus(fastaSplitSize.out.flatMap(),hints,augustus_config_dir.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)		
 
         emit:
                 gff = mergeAugustusGff.out
-                config = prepAugustusConfig.out
                 fasta = GffToFasta.out[0]
 		gff_filtered = AugustusFilterModels.out[0]
 
@@ -61,17 +57,28 @@ workflow augustus_parallel {
 
 	main:
 		fastaSplitSize(genome,params.npart_size)
-                prepAugustusConfig(augustus_config_dir)
-                runAugustusChunks(fastaSplitSize.out.flatMap(),hints.collect(),prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+                runAugustusChunks(fastaSplitSize.out.flatMap(),hints.collect(),augustus_config_dir.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
                 joinAugustusChunks(runAugustusChunks.out)
 		mergeAugustusGff(joinAugustusChunks.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)
 	emit:
-		gff = joinAugustusChunks.out
-                config = prepAugustusConfig.out
+		gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
                 gff_filtered = AugustusFilterModels.out[0]
+
+}
+
+workflow augustus_prep_config {
+
+	take:
+		augustus_config_dir
+
+	main:
+                prepAugustusConfig(augustus_config_dir)
+
+	emit:
+		config = prepAugustusConfig.out
 
 }
 
@@ -85,8 +92,7 @@ workflow augustus_prescan {
 
 	main:
                 fastaSplitSize(genome,params.npart_size)
-                prepAugustusConfig(augustus_config_dir)
-                runAugustusScan(fastaSplitSize.out.flatMap(),prepAugustusConfig.out.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
+                runAugustusScan(fastaSplitSize.out.flatMap(),augustus_config_dir.collect().map{ it[0].toString() },aug_extrinsic_config.collect() )
                 mergeAugustusGff(runAugustusScan.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
 
@@ -102,12 +108,11 @@ workflow augustus_train_from_spaln {
 	take:
 		genome
 		spaln_gff
-		augustus_config
+		augustus_config_dir
 
 	main:
-                prepAugustusConfig(augustus_config)
 		SpalnGffToTraining(spaln_gff)
-		trainAugustus(genome,SpalnGffToTraining.out,prepAugustusConfig.out.collect().map{ it[0].toString() },prepAugustusConfig.out)
+		trainAugustus(genome,SpalnGffToTraining.out,augustus_config_dir.collect().map{ it[0].toString() },augustus_config_dir)
 
 	emit:
 		acf_folder = trainAugustus.out[0]
@@ -121,12 +126,11 @@ workflow augustus_train_from_pasa {
 	take:
 		genome
 		pasa_gff
-		augustus_config
+		augustus_config_dir
 
 	main:
-
 		PasaGffToTraining(pasa_gff)
-		trainAugustus(genome,PasaGffToTraining.out[0],augustus_config,augustus_config)
+		trainAugustus(genome,PasaGffToTraining.out[0],augustus_config_dir.collect().map{ it[0].toString() },augustus_config_dir)
 
 	emit:
 		acf_folder = trainAugustus.out[0]
@@ -374,7 +378,9 @@ process runAugustusChunks {
 		fastaexplode -f $genome_chunk -d .
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
 		parallel -j ${task.cpus} < $command_file
-		for i in \$(ls *.out | sort -n ); do cat \$i >> $augustus_result ; done;
+		for i in \$(ls *.out | sort -n ); do echo \$i >> files.txt ; done;
+		joingenes -f files.txt -o ${augustus_result}
+		rm files.txt
 	"""
 	
 }
@@ -382,6 +388,8 @@ process runAugustusChunks {
 process joinAugustusChunks {
 
 	label 'augustus'
+
+        publishDir "${params.outdir}/logs/augustus/chunks", mode: 'copy'
 
 	input:
 	path chunks
@@ -394,9 +402,7 @@ process joinAugustusChunks {
 	augustus_models = chunk_name + ".merged.gff"
 
 	"""
-		cat $chunks > merged.txt
-		join_aug_pred.pl < merged.txt > $augustus_models 
-		rm merged.txt
+		fix_joingenes_gtf.pl < $chunks > $augustus_models
 	"""
 }
 

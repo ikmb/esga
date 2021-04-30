@@ -12,7 +12,7 @@ include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
 include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
-include { augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
+include { augustus_prep_config; augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
 include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
@@ -69,6 +69,7 @@ def helpMessage() {
     How to split programs:
     --nproteins		# of sequences to divide protein alignment jobs into [ default = 100 ]
     --npart_size	Size in bp to divide RepeatMasker and Augustus jobs [ default = 200000000, i.e. 200MB ]
+    --aug_chunk_length	Length of the individual AUGUSTUS processing chunks, overlapping by 1/6 of the chunk length
 
     Other options:
     --singleEnd		Specifies that the RNAseq input is single end reads [ true | false (default) ]
@@ -241,11 +242,8 @@ if (params.aug_config_folder) {
 		exit 1, "Custom Augustus config path does not exist..."
 	}
 	augustus_config_folder = Channel.from(folder_path)
-} else if (!workflow.containerEngine) {
-	Channel.from(file(System.getenv('AUGUSTUS_CONFIG_PATH')))
-		.ifEmpty { exit 1; "Looks like the Augustus config path is not set? This shouldn't happen!" }
-        	.set { augustus_config_folder }
 } else {
+	log.info "Taking hard-coded AUGUSTUS_CONFIG_PATH from container"
 // this is a bit dangerous, need to make sure this is updated when we bump to the next release version
 	Channel.from(file("/opt/augustus/3.4.0/config"))
         	.set { augustus_config_folder }
@@ -328,6 +326,10 @@ workflow {
 	assembly_preprocessing(params.genome)
 	genome_clean = assembly_preprocessing.out.fasta
 	assembly_stats = assembly_preprocessing.out.stats
+
+	// Stage augustus config folder
+	augustus_prep_config(augustus_config_folder)
+	augustus_config_dir = augustus_prep_config.out.config
 
 	// Repeat-mask the assembly
 	if (params.rm_species) {
@@ -432,17 +434,18 @@ workflow {
 		pasa_transcript_gff = Channel.empty()
 	}
 
+	// Train/modify the AUGUSTUS config folder
 	if (params.aug_training) {
 		// Prefer training from Spaln models since these tend to contain less noise 
 		if (params.proteins_targeted) {
-			augustus_train_from_spaln(genome_rm,protein_targeted_gff,augustus_config_folder)
+			augustus_train_from_spaln(genome_rm,protein_targeted_gff,augustus_config_dir)
 			augustus_conf_folder = augustus_train_from_spaln.out.acf_folder
 		} else if (params.transcripts && params.pasa) {
-			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_folder)
+			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_dir)
 			augustus_conf_folder = augustus_train_from_pasa.out.acf_folder
 		} 
 	} else {
-		augustus_conf_folder = augustus_config_folder
+		augustus_conf_folder = augustus_config_dir
 	}
 
 	// map existing gene models from related organisms using Kraken/Satsuma
