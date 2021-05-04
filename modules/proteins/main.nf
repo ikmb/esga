@@ -49,6 +49,27 @@ workflow proteinmodels {
 
 }
 
+workflow proteinhint_gth {
+
+	take:
+		genome
+		protein_fa
+
+	main:
+		blast_index(genome)
+		protein_index(protein_fa)
+		blast_proteins(protein_fa.splitFasta(by: params.nproteins),blast_index.out.collect())
+		blast2targets(blast_proteins.out.collectFile())
+		targets2gth(blast2targets.out.splitText(by: params.nproteins)	
+		gthToHints(targets2gth.out.collectFile(),params.pri_prot)
+	emit:
+		hints = gthToHints.out
+		gff = targets2gth.out.collectFile()
+		track = targets2gth.out.collectFile()
+
+
+}
+
 // Create a genome index for spaln
 process spalnMakeIndex {
 
@@ -160,8 +181,30 @@ process spalnToHints {
 	"""
 }
 
+process gthToHints {
+
+	publishDir "${params.outdir}/logs/gth", mode: 'copy'
+	
+	input:
+	path gff
+	val priority
+
+	output:
+	path hits
+
+	script:
+	hints = "gth.proteins.${priority}.hints.gff"
+
+	"""
+		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=gth --priority=${priority} --out=$hints
+	"""
+
+}
+
 // make a blast index 
 process blast_index {
+
+	label 'blast'
 
 	publishDir "${params.outdir}/blast/", mode: 'copy'
 
@@ -179,11 +222,30 @@ process blast_index {
 	"""
 }
 
+process protein_index {
+
+	input:
+	path protein_fa
+
+	output:
+	set path(protein_fa),path(protein_idx)
+
+	script:
+	protein_idx = protein_fa + ".cidx"
+
+	"""
+		cdbfasta $protein_fa
+	"""
+
+}
+
 process blast_proteins {
+
+	label 'blast'
 
 	input:
 	path protein_chunk
-	path blast_files
+	path blastdb_files
 
 	output:
 	path blast_results
@@ -213,27 +275,28 @@ process blast2targets {
 	targets = "blast_targets.bed"
 
 	"""
-		tblastn2exonerate_targets.pl --infile merged.txt > $targets
+		cut -f1,2 $blast_results | sort -u > $targets
 	"""
 }	
 
-process blast2exonerate {
+process targets2gth {
 
 	input:
 	path genome
-	path targets
-	
+	set path(protein_fa),path(protein_db)
+	path target_chunk
+
 	output:
-	path exonerate_out
+	path alignments
 
 	script:
-	exonerate_out = blast_result.getBaseName() + ".exonerate.out"
+	alignments = target_chunk + ".gth"
 
 	"""
-		exonerate_from_blast_hits.pl --matches $targets \
-			--genome_index $genome \
-			--max_intron_size $params.max_intron_size \
-			--protein_index $protein_db_index \
-			--outfile $commands
+		gth_from_targets.pl --genome $genome --proteins $protein_db --targets $target_chunk > commands.txt
+		parallel -j ${task.cpus} << commands.txt
+		cat *.out > $alignments
 	"""
+
 }
+

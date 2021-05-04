@@ -459,7 +459,7 @@ workflow {
         }
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
+	hints = protein_hints.concat(est_hints,trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS

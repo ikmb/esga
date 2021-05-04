@@ -19,3 +19,4 @@ dependencies:
  - pasa=2.4.1
  - gaas
  - bioconda::perl-uri=1.76
+ - bioconda::genomethreader=1.7.1
