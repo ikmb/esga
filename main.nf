@@ -9,7 +9,7 @@ params.version = workflow.manifest.version
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
+include { proteinmodels_spaln; proteinmodels_gth; proteinhint_spaln; proteinhint_gth } from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include { augustus_prep_config; augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
@@ -54,6 +54,7 @@ def helpMessage() {
     --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
     --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
     --aug_training	Enable AUGUSTUS training - if the aug_species already exists, only re-training will performed.
+    --protein_aligner	Specify the alignment algorithm to use for protein alignments (gth, spaln, default = spaln)
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
     --min_contig_size   Discard all contigs from the assembly smaller than this [ default = 5000 ]
@@ -124,6 +125,7 @@ summary['MaxIntronSize'] = params.max_intron_size
 summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
+summary['ProteinAligner'] = params.protein_aligner
 summary['Priority Proteins'] = params.pri_prot
 summary['Priority Transcripts'] = params.pri_est
 summary['Priority RNAseq Introns'] = params.pri_rnaseq
@@ -212,6 +214,10 @@ if (params.aug_config) {
 	exit 1, "Augustus extrinsic config not defined, cannot proceed..."
 }
 
+if (params.protein_aligner != "gth" && params.protein_aligner != "spaln") {
+	exit 1, "No valid protein aligner specified (gth,spaln)"
+}
+
 // Allow input of external hints generated with ProtHint pipelines
 if (params.prothint_gff && params.proteins) {
 	exit 1, "Only one source of proteins allowed - please choose either --prothint_gff or --proteins"
@@ -286,6 +292,7 @@ if (params.aug_training) {
 	}
 }
 log.info "Predict ncRNAs			${params.ncrna}"
+log.info "Protein aligner			${params.protein_aligner}"
 log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
 log.info "Run EVM gene building:		${params.evm}"
@@ -361,21 +368,36 @@ workflow {
 	}
 
 	// Generate hints from proteins (if any)
+	// Can use either SPALN or GenomeThreader
 	if (params.proteins) {
-		proteinhint_spaln(genome_clean,proteins)
-		protein_hints = proteinhint_spaln.out.hints
-		protein_evm_align = proteinhint_spaln.out.track
+		if (params.protein_aligner == "spaln") {
+			proteinhint_spaln(genome_clean,proteins)
+			protein_hints = proteinhint_spaln.out.hints
+			protein_evm_align = proteinhint_spaln.out.track
+		} else if (params.protein_aligner == "gth") {
+			proteinhint_gth(genome_clean,proteins)
+			protein_hints = proteinhint_gth.out.hints
+			protein_evm_align = proteinhint_gth.out.track	
+		}
 	} else {
 		protein_hints = Channel.empty()
 		protein_evm_align = Channel.empty()
 	}
 
 	// Construct gene models from species specific proteome
+	// Can use either SPALN or GenomeThreader
 	if (params.proteins_targeted) {
-		proteinmodels(genome_clean,proteins_targeted)
-		protein_targeted_hints = proteinmodels.out.hints
-                protein_targeted_gff = proteinmodels.out.gff
-		protein_targeted_evm_align = proteinmodels.out.track
+		if (params.protein_aligner == "spaln") {
+			proteinmodels_spaln(genome_clean,proteins_targeted)
+			protein_targeted_hints = proteinmodels_spaln.out.hints
+                	protein_targeted_gff = proteinmodels_spaln.out.gff
+			protein_targeted_evm_align = proteinmodels_spaln.out.track
+		} else if (params.protein_aligner == "gth") {
+			proteinmodels_gth(genome_clean,proteins_targeted)
+                        protein_targeted_hints = proteinmodels_gth.out.hints
+                        protein_targeted_gff = proteinmodels_gth.out.gff
+                        protein_targeted_evm_align = proteinmodels_gth.out.track
+		}
 	} else {
 		protein_targeted_hints = Channel.empty()
 		protein_targeted_gff = Channel.empty()

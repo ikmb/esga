@@ -27,7 +27,7 @@ workflow proteinhint_spaln {
 }
 
 // Used for targeted proteins to make a gene build from
-workflow proteinmodels {
+workflow proteinmodels_spaln {
 
 	take:
                 genome_rm
@@ -57,16 +57,39 @@ workflow proteinhint_gth {
 
 	main:
 		blast_index(genome)
-		protein_index(protein_fa)
-		blast_proteins(protein_fa.splitFasta(by: params.nproteins),blast_index.out.collect())
-		blast2targets(blast_proteins.out.collectFile())
-		targets2gth(blast2targets.out.splitText(by: params.nproteins)	
-		gthToHints(targets2gth.out.collectFile(),params.pri_prot)
+		fastaCleanProteins(protein_fa)
+                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+		blast_proteins(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),blast_index.out.collect())
+		blast2targets(blast_proteins.out.collect())
+		targets2gth(genome.collect(),protein_fa.collect(),blast2targets.out.splitText(by: params.nproteins, file: true))	
+		gthToHints(targets2gth.out.collect(),params.pri_prot)
+		spaln2evm(targets2gth.out.collect().collectFile())
 	emit:
 		hints = gthToHints.out
 		gff = targets2gth.out.collectFile()
-		track = targets2gth.out.collectFile()
+		track = spaln2evm.out
 
+}
+
+workflow proteinmodels_gth {
+
+	take:
+                genome
+                protein_fa
+
+        main:
+                blast_index(genome)
+                fastaCleanProteins(protein_fa)
+                fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
+                blast_proteins(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),blast_index.out.collect())
+                blast2targets(blast_proteins.out.collect())
+                targets2gth(genome.collect(),protein_fa.collect(),blast2targets.out.splitText(by: params.nproteins, file: true))
+                gthToHints(targets2gth.out.collect(),params.pri_prot)
+		spaln2evm(targets2gth.out.collect().collectFile())
+        emit:
+                hints = gthToHints.out
+                gff = targets2gth.out.collectFile()
+                track = spaln2evm.out
 
 }
 
@@ -186,17 +209,19 @@ process gthToHints {
 	publishDir "${params.outdir}/logs/gth", mode: 'copy'
 	
 	input:
-	path gff
+	path gffs
 	val priority
 
 	output:
-	path hits
+	path hints
 
 	script:
-	hints = "gth.proteins.${priority}.hints.gff"
+	hints = file(gffs[0]).getBaseName() + ".proteins.${priority}.hints.gff"
 
 	"""
-		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=gth --priority=${priority} --out=$hints
+		cat $gffs > gff
+		align2hints.pl --in=gff --maxintronlen=${params.max_intron_size} --prg=gth --priority=${priority} --out=$hints
+		rm gff
 	"""
 
 }
@@ -218,30 +243,17 @@ process blast_index {
 	dbName = genome_fa.getBaseName()
 
 	"""
-		makeblastdb -in $fasta -dbtype nucl -parse_seqids -out $dbName
+		makeblastdb -in $genome_fa -dbtype nucl -parse_seqids -out $dbName
 	"""
-}
-
-process protein_index {
-
-	input:
-	path protein_fa
-
-	output:
-	set path(protein_fa),path(protein_idx)
-
-	script:
-	protein_idx = protein_fa + ".cidx"
-
-	"""
-		cdbfasta $protein_fa
-	"""
-
 }
 
 process blast_proteins {
 
+	scratch true
+
 	label 'blast'
+
+	publishDir "${params.outdir}/logs/tblastn", mode: 'copy'
 
 	input:
 	path protein_chunk
@@ -258,6 +270,7 @@ process blast_proteins {
 		tblastn -num_threads ${task.cpus} \
 			-evalue ${params.blast_evalue} \
 			-max_intron_length ${params.max_intron_size} \
+			-outfmt 6 \
 			-db $db_name -query $protein_chunk > $blast_results
 	"""
 
@@ -275,15 +288,19 @@ process blast2targets {
 	targets = "blast_targets.bed"
 
 	"""
-		cut -f1,2 $blast_results | sort -u > $targets
+		cat $blast_results > blast.out
+		cut -f1,2 blast.out | sort -u | sort -k2 > $targets
+		rm blast.out
 	"""
 }	
 
 process targets2gth {
 
+	scratch true
+
 	input:
 	path genome
-	set path(protein_fa),path(protein_db)
+	path protein_fa
 	path target_chunk
 
 	output:
@@ -292,10 +309,24 @@ process targets2gth {
 	script:
 	alignments = target_chunk + ".gth"
 
+	def options = ""	
+	if (params.gth_options) {
+		options = params.gth_options
+	}
+
 	"""
-		gth_from_targets.pl --genome $genome --proteins $protein_db --targets $target_chunk > commands.txt
-		parallel -j ${task.cpus} << commands.txt
-		cat *.out > $alignments
+		cut -f1 $target_chunk | sort -u > proteins.txt
+		cut -f2 $target_chunk | sort -u > dna.txt
+		mkdir -p protein_db && cd protein_db && fasta_extract_from_list.pl --list ../proteins.txt --fasta ../${protein_fa} > jobs.sh && bash jobs.sh && cd ..
+		mkdir -p genome_db && cd genome_db && fasta_extract_from_list.pl --list ../dna.txt --fasta ../${genome} > jobs.sh && bash jobs.sh && cd ..
+		gth_from_targets.pl --targets $target_chunk --options $options > all_commands.txt
+		grep create all_commands.txt > indexing.sh
+		bash indexing.sh
+		rm *.gth.out
+		grep -v create all_commands.txt > commands.txt
+		parallel -j ${task.cpus} < commands.txt
+		cat *.gth.out > $alignments
+		rm -Rf genome_db protein_db *.gth.out
 	"""
 
 }
