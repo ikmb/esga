@@ -391,12 +391,12 @@ workflow {
 			proteinmodels_spaln(genome_clean,proteins_targeted)
 			protein_targeted_hints = proteinmodels_spaln.out.hints
                 	protein_targeted_gff = proteinmodels_spaln.out.gff
-			protein_targeted_evm_align = proteinmodels_spaln.out.track
+			protein_targeted_evm_align = proteinmodels_spaln.out.evm
 		} else if (params.protein_aligner == "gth") {
 			proteinmodels_gth(genome_clean,proteins_targeted)
                         protein_targeted_hints = proteinmodels_gth.out.hints
                         protein_targeted_gff = proteinmodels_gth.out.gff
-                        protein_targeted_evm_align = proteinmodels_gth.out.track
+                        protein_targeted_evm_align = proteinmodels_gth.out.evm
 		}
 	} else {
 		protein_targeted_hints = Channel.empty()

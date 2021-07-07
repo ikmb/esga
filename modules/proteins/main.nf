@@ -19,11 +19,13 @@ workflow proteinhint_spaln {
 		spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,60)
 		spalnToHints(spalnMerge.out, params.pri_prot)
 		spaln2evm(spalnMerge.out)
+		spaln2gmod(spalnMerge.out)
 	
 	emit:
 		hints = spalnToHints.out
 		gff = spalnMerge.out
-		track = spaln2evm.out
+		evm = spaln2evm.out
+		track = spaln2gmod.out
 }
 
 // Used for targeted proteins to make a gene build from
@@ -41,11 +43,13 @@ workflow proteinmodels_spaln {
                 spalnMerge(spalnAlign.out.collect(),spalnMakeIndex.out,90)
                 spalnToHints(spalnMerge.out, params.pri_prot_target)
 		spaln2evm(spalnMerge.out)
+		spaln2gmod(spalnMerge.out)
 
         emit:
                 hints = spalnToHints.out
                 gff = spalnMerge.out
-		track = spaln2evm.out
+		evm = spaln2evm.out
+		track = spaln2gmod.out
 
 }
 
@@ -119,7 +123,7 @@ process spalnAlign {
 
 	scratch true
 
-	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+	//publishDir "${params.outdir}/logs/spaln", mode: 'copy'
 
 	input:
 	path proteins
@@ -182,6 +186,25 @@ process spaln2evm {
 	"""
 		spaln2evm.pl --infile $spaln_models > $spaln_evm
 	"""
+}
+
+process spaln2gmod {
+
+	publishDir "${params.outdir}/tracks", mode: 'copy'
+
+	input:
+	path spaln_models
+
+	output:
+	path spaln_track
+
+	script:
+	spaln_track = spaln_models.getBaseName() + ".gmod.gff"
+
+	"""
+		spaln2gmod.pl --infile $spaln_models > $spaln_track
+	"""
+
 }
 
 // Convert spaln models into AUGUSTUS compatible hint format
