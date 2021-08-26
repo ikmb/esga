@@ -6,8 +6,8 @@ This pipeline is designed to run on a distributed compute system, such as a trad
 We have tested the pipeline on two Slurm clusters, with node configurations of 16cores/128GB Ram and 20cores/256GB Ram, respectively. 
 
 While smaller nodes will probably work, it may require some tweaking on your end. Most importantly, if you plan on using the transcriptome 
-assembly branch of the pipeline, available memory may become limiting (however, 128GB Ram should be fine for typical datasets; 256GB are perhaps 
-necessary if you plan on using a larger sample size). 
+assembly or the whole genome alignment branches of the pipeline, available memory may become limiting. For transcriptome assembly, 128GB should be fine in most cases. 
+Genome alignments will easily consume up to 500GB of RAM. If you cluster does not support those, it's best to not turn on this part. 
 
 ## Installing Nextflow
 

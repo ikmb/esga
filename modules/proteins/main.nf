@@ -72,7 +72,7 @@ workflow proteinhint_gth {
 		hints = gthToHints.out
 		gff = targets2gth.out.collectFile()
 		track = spaln2evm.out
-
+		evm = spaln2evm.out
 }
 
 workflow proteinmodels_gth {
@@ -94,7 +94,7 @@ workflow proteinmodels_gth {
                 hints = gthToHints.out
                 gff = targets2gth.out.collectFile()
                 track = spaln2evm.out
-
+		evm = spaln2evm.out
 }
 
 // Create a genome index for spaln

@@ -83,9 +83,9 @@ process fastaMergeFiles {
         merged_fasta = "sequences.merged.fa"
 
         """
-                cat $chunks >> merged.fa
-                fastasort -f merged.fa > $merged_fasta
-                rm merged.fa
+                cat $chunks >> $merged_fasta
+                #fastasort -f merged.fa > $merged_fasta
+                #rm merged.fa
         """
 
 }
@@ -132,8 +132,6 @@ process fastaCleanProteins {
 }
 
 process fastaCleanNames {
-
-	publishDir "${params.results}", mode: 'copy'
 
 	input:
 	path(fasta)

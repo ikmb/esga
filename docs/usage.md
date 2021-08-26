@@ -31,7 +31,7 @@ reads: false
 aug_species: "human"
 aug_options: ""
 spaln_taxon: "Tetrapod"
-spaln_q: 7
+spaln_q: 5
 utr: false
 trinity: false
 pasa: false
@@ -104,14 +104,6 @@ Please make sure to use closely related genomes for this (to annotate a primate,
 (>>100GB for vertebrates). We have had this part crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster 
 to successfully use this part of ESGA when working on larger vertebrates. 
 
-#### `--prothint_gff`
-Use hints already computed with the [ProtHint](https://github.com/gatech-genemark/ProtHint) pipeline. This option is incompatible with "--proteins". Please note that ESGA will not be able to sanity check the prothint-derived data. It must match your 
-assembly version to the "t"! This is especially critical with regards to the sequence names - ESGA will strip any decoration from your sequence names, like white spaces and any characters thereafter. 
-
-ProtHint is great! Why is ESGA not offering ProtHint as an integrated option?
-
-Unfortunately, the licenses for ProtHint and the required GeneMark-ET/ES are not compatible with a free and open use/distribution in the spirit of academic research. However, the installation is easy so you should be able to get this up and running in no time!
-
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
 yes you can run the Trinity transcriptome assembly part of the pipeline (see below), but if you already have a set of assembled transcripts (--transcripts), this may not be necessary in combination with the RNA-seq hints
@@ -133,11 +125,19 @@ on the size of the input data. However, we suspect that 120GB RAM will be fine i
 Independently predict non-coding RNAs using RFam version 14. The resulting models will not be merged into the main gene build but can be used for manual curation in e.g. WebApollo. Please note that the node executing the nextflow process
 must have access to the internet to download the RFam files on-the-fly (some clusters do not allow internet connections from compute or even login nodes).
 
-### 4. Program parameters
+### 4. Tool options
+
+#### `--rnaseq_aligner` [ hisat | star (default) ]
+Alignment software to use for RNAseq reads. Default is STAR.
+
+#### `--protein_aligner` [ gth | spaln (default) ]
+Alignment software to use for protein sequences. Default is SPALN.
+
+### 5. Program parameters
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
 The default value is set to 20000 - for something like a nematode, this would be too long; for some lower vertebrates it would probably be fine, although 
-a few introns may be much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. Information of plausible intron sizes can be obtained from the literature for many taxonomic groups. 
+a few introns may be much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. Information on plausible intron sizes can be obtained from the literature for many taxonomic groups. 
 
 #### `--rm_lib`[ fasta file | false ]
 ESGA can run RepeatMasker using the built-in repeat library (DFam 2.0) - see below. However, given that DFam is quite sparse, especially outside of mammals, we would recommend to instead provide 
@@ -203,13 +203,13 @@ Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particula
 #### `--pri_trans <int>` [ 4 (default) ]
 Priority for trans-mapped annotations (i.e. lift-over gene models, converted to CDS and exon hints).
 
-#### `--spaln_q <int>` [ 7 (default) ]
-Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details.
+#### `--spaln_q <int>` [ 5 (default) ]
+Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details. Options 5 to 7 are typically what you want when aligning proteins against an entire genome. 
 
 #### `--spaln_taxon` [ default = "Tetrapod" ]
 Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. The default, 'Tetrapod', should work for all tetrapods.
 
-### 5. How to tune the speed of the pipeline - data splitting
+### 6. How to tune the speed of the pipeline - data splitting
 
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 
 running specific programs. Then that program can be run on each smaller chunk in parallel in a compute cluster. 
@@ -232,7 +232,7 @@ Setting this to larger values will create fewer parallel jobs, so the run time i
 #### `--min_contig_size` [ default = 5000 ]
 Small contigs generally will not contribute anything useful to the annotation, but can increase runtime dramatically. Contigs smaller than this size are removed from the assembly prior to annotation. 
 
-### 6. Other options 
+### 7. Other options 
 
 #### `--email` [ you@somewhere.com | false (default)]
 If you specify an Email address, the pipeline will send a notification upon completion. However, for this to work, the node running the nextflow process must have a configured Email server. 

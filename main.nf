@@ -5,6 +5,12 @@ nextflow.preview.dsl=2
 
 params.version = workflow.manifest.version
 
+if (!params.reads && !params.proteins_targeted && !params.proteins && !params.transcripts) {
+	params.evidence = false
+} else {
+	params.evidence = true
+}
+
 // this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
@@ -14,7 +20,7 @@ include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include { augustus_prep_config; augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
-include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
+include { rnaseqhint_hisat; rnaseqhint_star } from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
 include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
@@ -47,6 +53,10 @@ def helpMessage() {
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --ncrna		Annotate ncRNAs using RFam
     --trinity		Assemble transcripts from provided RNAseq data
+
+    Tools:
+    --protein_aligner	Alignment software to use for proteins (spaln [default], gth)
+    --rnaseq_aligner	Alignment software to use for RNAseq reads (star [default], hisat)
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -179,8 +189,14 @@ if (params.transcripts) {
 }
 
 if (!params.reads && !params.proteins && !params.proteins_targeted && !params.transcripts) {
-	exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+	//exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+	log.warn "No annotation evidences provided... doing a naked annotation then..."
+
+	if (params.evm) {
+		exit 1, "Requested EVM gene building without providing any alignment evidences - this is not possible!"
+	}
 }
+dummy_hints = Channel.fromPath(params.empty_gff)
 
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
@@ -214,6 +230,9 @@ if (params.aug_config) {
 	exit 1, "Augustus extrinsic config not defined, cannot proceed..."
 }
 
+if (params.rnaseq_aligner != "star" && params.rnaseq_aligner != "hisat") {
+	exit 1, "No valid rnaseq aligner specified (star,hisat)"
+}
 if (params.protein_aligner != "gth" && params.protein_aligner != "spaln") {
 	exit 1, "No valid protein aligner specified (gth,spaln)"
 }
@@ -416,12 +435,19 @@ workflow {
 
 	// Generate hints from RNA-seq (if any)
 	if (params.reads) {
-		rnaseqhint(genome_clean,params.reads)
-		rna_hints = rnaseqhint.out.hints
-		rna_bam = rnaseqhint.out.bam
+		if (params.rnaseq_aligner == "star") {
+			rnaseqhint_star(genome_clean,params.reads)
+			rna_hints = rnaseqhint_star.out.hints
+			rna_bam = rnaseqhint_star.out.bam
+		} else {
+			rnaseqhint_hisat(genome_clean,params.reads)
+			rna_hints = rnaseqhint_hisat.out.hints
+			rna_bam = rnaseqhint_hisat.out.bam
+		}
+		
 		// Assembly reads into transcripts for PASA
 		if (params.trinity || !params.transcripts && params.reads && params.pasa ) {
-			trinity_guided_assembly(rnaseqhint.out.bam)
+			trinity_guided_assembly(rna_bam)
 			trinity_esthint(genome_clean,trinity_guided_assembly.out.assembly)
 			trinity_gff = trinity_esthint.out.gff
 			trinity_hints = trinity_esthint.out.hints
@@ -481,7 +507,7 @@ workflow {
         }
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints,trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
+	hints = protein_hints.concat(est_hints,trinity_hints,rna_hints,protein_targeted_hints,trans_hints,dummy_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS

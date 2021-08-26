@@ -67,3 +67,41 @@ process GffToFasta {
 	
 }
 
+process bam_index {
+
+	label 'medium_running'
+
+	input:
+	path bam
+
+	output:
+	path bam
+	path bai
+
+	script:
+	bai = bam.getName() + ".bai"
+
+	"""
+		samtools index $bam
+	"""
+
+}
+	
+process bam_merge {
+
+	label 'medium_running'
+
+	input:
+	path bams
+
+	output:
+	path merged_bams
+
+	script:
+	merged_bams = bams[0].getBaseName() + ".merged.bam"
+
+	"""
+		samtools merge -O BAM $merged_bams $bams
+	"""
+
+}

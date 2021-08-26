@@ -156,11 +156,27 @@ process AugustusFilterModels {
 	gff_good = gff.getName() + ".good.gff"
 	gff_bad = gff.getName() + ".bad.gff"
 	proteins = "augustus.protein_supported_models.proteins.fa"
-
-	"""
-		augustus_filter_models.pl --infile $gff 
-		gffread -g $genome -y augustus.protein_supported_models.proteins.fa $gff_good
-	"""
+	def support = 1.0
+	// FIX THIS
+	// Filtering makes no sense if we do not have evidences
+	def m = "PE"
+	if (params.evidence) {
+		if (!params.proteins && !params.proteins_targeted) {
+			m = "E"
+		}
+	}
+	if (params.evidence) {
+		"""
+			augustus_filter_models.pl --infile $gff --support $support --mode $m
+			gffread -g $genome -y augustus.protein_supported_models.proteins.fa $gff_good
+		"""
+	} else {
+		"""
+			gffread -g $genome -y $proteins $gff
+			cp $gff $gff_good
+			touch $gff_bad
+		"""
+	}
 }
 
 // Convert a SPALN alignment to full GFF format

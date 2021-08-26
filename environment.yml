@@ -1,20 +1,19 @@
 # You can use this file to create a conda environment for the genome-annotation pipeline:
 #   conda env create -f genome-annotation-conda.yml
-name: esga-1.1
+name: esga-1.2
 channels:
  - defaults
  - conda-forge
  - bioconda
 dependencies:
  - parallel
- - samtools
+ - samtools=1.13
  - repeatmodeler=1.0.11
  - repeatmasker=4.0.7
  - cdbtools
  - exonerate=2.4.0 
- - hisat2=2.2.1
  - evidencemodeler=1.1.1
- - minimap2=2.17
+ - minimap2=2.22
  - gffread=0.11.7
  - pasa=2.4.1
  - gaas
