@@ -2,6 +2,8 @@
 
 # ESGA - Genome Annotation (v2)
 
+This project is under active development - it may not work for all possible use cases yet. 
+
 [![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/)
 
 [![Docker Container available](https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
