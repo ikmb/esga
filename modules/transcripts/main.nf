@@ -26,6 +26,8 @@ workflow esthint {
 // Map transcripts onto a genome using Minimap2
 process estMinimap {
 
+	label 'minimap'
+
 	//scratch true
 
 	publishDir "${params.outdir}/transcripts", mode: 'copy'
