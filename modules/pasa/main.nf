@@ -1,5 +1,5 @@
 include fastaSplitSize from "./../fasta"  params(params)
-include estMinimap from "./../transcripts/main.nf" params(params)
+include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
 include GffToFasta from "./../util" params(params)
 
 workflow pasa {
@@ -11,7 +11,8 @@ workflow pasa {
 	main:
 		runSeqClean(transcripts)
 		estMinimap(runSeqClean.out[0],genome)
-		runPasa(genome,transcripts,estMinimap.out[0])
+		estMinimapToGff(estMinimap.out)
+		runPasa(genome,transcripts,estMinimapToGff.out[0])
 		PasaToModels(runPasa.out[0],runPasa.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
