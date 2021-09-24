@@ -28,7 +28,7 @@ include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 include rfamsearch from "./modules/infernal/main.nf" params(params)
 include map_annotation from "./modules/satsuma/main.nf" params(params)
 include get_software_versions from "./modules/logging/main.nf" params(params)
-
+include { snap_train_from_spaln; snap_train_from_pasa ; snap } from "./modules/snap/main.nf" params(params)
 def helpMessage() {
   log.info"""
   =================================================================
@@ -176,6 +176,14 @@ if (params.proteins_targeted) {
 	proteins_targeted = Channel.from(pt)
 } else {
 	proteins_targeted = Channel.empty()
+}
+
+if (params.reads) {
+	Channel.fromFilePairs(params.reads, size: -1)
+	.ifEmpty { exit 1; "Did not find any reads matching your input pattern" }
+	. set { reads}
+} else {
+	reads = Channel.empty()
 }
 
 if (params.transcripts) {
@@ -436,11 +444,11 @@ workflow {
 	// Generate hints from RNA-seq (if any)
 	if (params.reads) {
 		if (params.rnaseq_aligner == "star") {
-			rnaseqhint_star(genome_clean,params.reads)
+			rnaseqhint_star(genome_clean,reads)
 			rna_hints = rnaseqhint_star.out.hints
 			rna_bam = rnaseqhint_star.out.bam
 		} else {
-			rnaseqhint_hisat(genome_clean,params.reads)
+			rnaseqhint_hisat(genome_clean,reads)
 			rna_hints = rnaseqhint_hisat.out.hints
 			rna_bam = rnaseqhint_hisat.out.bam
 		}
@@ -494,6 +502,28 @@ workflow {
 		} 
 	} else {
 		augustus_conf_folder = augustus_config_dir
+	}
+	
+	// Gene finding using SNAP
+	if (params.snap) {
+		// use an existing SNAP HMM file
+		if (params.snap_hmm) {
+			hmm = Channel.fromPath(file(params.snap_hmm))
+		} else {
+			if (params.proteins_targeted) {
+				snap_train_from_spaln(genome,protein_targeted_gff)
+				hmm = snap_train_from_spaln.out.hmm
+			} else if (params.transcripts && params.pasa) { 
+				snap_train_from_pasa(genome,pasa_gff)
+                                hmm = snap_train_from_pasa.out.hmm
+			}
+		}
+
+		snap(genome_rm,hmm)
+		snap_gff = snap.out.annotation
+
+	} else {
+		snap_gff = Channel.empty()
 	}
 
 	// map existing gene models from related organisms using Kraken/Satsuma
@@ -581,6 +611,8 @@ workflow {
 		protein_targeted_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
+		liftovers to: "${params.outdir}/liftover", mode: 'copy'
+		trans_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_bam to: "${params.outdir}/evidence/rnaseq", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'

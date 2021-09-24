@@ -40,7 +40,6 @@ process estMinimap {
 	path minimap_bam
 
 	script:
-	minimap_gff = est.getBaseName() + ".minimap.gff"
 	minimap_bam = est.getBaseName() + ".minimap.bam"
 
 	"""
@@ -58,7 +57,7 @@ process estMinimapToGff {
 	path gff
 
 	script:
-	gff = bam.getBaseName() + ".minimap.gff"
+	gff = bam.getBaseName() + ".minimap.gff3"
 
 	"""
 		minimap2_bam2gff.pl $bam > $gff
@@ -100,7 +99,7 @@ process estMinimapToTrack {
 	path minimap_track
 
 	script:
-	minimap_track = minimap_gff.getBaseName() + ".webapollo.gff"
+	minimap_track = minimap_gff.getBaseName() + ".webapollo.gff3"
 
 	"""
 		match2track.pl --infile $minimap_gff > $minimap_track

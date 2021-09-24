@@ -131,7 +131,7 @@ must have access to the internet to download the RFam files on-the-fly (some clu
 Alignment software to use for RNAseq reads. Default is STAR.
 
 #### `--protein_aligner` [ gth | spaln (default) ]
-Alignment software to use for protein sequences. Default is SPALN.
+Alignment software to use for protein sequences. Default is `spaln` since it is much faster than `gth`. This speed advantage may be offset by some questionable alignments. In that case, re-run with gth to check if the alignments improve. 
 
 ### 5. Program parameters
 

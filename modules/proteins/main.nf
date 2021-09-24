@@ -135,7 +135,7 @@ process spalnAlign {
 
 	script:
 	chunk_name = proteins.getBaseName() 
-	spaln_gff = chunk_name + ".gff"
+	spaln_gff = chunk_name + ".gff3"
 	spaln_grd = chunk_name + ".grd"
 
 	"""
@@ -181,7 +181,7 @@ process spaln2evm {
 	path spaln_evm
 
 	script:
-	spaln_evm = spaln_models.getBaseName() + ".evm.gff"
+	spaln_evm = spaln_models.getBaseName() + ".evm.gff3"
 
 	"""
 		spaln2evm.pl --infile $spaln_models > $spaln_evm
@@ -220,7 +220,7 @@ process spalnToHints {
 	path hints
 
 	script:
-	hints = "spaln.proteins.${priority}.hints.gff"
+	hints = "spaln.proteins.${priority}.hints.gff3"
 
 	"""
 		align2hints.pl --in=$gff --maxintronlen=${params.max_intron_size} --prg=spaln --priority=${priority} --out=$hints
@@ -319,7 +319,7 @@ process blast2targets {
 
 process targets2gth {
 
-	scratch true
+	//scratch true
 
 	input:
 	path genome
@@ -334,7 +334,7 @@ process targets2gth {
 
 	def options = ""	
 	if (params.gth_options) {
-		options = params.gth_options
+		options = "--options ${params.gth_options}"
 	}
 
 	"""
@@ -342,7 +342,7 @@ process targets2gth {
 		cut -f2 $target_chunk | sort -u > dna.txt
 		mkdir -p protein_db && cd protein_db && fasta_extract_from_list.pl --list ../proteins.txt --fasta ../${protein_fa} > jobs.sh && bash jobs.sh && cd ..
 		mkdir -p genome_db && cd genome_db && fasta_extract_from_list.pl --list ../dna.txt --fasta ../${genome} > jobs.sh && bash jobs.sh && cd ..
-		gth_from_targets.pl --targets $target_chunk --options $options > all_commands.txt
+		gth_from_targets.pl --targets $target_chunk $options > all_commands.txt
 		grep create all_commands.txt > indexing.sh
 		bash indexing.sh
 		rm *.gth.out

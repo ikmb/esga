@@ -9,8 +9,8 @@ workflow evm_prediction {
 		transcript_gff
 		gene_models
 	main:
-		evmMergeGenes(gene_models)
-		evmPartition(genome,evmMergeGenes.out[0],transcript_gff.collectFile(),protein_gff.collectFile())
+		evmMergeGenes(gene_models.collect())
+		evmPartition(genome,evmMergeGenes.out[0].collectFile(),transcript_gff.collectFile(),protein_gff.collectFile())
 		runEvm(evmPartition.out[0].splitText(by: params.nevm, file: true))
 		evmMerge(runEvm.out.collect(),evmPartition.out[1].collect(),genome.collect())
 		evmToGff(evmMerge.out[0].collect())

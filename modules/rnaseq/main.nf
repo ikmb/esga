@@ -11,7 +11,7 @@ workflow rnaseqhint_hisat {
 
 	main:
 		HisatMakeDB(genome)
-		runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
+		runFastp(reads )
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
 		makeBigWig(HisatMap.out[0],HisatMap.out[1])
 		mergeBams(HisatMap.out[0].collect())
@@ -32,7 +32,7 @@ workflow rnaseqhint_star {
 
         main:
                 STARmakeDB(genome)
-                runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
+                runFastp(reads)
                 STARalign(runFastp.out[0],STARmakeDB.out.collect())
 		STARalignTwo(runFastp.out[0],STARmakeDB.out.collect(),STARalign.out.collect())
 		bam_index(STARalignTwo.out[0])
