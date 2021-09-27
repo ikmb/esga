@@ -10,7 +10,7 @@ dependencies:
  - samtools
  - repeatmodeler=1.0.11
  - repeatmasker=4.0.7
- - bioconda::hisat2:2.2.1
+ - bioconda::hisat2=2.2.1
  - cdbtools
  - exonerate=2.4.0 
  - evidencemodeler=1.1.1
