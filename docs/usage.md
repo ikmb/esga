@@ -74,7 +74,7 @@ Location of a single FASTA file with all EST sequences or assembled transcriptom
 them into a single file first and make sure that the sequence names are not duplicated (this happens when you try to merge two Trinity assemblies, for example). 
 
 #### `--proteins_targeted`
-Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one.
+Location of a single FASTA file with exactly one proteome from your species of interest or a very closely related one. Make sure that this file contains more than just a few sequences as it expects to have a near complete proteome here. 
 
 #### `--proteins` 
 Location of a single FASTA file with protein sequences from related taxa. If you have multiple files, concatenate them into a single file first. 

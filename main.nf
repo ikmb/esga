@@ -57,6 +57,7 @@ def helpMessage() {
     Tools:
     --protein_aligner	Alignment software to use for proteins (spaln [default], gth)
     --rnaseq_aligner	Alignment software to use for RNAseq reads (star [default], hisat)
+    --snap		Run the SNAP gene finder in addition to AUGUSTUS
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -64,6 +65,7 @@ def helpMessage() {
     --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
     --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
     --aug_training	Enable AUGUSTUS training - if the aug_species already exists, only re-training will performed.
+    --snap_hmm		Pass an existing SNAP HMM profile to skip de-novo training.
     --protein_aligner	Specify the alignment algorithm to use for protein alignments (gth, spaln, default = spaln)
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
@@ -225,6 +227,10 @@ if (params.pasa && params.reads && !params.trinity) {
 }
 if (params.polish && !params.pasa) {
 	exit 1, "Cannot polish an annotation without running Pasa (--pasa, --transcripts or --trinity & reads)"
+}
+
+if (params.snap && !params.snap_hmm  && !params.proteins_targeted && !params.transcripts && !params.reads) {
+	exit 1, "Cannot run SNAP without some sort of training data or existing HMM profile"
 }
 
 if (params.aug_config) {
@@ -508,14 +514,18 @@ workflow {
 	if (params.snap) {
 		// use an existing SNAP HMM file
 		if (params.snap_hmm) {
-			hmm = Channel.fromPath(file(params.snap_hmm))
+			Channel.fromPath(file(params.snap_hmm))
+			.ifEmpty { 1; "Could not find the specified SNAP hmm profile" }
+			.set { hmm }
 		} else {
 			if (params.proteins_targeted) {
 				snap_train_from_spaln(genome,protein_targeted_gff)
 				hmm = snap_train_from_spaln.out.hmm
-			} else if (params.transcripts && params.pasa) { 
+			} else if (params.pasa) { 
 				snap_train_from_pasa(genome,pasa_gff)
                                 hmm = snap_train_from_pasa.out.hmm
+			} else {
+				snap_gff = Channel.empty()
 			}
 		}
 
@@ -556,7 +566,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers, snap_gff).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff)
