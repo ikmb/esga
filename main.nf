@@ -181,9 +181,11 @@ if (params.proteins_targeted) {
 }
 
 if (params.reads) {
+
 	Channel.fromFilePairs(params.reads, size: -1)
 	.ifEmpty { exit 1; "Did not find any reads matching your input pattern" }
-	. set { reads}
+	.set { reads}
+
 } else {
 	reads = Channel.empty()
 }

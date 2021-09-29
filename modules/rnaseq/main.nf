@@ -185,7 +185,7 @@ process STARalignTwo {
 // We use HiSat so we don't need to know the read length during index construction, unlike STAR
 process HisatMakeDB {
 
-	label 'hisat'
+	//label 'hisat'
 
 	//publishDir "${params.outdir}/databases/HisatDB", mode: 'copy'
 
@@ -207,7 +207,7 @@ process HisatMakeDB {
 
 process HisatMap {
 
-	label 'hisat'
+	//label 'hisat'
 
 	publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
 	
