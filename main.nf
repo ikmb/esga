@@ -5,16 +5,22 @@ nextflow.preview.dsl=2
 
 params.version = workflow.manifest.version
 
+if (!params.reads && !params.proteins_targeted && !params.proteins && !params.transcripts) {
+	params.evidence = false
+} else {
+	params.evidence = true
+}
+
 // this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
 include fastaMergeFiles from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
 include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
-include { proteinmodels; proteinhint_spaln } from "./modules/proteins/main.nf" params(params)
+include { proteinmodels_spaln; proteinmodels_gth; proteinhint_spaln; proteinhint_gth } from "./modules/proteins/main.nf" params(params)
 include esthint from "./modules/transcripts/main.nf" params(params)
 include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
 include { augustus_prep_config; augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
 include merge_hints from "./modules/util" params(params)
-include rnaseqhint from "./modules/rnaseq/main.nf" params(params)
+include { rnaseqhint_hisat; rnaseqhint_star } from "./modules/rnaseq/main.nf" params(params)
 include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
 include evm_prediction from "./modules/evm/main.nf" params(params)
 include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
@@ -22,7 +28,7 @@ include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
 include rfamsearch from "./modules/infernal/main.nf" params(params)
 include map_annotation from "./modules/satsuma/main.nf" params(params)
 include get_software_versions from "./modules/logging/main.nf" params(params)
-
+include { snap_train_from_spaln; snap_train_from_pasa ; snap } from "./modules/snap/main.nf" params(params)
 def helpMessage() {
   log.info"""
   =================================================================
@@ -47,6 +53,11 @@ def helpMessage() {
     --evm               Whether to run EvicenceModeler at the end to produce a consensus gene build [true | false (default) ]
     --ncrna		Annotate ncRNAs using RFam
     --trinity		Assemble transcripts from provided RNAseq data
+
+    Tools:
+    --protein_aligner	Alignment software to use for proteins (spaln [default], gth)
+    --rnaseq_aligner	Alignment software to use for RNAseq reads (star [default], hisat)
+    --snap		Run the SNAP gene finder in addition to AUGUSTUS
  	
     Programs parameters:
     --rm_lib		Perform repeatmasking using a library in FASTA format [ default = 'false' ]
@@ -54,6 +65,8 @@ def helpMessage() {
     --aug_species	Species model for Augustus [ default = 'human' ]. If "--training true" and you want to do de novo training, give a NEW name to your species
     --aug_config	Location of augustus configuration file [ default = 'bin/augustus_default.cfg' ]
     --aug_training	Enable AUGUSTUS training - if the aug_species already exists, only re-training will performed.
+    --snap_hmm		Pass an existing SNAP HMM profile to skip de-novo training.
+    --protein_aligner	Specify the alignment algorithm to use for protein alignments (gth, spaln, default = spaln)
     --max_intron_size	Maximum length of introns to consider for spliced alignments [ default = 20000 ]
     --evm_weights	Custom weights file for EvidenceModeler (overrides the internal default)
     --min_contig_size   Discard all contigs from the assembly smaller than this [ default = 5000 ]
@@ -124,6 +137,7 @@ summary['MaxIntronSize'] = params.max_intron_size
 summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
+summary['ProteinAligner'] = params.protein_aligner
 summary['Priority Proteins'] = params.pri_prot
 summary['Priority Transcripts'] = params.pri_est
 summary['Priority RNAseq Introns'] = params.pri_rnaseq
@@ -166,6 +180,16 @@ if (params.proteins_targeted) {
 	proteins_targeted = Channel.empty()
 }
 
+if (params.reads) {
+
+	Channel.fromFilePairs(params.reads, size: -1)
+	.ifEmpty { exit 1; "Did not find any reads matching your input pattern" }
+	.set { reads}
+
+} else {
+	reads = Channel.empty()
+}
+
 if (params.transcripts) {
 	t = file(params.transcripts)
 	if (!t.exists() ) {
@@ -177,8 +201,14 @@ if (params.transcripts) {
 }
 
 if (!params.reads && !params.proteins && !params.proteins_targeted && !params.transcripts) {
-	exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+	//exit 1, "Need to specify some kind of annotation evidence for this pipeline to run!"
+	log.warn "No annotation evidences provided... doing a naked annotation then..."
+
+	if (params.evm) {
+		exit 1, "Requested EVM gene building without providing any alignment evidences - this is not possible!"
+	}
 }
+dummy_hints = Channel.fromPath(params.empty_gff)
 
 if (params.rm_species && params.rm_lib) {
 	log.warn "Specified both a repeatmasker species and a library - will only use the species!"
@@ -201,6 +231,10 @@ if (params.polish && !params.pasa) {
 	exit 1, "Cannot polish an annotation without running Pasa (--pasa, --transcripts or --trinity & reads)"
 }
 
+if (params.snap && !params.snap_hmm  && !params.proteins_targeted && !params.transcripts && !params.reads) {
+	exit 1, "Cannot run SNAP without some sort of training data or existing HMM profile"
+}
+
 if (params.aug_config) {
 	aug_config_file = file(params.aug_config)
 	if (aug_config_file.exists()) {
@@ -210,6 +244,13 @@ if (params.aug_config) {
 	}
 } else {
 	exit 1, "Augustus extrinsic config not defined, cannot proceed..."
+}
+
+if (params.rnaseq_aligner != "star" && params.rnaseq_aligner != "hisat") {
+	exit 1, "No valid rnaseq aligner specified (star,hisat)"
+}
+if (params.protein_aligner != "gth" && params.protein_aligner != "spaln") {
+	exit 1, "No valid protein aligner specified (gth,spaln)"
 }
 
 // Allow input of external hints generated with ProtHint pipelines
@@ -286,6 +327,7 @@ if (params.aug_training) {
 	}
 }
 log.info "Predict ncRNAs			${params.ncrna}"
+log.info "Protein aligner			${params.protein_aligner}"
 log.info "Run PASA assembly:		${params.pasa}"
 log.info "Run Trinity assembly:		${params.trinity}"
 log.info "Run EVM gene building:		${params.evm}"
@@ -361,21 +403,36 @@ workflow {
 	}
 
 	// Generate hints from proteins (if any)
+	// Can use either SPALN or GenomeThreader
 	if (params.proteins) {
-		proteinhint_spaln(genome_clean,proteins)
-		protein_hints = proteinhint_spaln.out.hints
-		protein_evm_align = proteinhint_spaln.out.track
+		if (params.protein_aligner == "spaln") {
+			proteinhint_spaln(genome_clean,proteins)
+			protein_hints = proteinhint_spaln.out.hints
+			protein_evm_align = proteinhint_spaln.out.track
+		} else if (params.protein_aligner == "gth") {
+			proteinhint_gth(genome_clean,proteins)
+			protein_hints = proteinhint_gth.out.hints
+			protein_evm_align = proteinhint_gth.out.track	
+		}
 	} else {
 		protein_hints = Channel.empty()
 		protein_evm_align = Channel.empty()
 	}
 
 	// Construct gene models from species specific proteome
+	// Can use either SPALN or GenomeThreader
 	if (params.proteins_targeted) {
-		proteinmodels(genome_clean,proteins_targeted)
-		protein_targeted_hints = proteinmodels.out.hints
-                protein_targeted_gff = proteinmodels.out.gff
-		protein_targeted_evm_align = proteinmodels.out.track
+		if (params.protein_aligner == "spaln") {
+			proteinmodels_spaln(genome_clean,proteins_targeted)
+			protein_targeted_hints = proteinmodels_spaln.out.hints
+                	protein_targeted_gff = proteinmodels_spaln.out.gff
+			protein_targeted_evm_align = proteinmodels_spaln.out.evm
+		} else if (params.protein_aligner == "gth") {
+			proteinmodels_gth(genome_clean,proteins_targeted)
+                        protein_targeted_hints = proteinmodels_gth.out.hints
+                        protein_targeted_gff = proteinmodels_gth.out.gff
+                        protein_targeted_evm_align = proteinmodels_gth.out.evm
+		}
 	} else {
 		protein_targeted_hints = Channel.empty()
 		protein_targeted_gff = Channel.empty()
@@ -394,12 +451,19 @@ workflow {
 
 	// Generate hints from RNA-seq (if any)
 	if (params.reads) {
-		rnaseqhint(genome_clean,params.reads)
-		rna_hints = rnaseqhint.out.hints
-		rna_bam = rnaseqhint.out.bam
+		if (params.rnaseq_aligner == "star") {
+			rnaseqhint_star(genome_clean,reads)
+			rna_hints = rnaseqhint_star.out.hints
+			rna_bam = rnaseqhint_star.out.bam
+		} else {
+			rnaseqhint_hisat(genome_clean,reads)
+			rna_hints = rnaseqhint_hisat.out.hints
+			rna_bam = rnaseqhint_hisat.out.bam
+		}
+		
 		// Assembly reads into transcripts for PASA
 		if (params.trinity || !params.transcripts && params.reads && params.pasa ) {
-			trinity_guided_assembly(rnaseqhint.out.bam)
+			trinity_guided_assembly(rna_bam)
 			trinity_esthint(genome_clean,trinity_guided_assembly.out.assembly)
 			trinity_gff = trinity_esthint.out.gff
 			trinity_hints = trinity_esthint.out.hints
@@ -447,6 +511,32 @@ workflow {
 	} else {
 		augustus_conf_folder = augustus_config_dir
 	}
+	
+	// Gene finding using SNAP
+	if (params.snap) {
+		// use an existing SNAP HMM file
+		if (params.snap_hmm) {
+			Channel.fromPath(file(params.snap_hmm))
+			.ifEmpty { 1; "Could not find the specified SNAP hmm profile" }
+			.set { hmm }
+		} else {
+			if (params.proteins_targeted) {
+				snap_train_from_spaln(genome,protein_targeted_gff)
+				hmm = snap_train_from_spaln.out.hmm
+			} else if (params.pasa) { 
+				snap_train_from_pasa(genome,pasa_gff)
+                                hmm = snap_train_from_pasa.out.hmm
+			} else {
+				snap_gff = Channel.empty()
+			}
+		}
+
+		snap(genome_rm,hmm)
+		snap_gff = snap.out.annotation
+
+	} else {
+		snap_gff = Channel.empty()
+	}
 
 	// map existing gene models from related organisms using Kraken/Satsuma
         if (params.references) {
@@ -459,7 +549,7 @@ workflow {
         }
 
 	// Merge hints
-	hints = protein_hints.concat(est_hints, trinity_hints,rna_hints,protein_targeted_hints,trans_hints)
+	hints = protein_hints.concat(est_hints,trinity_hints,rna_hints,protein_targeted_hints,trans_hints,dummy_hints)
 	merge_hints(hints.collect())
 
 	// Run AUGUSTUS
@@ -478,7 +568,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers, snap_gff).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff)
@@ -533,6 +623,8 @@ workflow {
 		protein_targeted_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
+		liftovers to: "${params.outdir}/liftover", mode: 'copy'
+		trans_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
 		rna_bam to: "${params.outdir}/evidence/rnaseq", mode: 'copy'
 		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'

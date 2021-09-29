@@ -93,7 +93,7 @@ foreach my  $key  (@chromosomes) {
 	
 		my $output = $counter . "_" . "augustus_chunk.out" ;
 
-		my $command = "augustus --species=$model --softmasking=1 $options --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=1 --predictionEnd=$len  $key.fa > $output" ;
+		my $command = "augustus --exonnames=on --species=$model --softmasking=1 $options --UTR=$utr --extrinsicCfgFile=$aug_conf --hintsfile=$hints --predictionStart=1 --predictionEnd=$len  $key.fa > $output" ;
 		printf $command . "\n" ;
 
 	} else {

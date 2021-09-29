@@ -54,9 +54,10 @@ while (<$IN>) {
         my $line = $_;
         chomp $line;
 
-        my ($seq,$src,$feature,$start,$stop,$score,$strand,$phase,$info) = split("\t",$line);
+	# ctg.000005F     EVM2.2  exon    273274  273476  .       -       .       gene_id "ML000115a"; transcript_id "ML000115a-1"; gene_name "ML000115a;";
 
-	
+        my ($seq,$src,$feature,$start,$stop,$score,$strand,$phase,$info) = split(/\t/,$line);
+
 	my $hint_type = "" ;
 	my $margin = 0;
 
@@ -89,9 +90,8 @@ while (<$IN>) {
 
 	$group =~ s/\"//g ;
 	
-	printf $seq . "\t" . "transmapped" . "\t" . $hint_type . "\t" . $start+$margin . "\t" . $stop-$margin . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;source=$source;pri=$pri\n";
+	printf $seq . "\t" . "transmapped" . "\t" . $hint_type . "\t" . ($start+$margin) . "\t" . ($stop-$margin) . "\t" . "." . "\t" . $strand . "\t" . "." . "\t" . "group=$group;src=$source;pri=$pri\n";
 
-	
 }
 
 close($IN);

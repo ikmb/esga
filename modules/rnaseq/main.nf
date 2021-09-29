@@ -1,6 +1,9 @@
 // Workflow to perform RNA-seq mapping against a reference
 // requires: genome sequence in FASTA format (unmasked is fine) and one or more RNA-seq read sets
-workflow rnaseqhint {
+
+include {bam_index} from "../util.nf" params(params)
+
+workflow rnaseqhint_hisat {
 
 	take:
 		genome
@@ -8,9 +11,9 @@ workflow rnaseqhint {
 
 	main:
 		HisatMakeDB(genome)
-		runFastp(Channel.fromFilePairs(reads).ifEmpty { exit 1, "Did not find any matching read files" } )
+		runFastp(reads )
 		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
-		makeBigWig(HisatMap.out[0],HisatMap.out[1])		
+		makeBigWig(HisatMap.out[0],HisatMap.out[1])
 		mergeBams(HisatMap.out[0].collect())
 		BamToExonHint(mergeBams.out)
 		BamToIntronHint(mergeBams.out)
@@ -19,6 +22,31 @@ workflow rnaseqhint {
 	emit:
 		bam = mergeBams.out[0]
 		hints = filterRseqHints.out[0]		
+}
+
+workflow rnaseqhint_star {
+
+	take:
+                genome
+                reads
+
+        main:
+                STARmakeDB(genome)
+                runFastp(reads)
+                STARalign(runFastp.out[0],STARmakeDB.out.collect())
+		STARalignTwo(runFastp.out[0],STARmakeDB.out.collect(),STARalign.out.collect())
+		bam_index(STARalignTwo.out[0])
+		makeBigWig(bam_index.out[0],bam_index.out[1])
+                mergeBams(STARalignTwo.out[0].collect())
+                BamToExonHint(mergeBams.out)
+                BamToIntronHint(mergeBams.out)
+                filterRseqHints(BamToIntronHint.out.concat(BamToExonHint.out).collectFile())
+
+        emit:
+                bam = mergeBams.out[0]
+                hints = filterRseqHints.out[0]
+
+
 }
 
 
@@ -58,11 +86,106 @@ process runFastp {
 	}
 }
 
+process STARmakeDB {
+
+	label 'star'
+
+	publishDir "${params.outdir}/databases/STAR", mode: 'copy'
+
+	input:
+	path genome
+
+	output:
+	path star_dir
+
+	script:
+	star_dir = "STAR_INDEX"
+	"""
+		mkdir -p $star_dir
+		STAR --runThreadN ${task.cpus} \
+			--runMode genomeGenerate \
+			--genomeDir $star_dir \
+			--genomeFastaFiles $genome \
+			--limitGenomeGenerateRAM ${task.memory.toBytes()}
+	"""
+}
+
+process STARalign {
+
+	scratch true
+
+	label 'star'
+
+	input:
+	path reads
+	path star_index
+
+	output:
+	path junctions
+
+	script:
+	options = "--outFilterType BySJout --outFilterMultimapNmax 5 --outSAMstrandField intronMotif"
+	ReadsBase = reads[0].toString() - ~/(_R1)?(_trimmed)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
+	junctions = ReadsBase + ".SJ.out.tab"
+	bam = ReadsBase + ".aligned.bam"
+	"""
+		STAR --runThreadN ${task.cpus} \
+			--genomeDir $star_index \
+			--readFilesCommand zcat \
+			--limitBAMsortRAM ${task.memory.toBytes()/4} \
+			--readFilesIn $reads \
+			--alignIntronMin 20 \
+			--alignIntronMax $params.max_intron_size \
+			--outSAMtype BAM SortedByCoordinate \
+			$options
+
+			cp SJ.out.tab $junctions
+	"""
+}
+
+process STARalignTwo {
+
+        scratch true
+
+        label 'star'
+
+        publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
+
+        input:
+        path reads
+        path star_index
+	path all_juncs
+
+        output:
+        path bam
+        path junctions
+
+        script:
+        options = "--outFilterType BySJout --outFilterMultimapNmax 5 --outSAMstrandField intronMotif"
+        ReadsBase = reads[0].toString() - ~/(_R1)?(_trimmed)?(_val_1)?(\.fq)?(\.fastq)?(\.gz)?$/
+        junctions = ReadsBase + ".SJ.out.tab"
+        bam = ReadsBase + ".aligned.bam"
+        """
+                STAR --runThreadN ${task.cpus} \
+                        --genomeDir $star_index \
+                        --readFilesCommand zcat \
+                        --readFilesIn $reads \
+                        --alignIntronMin 20 \
+			--limitBAMsortRAM ${task.memory.toBytes()/4} \
+			--sjdbFileChrStartEnd $all_juncs \
+                        --alignIntronMax $params.max_intron_size \
+                        --outSAMtype BAM SortedByCoordinate \
+                        $options
+                        cp Aligned.sortedByCoord.out.bam $bam
+                        cp SJ.out.tab $junctions
+        """
+}
+
 // Generate an alignment index from the genome sequence
 // We use HiSat so we don't need to know the read length during index construction, unlike STAR
 process HisatMakeDB {
 
-	label 'long_running'
+	//label 'hisat'
 
 	//publishDir "${params.outdir}/databases/HisatDB", mode: 'copy'
 
@@ -82,11 +205,9 @@ process HisatMakeDB {
 	"""
 }
 
-/*
- * STEP RNAseq.3 - Hisat2
- */
-
 process HisatMap {
+
+	//label 'hisat'
 
 	publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
 	
@@ -157,22 +278,22 @@ process makeBigWig {
 // Combine all BAM files for hint generation
 process mergeBams {
 
-	//publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
+	//publishDir "${params.outdir}/evidence/rnaseq/", mode: 'copy'
 
 	scratch true 
 
 	input:
-	path hisat_bams
+	path bams
 
 	output:
 	path bam	
 
 	script:
-	bam = "hisat2.merged.bam"
+	bam = "rnaseq.merged.bam"
 	avail_ram_per_core = (task.memory/task.cpus).toGiga()-1
 	
 	"""
-		samtools merge - $hisat_bams | samtools sort -@ ${task.cpus} -m${avail_ram_per_core}G - > $bam
+		samtools merge - $bams | samtools sort -@ ${task.cpus} -m${avail_ram_per_core}G - > $bam
 	"""
 }
 
@@ -181,7 +302,7 @@ process BamToExonHint {
 
 	scratch true
 
-        publishDir "${params.outdir}/evidence/rnaseq/Hisat2", mode: 'copy'
+        publishDir "${params.outdir}/evidence/rnaseq/", mode: 'copy'
 
 	input:
 	path bam
@@ -219,7 +340,7 @@ process BamToIntronHint {
 	path hisat_hints
 
 	script:
-	hisat_hints = "RNAseq.hisat.hints.gff"
+	hisat_hints = "rnaseq.merged.introns.gff"
 
 	"""
 		bam2hints --intronsonly 0 -p ${params.pri_rnaseq} -s 'E' --in=$bam --out=$hisat_hints

@@ -9,6 +9,7 @@ references: false
 aug_species: "human"
 aug_options: ""
 spaln_taxon: "Tetrapod"
+spaln_q: 5
 utr: false
 ncrna: false
 trinity: false

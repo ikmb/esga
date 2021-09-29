@@ -38,8 +38,8 @@ if ($help) {
 }
 
 # Check if we have a valid filtering mode
-if ($mode ne "P" && $mode ne "PE") {
-	die "Must choose ether P or PE as filtering mode\n";
+if ($mode ne "P" && $mode ne "PE" && $mode ne "E" && $mode ne "T" ) {
+	die "Must choose ether P, PE or E as filtering mode\n";
 }
 
 my $good_models = $infile . ".good.gff";
@@ -67,6 +67,10 @@ foreach my $line (<$IN>) {
 		if ($mode eq "P" && $p > 0 ) {
                         $valid = 1;
 		} elsif ($mode eq "PE" && $p > 0 && $e > 0) {
+			$valid = 1;
+		} elsif ($mode eq "E" && $e > 0 || $p > 0) {
+			$valid =1 ;
+		} elsif ($mode eq "T" && $t > 0 || $e > 0 || $p > 0) {
 			$valid = 1;
                 } else {
                         $valid = 0;

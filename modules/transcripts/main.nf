@@ -1,6 +1,9 @@
 // **************************
 // Production of annotation hints from EST/transcript FASTA sequences
 // **************************
+include { fastaCleanNames } from "../fasta.nf" params(params)
+include { bam_merge } from "../util.nf" params(params)
+
 workflow esthint {
 
 	take:
@@ -8,17 +11,22 @@ workflow esthint {
 		est
 
 	main:
-		estMinimap(est,genome_rm)
-		estMinimapToHints(estMinimap.out)
-		estMinimapToTrack(estMinimap.out)
+		fastaCleanNames(est)
+		estMinimap(fastaCleanNames.out.splitFasta(by: 100000, file: true),genome_rm.collect())
+		bam_merge(estMinimap.out.collect())
+		estMinimapToGff(bam_merge.out)	
+		estMinimapToHints(estMinimapToGff.out)
+		estMinimapToTrack(estMinimapToGff.out)
 
 	emit:
-		gff = estMinimap.out
+		gff = estMinimapToGff.out
 		hints = estMinimapToHints.out
 }
 
 // Map transcripts onto a genome using Minimap2
 process estMinimap {
+
+	label 'minimap'
 
 	//scratch true
 
@@ -29,18 +37,32 @@ process estMinimap {
 	path genome_rm	
 
 	output:
-	path minimap_gff	
+	path minimap_bam
 
 	script:
-	minimap_gff = est.getBaseName() + ".minimap.gff"
 	minimap_bam = est.getBaseName() + ".minimap.bam"
 
 	"""
 		samtools faidx $genome_rm
-		minimap2 -t ${task.cpus} -ax splice:hq -c -G ${params.max_intron_size}  $genome_rm $est | samtools sort -O BAM -o $minimap_bam
-		minimap2_bam2gff.pl $minimap_bam > $minimap_gff
+		minimap2 -t ${task.cpus} -ax splice:hq -c -G ${params.max_intron_size}  $genome_rm $est | samtools sort -@ ${task.cpus} -m 2G -O BAM -o $minimap_bam
 	"""	
+}
 
+process estMinimapToGff {
+
+	input:
+	path bam
+
+	output:
+	path gff
+
+	script:
+	gff = bam.getBaseName() + ".minimap.gff3"
+
+	"""
+		minimap2_bam2gff.pl $bam > $gff
+	"""
+	
 }
 
 // Combine exonerate hits and generate hints
@@ -77,7 +99,7 @@ process estMinimapToTrack {
 	path minimap_track
 
 	script:
-	minimap_track = minimap_gff.getBaseName() + ".webapollo.gff"
+	minimap_track = minimap_gff.getBaseName() + ".webapollo.gff3"
 
 	"""
 		match2track.pl --infile $minimap_gff > $minimap_track

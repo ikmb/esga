@@ -6,7 +6,7 @@ Your assembly should ideally be very contiguous (scaffold N50 > 1MB), else the r
 characters (like colons, semicolons, etc). Ideally, a scaffold should be named ">scaffold1", not "scaffold:1 cov129X-blabla". In addition, public databases tend to not like assemblies that contain leading or trailing Ns in their scaffolds - so consider
 removing those if they exist and you plan on submitting your data to e.g. GenBank. Otherwise it will be quite painful to do this later and re-compute all feature coordinates. 
 
-Finally, if your assembly contains the *mitchondrial genome* (or any other organelle), you should consider removing it. ESGA will not correctly deal with organellar genomes due to difference in the genetic code used. 
+Finally, if your assembly contains the *mitchondrial genome* (or any other organelle), you should consider removing it. ESGA will not correctly deal with organellar genomes due to differences in the genetic code used. 
 
 ## Evidence data 
 
@@ -85,8 +85,8 @@ chicken should work just fine. Remember, Augustus uses a range of hints produced
 the model are appropriate for you organism, this is a good approach.
 
 However, if you are not getting satisfying results or find that no pre-existing model is likely appropriate for your genome of choice, you can enable an
-automatic training routine. This will use available transcriptome data to either refine an existing model (--model exists) or built one from scratch 
-(--model does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a pretty long time (several
+automatic training routine. This will use available transcriptome data to either refine an existing model (--aug_species) or built one from scratch 
+(i.e. --aug_species does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a pretty long time (several
 days for larger genomes) as it needs to first re-construct gene models from the aligned transcriptome data, select all the models that are probably
 full length and finally use these gene structures to train Augustus. 
 

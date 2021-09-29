@@ -65,7 +65,7 @@ workflow augustus_parallel {
 	emit:
 		gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
-                gff_filtered = AugustusFilterModels.out[0]
+                gff_filtered = mergeAugustusGff.out
 
 }
 
@@ -156,11 +156,27 @@ process AugustusFilterModels {
 	gff_good = gff.getName() + ".good.gff"
 	gff_bad = gff.getName() + ".bad.gff"
 	proteins = "augustus.protein_supported_models.proteins.fa"
-
-	"""
-		augustus_filter_models.pl --infile $gff 
-		gffread -g $genome -y augustus.protein_supported_models.proteins.fa $gff_good
-	"""
+	def support = 1.0
+	// FIX THIS
+	// Filtering makes no sense if we do not have evidences
+	def m = "PE"
+	if (params.evidence) {
+		if (!params.proteins && !params.proteins_targeted) {
+			m = "E"
+		}
+	}
+	if (params.evidence) {
+		"""
+			augustus_filter_models.pl --infile $gff --support $support --mode $m
+			gffread -g $genome -y augustus.protein_supported_models.proteins.fa $gff_good
+		"""
+	} else {
+		"""
+			gffread -g $genome -y $proteins $gff
+			cp $gff $gff_good
+			touch $gff_bad
+		"""
+	}
 }
 
 // Convert a SPALN alignment to full GFF format
@@ -372,13 +388,22 @@ process runAugustusChunks {
 	augustus_result = "augustus.${chunk_name}.out.gff"
 	command_file = "commands." + chunk_name + ".txt"
 	utr = (params.utr) ? "on" : "off"
+	
+	def support = 1.0
+	def m = "PE"
+	def options = ""
+        if (params.evidence) {
+                if (!params.proteins && !params.proteins_targeted) {
+                        m = "E"
+                }
+	}
 
 	"""
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d .
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
 		parallel -j ${task.cpus} < $command_file
-		for i in \$(ls *.out | sort -n ); do echo \$i >> files.txt ; done;
+		for i in \$(ls *.out | sort -n); do echo \$i >> files.txt ; done;
 		joingenes -f files.txt -o ${augustus_result}
 		rm files.txt
 	"""
