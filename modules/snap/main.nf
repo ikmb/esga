@@ -75,7 +75,7 @@ process spaln_to_snap {
 	zff = gff.getBaseName() + ".zff"
 
 	"""
-		spaln_gff2snap.pl < $gff > $zff
+		gff2snap.pl < $gff > $zff
 	"""
 
 }

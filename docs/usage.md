@@ -52,7 +52,7 @@ An explanation of these options follows below.
 
 #### `--genome`
 Location of the genome you want to annotate. This file should be in FASTA format. Additionally, we recommend to make sure that you clean the fasta headers in a way that they do not contain any special characters, unnecessary spaces or other "meta" data. 
-Please also be aware that some public databases to not allow the submission of assemblies that have leading or trailing 'N's in any of its scaffolds.
+Please also be aware that some public databases do not allow the submission of assemblies that have leading or trailing 'N's in any of its scaffolds.
 
 ### 2. Evidences. At least one of:
 
@@ -172,7 +172,7 @@ When in doubt, use `--rm_species mammal` to enable this option and mask mammalia
 Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
 #### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
-Location of Augustus configuration file. By default, this pipeline uses config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. 
+Location of Augustus extinsic hint configuration file. By default, this pipeline uses a config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
 
 #### `--aug_options` [ default = "" ]
 Augustus has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
@@ -183,7 +183,7 @@ Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help prod
 was trained to predict UTRs - else the pipeline will fatally fail (just remove --utr in that case and -resume).
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
-A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used.
+A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used. However, you can pass your own version - ideally starting from our template to make sure that all types of evidence are considered. 
 
 #### `--pri_prot_targeted <int>` [ 5 (default ]
 Priority of protein-based hints for Augustus gene predictions from the closest reference proteome. Higher priority hints are considered first and override lower-priority hints.
@@ -218,7 +218,7 @@ to tweak one or several of the parameters below. If unsure, leave at the default
 
 #### `--aug_chunk_length`[default = 3000000]
 The length of genomic sequence to run individual AUGUSTUS jobs on. Chunks are overlapped by 1/6*aug_chunk_length. The aug_chunk_length should be chosen so that the longest expected gene will fit in it. The default of 3MB should be sufficient for most metazoans. 
-Decreasing this number will (likely) create more parallel jobs.
+Decreasing this number will (likely) create more parallel jobs and may miss genes entirely if they are longer that the specified length. 
 
 #### `--nproteins` [ default = 200 ]
 Number of sequences in each protein alignment job. Larger values will usually create longer run times, but decrease the number of parallel jobs and load on the file system. 

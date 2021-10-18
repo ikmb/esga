@@ -2,6 +2,7 @@ include fastaSplitSize from "./../fasta"  params(params)
 include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
 include GffToFasta from "./../util" params(params)
 
+// Run the PASA pipeline
 workflow pasa {
 
 	take:
@@ -25,6 +26,7 @@ workflow pasa {
 
 }
 
+// Add UTRs do a gene build
 workflow polish_annotation {
 
 	take:

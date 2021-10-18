@@ -16,6 +16,7 @@ workflow rfamsearch {
 	
 }
 
+// Download version 14 of Rfam from the FTP server
 process download_rfam {
 
 	executor 'local'
@@ -38,6 +39,7 @@ process download_rfam {
 
 }
 
+// Format the Rfam database
 process infernal_press {
 
 	label 'infernal'
@@ -55,6 +57,7 @@ process infernal_press {
 	"""
 }
 
+// Perform infernal search against database
 process infernal_search {
 
 	publishDir "${params.outdir}/logs/rfam", mode: 'copy'
@@ -78,6 +81,7 @@ process infernal_search {
 	"""
 }
 
+// Convert infernal hits to GFF3 format
 process infernal2gff {
 
 	input:
