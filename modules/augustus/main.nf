@@ -3,6 +3,7 @@ include fastaSplitSize from "./../fasta" params(params)
 
 // Predict gene models on a genome sequence using hints
 // We need the augustus_config_dir so we can create custom-trained models and pass them to Augustus in the context of a container
+// Defunct, consider using augustus_parallel
 workflow augustus_prediction {
 
 	take:
@@ -25,6 +26,7 @@ workflow augustus_prediction {
 }
 
 // Run an AUGUSTUS annotation using the most exhaustive settings
+// This is the slowest option!
 workflow augustus_prediction_slow {
 
 	take:
@@ -47,6 +49,8 @@ workflow augustus_prediction_slow {
 
 }
 
+// Run AUGUSTUS in parallel, splitting contigs into chunks and merging them later
+// This is the fastest option!
 workflow augustus_parallel {
 
 	take:
@@ -69,6 +73,7 @@ workflow augustus_parallel {
 
 }
 
+// Stage the AUGUSTUS config so we can modify it later
 workflow augustus_prep_config {
 
 	take:

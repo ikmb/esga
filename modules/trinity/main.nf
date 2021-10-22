@@ -16,7 +16,7 @@ process runTrinityGuided {
 	
 	label 'trinity'
 
-	//scratch true 
+	scratch true 
 
 	//publishDir "${params.outdir}/transcripts/trinity", mode: 'copy'
 	

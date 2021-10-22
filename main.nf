@@ -275,6 +275,15 @@ if (params.references) {
 	reference_species = Channel.empty()
 }
 
+// Check if RNAseq reads exist
+if (params.reads) {
+
+	Channel.fromFilePairs(params.reads)
+		.ifEmpty { exit 1; "No reads found matching your input pattern" }
+		.set { rnaseq_channel }
+
+}
+
 // Provide the path to the augustus config folder
 // If it's in a container, use the hard-coded path, otherwise the augustus env variable
 if (params.aug_config_folder) {
