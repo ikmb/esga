@@ -1,3 +1,7 @@
+// ****************
+// Module to define Blast+ relevant processes
+// ****************
+
 process make_blast_nt_index {
 
 	input:

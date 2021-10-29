@@ -1,3 +1,4 @@
+// MultiQC reporting
 
 process multiqc {
 

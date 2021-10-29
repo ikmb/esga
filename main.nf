@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
-nextflow.preview.dsl=2
-//nextflow.enable.dsl=2
+//nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 params.version = workflow.manifest.version
 
@@ -12,23 +12,24 @@ if (!params.reads && !params.proteins_targeted && !params.proteins && !params.tr
 }
 
 // this needs to passed to the imported modules to determine if augustus is run with or without UTR annotation
-include fastaMergeFiles from "./modules/fasta" params(params)
+include { fastaMergeFiles } from "./modules/fasta" params(params)
 include { repeatmasking_with_lib; repeatmasking_with_species } from "./modules/repeatmasker/main.nf" params(params)
-include model_repeats from "./modules/repeatmodeler/main.nf" params(params)
+include { model_repeats } from "./modules/repeatmodeler/main.nf" params(params)
 include { proteinmodels_spaln; proteinmodels_gth; proteinhint_spaln; proteinhint_gth } from "./modules/proteins/main.nf" params(params)
-include esthint from "./modules/transcripts/main.nf" params(params)
-include esthint as trinity_esthint from "./modules/transcripts/main.nf" params(params)
+include { esthint } from "./modules/transcripts/main.nf" params(params)
+include { esthint as trinity_esthint } from "./modules/transcripts/main.nf" params(params)
 include { augustus_prep_config; augustus_parallel; augustus_prediction_slow; augustus_train_from_spaln; augustus_train_from_pasa  } from "./modules/augustus/main.nf" params(params)
-include merge_hints from "./modules/util" params(params)
+include { merge_hints } from "./modules/util" params(params)
 include { rnaseqhint_hisat; rnaseqhint_star } from "./modules/rnaseq/main.nf" params(params)
-include trinity_guided_assembly from "./modules/trinity/main.nf" params(params)
-include evm_prediction from "./modules/evm/main.nf" params(params)
+include { trinity_guided_assembly } from "./modules/trinity/main.nf" params(params)
+include { evm_prediction } from "./modules/evm/main.nf" params(params)
 include { polish_annotation; pasa } from "./modules/pasa/main.nf" params(params)
-include assembly_preprocessing from "./modules/assembly/main.nf" params(params)
-include rfamsearch from "./modules/infernal/main.nf" params(params)
-include map_annotation from "./modules/satsuma/main.nf" params(params)
-include get_software_versions from "./modules/logging/main.nf" params(params)
+include { assembly_preprocessing } from "./modules/assembly/main.nf" params(params)
+include { rfamsearch } from "./modules/infernal/main.nf" params(params)
+include { map_annotation } from "./modules/satsuma/main.nf" params(params)
+include { get_software_versions } from "./modules/logging/main.nf" params(params)
 include { snap_train_from_spaln; snap_train_from_pasa ; snap } from "./modules/snap/main.nf" params(params)
+
 def helpMessage() {
   log.info"""
   =================================================================
@@ -620,32 +621,6 @@ workflow {
 		polish_gff = Channel.empty()
 	}
 
-	publish:
-		genome_rm to: "${params.outdir}/repeatmasking", mode: 'copy'
-		repeat_gffs to: "${params.outdir}/repeatmasking", mode: 'copy'
-		assembly_stats to: "${params.outdir}/assembly", mode: 'copy'
-		augustus_gff to: "${params.outdir}/annotation/augustus", mode: 'copy'
-		augustus_fa to: "${params.outdir}/annotation/augustus", mode: 'copy'
-		est_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
-		est_gff to:  "${params.outdir}/evidence/transcripts", mode: 'copy'
-		protein_targeted_gff to: "${params.outdir}/annotation/spaln", mode: 'copy'
-		protein_targeted_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
-		protein_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
-		protein_gff to: "${params.outdir}/evidence/proteins", mode: 'copy'
-		liftovers to: "${params.outdir}/liftover", mode: 'copy'
-		trans_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
-		rna_hints to: "${params.outdir}/evidence/hints", mode: 'copy'
-		rna_bam to: "${params.outdir}/evidence/rnaseq", mode: 'copy'
-		repeats to: "${params.outdir}/repeatmasking", mode: 'copy'
-		evm_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
-		evm_fa to: "${params.outdir}/annotation/evm", mode: 'copy'
-		pasa_gff to: "${params.outdir}/annotation/pasa", mode: 'copy'
-		pasa_fa to: "${params.outdir}/annotation/pasa", mode: 'copy'
-		polish_gff to: "${params.outdir}/annotation/evm", mode: 'copy'
-		ncrna_gff to: "${params.outdir}/annotation/ncrna", mode: 'copy'
-		protein_targeted_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
-		protein_evm_align to: "${params.outdir}/evidence_modeler", mode: 'copy'
-		transcript_gff to: "${params.outdir}/evidence_modeler", mode: 'copy'
 }
 
 workflow.onComplete {

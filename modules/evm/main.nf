@@ -1,4 +1,4 @@
-include GffToFasta from "./../util" params(params)
+include { GffToFasta } from "./../util" params(params)
 
 // Use EVM to reconsile gene model predictions and evidences
 workflow evm_prediction {
@@ -138,7 +138,7 @@ process evmToGff {
 
 	label 'medium_running'
 
-	//publishDir "${params.outdir}/annotation/evm", mode: 'copy'
+	publishDir "${params.outdir}/annotation/evm", mode: 'copy'
 
 	input:
 	path partitions

@@ -1,3 +1,5 @@
+// Repeatmasking a genome assembly
+
 include { fastaSplitSize; fastaMergeChunks } from "./../fasta" params(params)
 
 // Repeatmasking using a library in Fasta format
@@ -134,6 +136,8 @@ process repeatMaskLib {
 process repeatMaskSpecies {
 
         scratch true
+
+	publishDir "${params.outdir}/repeatmasker", mode: 'copy'	
 
         input:
         path genome

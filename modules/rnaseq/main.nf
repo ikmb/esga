@@ -55,12 +55,12 @@ process runFastp {
 
 	label 'fastp'
 
-	//publishDir "${params.outdir}/evidence/rnaseq/fastp", mode: 'copy'
+	publishDir "${params.outdir}/rnaseq/fastp", mode: 'copy'
 
 	scratch true 
 
 	input:
-	tuple name, path(reads)
+	tuple val(name), path(reads)
 		
 	output:
 	path "*_trimmed.fastq.gz"
@@ -86,11 +86,12 @@ process runFastp {
 	}
 }
 
+// Format assembly into a STAR database
 process STARmakeDB {
 
 	label 'star'
 
-	publishDir "${params.outdir}/databases/STAR", mode: 'copy'
+	publishDir "${params.outdir}/rnaseq/databases/STAR", mode: 'copy'
 
 	input:
 	path genome
@@ -110,6 +111,7 @@ process STARmakeDB {
 	"""
 }
 
+// Perform STAR alignment without known junctions
 process STARalign {
 
 	scratch true
@@ -143,13 +145,14 @@ process STARalign {
 	"""
 }
 
+// Perform STAR alignment with known junctions
 process STARalignTwo {
 
-        scratch true
+        //scratch true
 
         label 'star'
 
-        publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
+        publishDir "${params.outdir}/rnaseq/STAR", mode: 'copy'
 
         input:
         path reads
@@ -187,7 +190,7 @@ process HisatMakeDB {
 
 	//label 'hisat'
 
-	//publishDir "${params.outdir}/databases/HisatDB", mode: 'copy'
+	//publishDir "${params.outdir}/rnaseq/databases/HisatDB", mode: 'copy'
 
 	input:
 	path genome
@@ -205,11 +208,12 @@ process HisatMakeDB {
 	"""
 }
 
+// Perform Hisat alignment
 process HisatMap {
 
 	//label 'hisat'
 
-	publishDir "${params.outdir}/logs/rnaseq", mode: 'copy'
+	publishDir "${params.outdir}/rnaseq/Hisat", mode: 'copy'
 	
 	scratch true
 
@@ -240,13 +244,14 @@ process HisatMap {
 	}
 }
 
+// Convert BAM file to coverage track
 process makeBigWig {
 
 	scratch true
 
 	label 'deeptools'
 
-	publishDir "${params.outdir}/tracks", mode: 'copy'
+	publishDir "${params.outdir}/gmod", mode: 'copy'
 
 	input:
 	path bam
@@ -278,7 +283,7 @@ process makeBigWig {
 // Combine all BAM files for hint generation
 process mergeBams {
 
-	//publishDir "${params.outdir}/evidence/rnaseq/", mode: 'copy'
+	//publishDir "${params.outdir}/rnaseq/", mode: 'copy'
 
 	scratch true 
 
@@ -302,7 +307,7 @@ process BamToExonHint {
 
 	scratch true
 
-        publishDir "${params.outdir}/evidence/rnaseq/", mode: 'copy'
+        publishDir "${params.outdir}/hints/rnaseq/", mode: 'copy'
 
 	input:
 	path bam
@@ -330,7 +335,7 @@ process BamToExonHint {
  */	
 process BamToIntronHint {
 
-	//publishDir "${params.outdir}/evidence/rnaseq/hints", mode: 'copy'
+	//publishDir "${params.outdir}/hints/rnaseq", mode: 'copy'
 	label 'augustus'
 
 	input:

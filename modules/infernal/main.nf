@@ -1,5 +1,10 @@
-include fastaSplitSize from "./../fasta" params(params)
+// ******************
+// Module for ncRNA detection using Infernal CM
+// ******************
 
+include { fastaSplitSize } from "./../fasta" params(params)
+
+// Basic ncRNA prediction using infernal CMs
 workflow rfamsearch {
 
 	take:
@@ -83,6 +88,8 @@ process infernal_search {
 
 // Convert infernal hits to GFF3 format
 process infernal2gff {
+
+        publishDir "${params.outdir}/annotation/ncrna", mode: 'copy'
 
 	input:
 	path rfam_report

@@ -1,3 +1,4 @@
+// De-novo transcriptome assembly using Trinity
 
 workflow trinity_guided_assembly {
 	

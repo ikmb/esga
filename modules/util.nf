@@ -1,3 +1,7 @@
+// ************************
+// Collection of utilities
+// ************************
+
 // this is currently super simplistic and should be made a bit smarter down the line
 process merge_hints {
 
