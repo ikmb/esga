@@ -1,4 +1,4 @@
-name: Docker
+name: Docker Minimap2 Release
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -6,11 +6,8 @@ name: Docker
 # documentation.
 
 on:
-  push:
-    branches: [ devel ]
-  pull_request:
-    branches: [ devel ]
-
+  release:
+    types: [published]
 
 jobs:
   push_dockerhub:

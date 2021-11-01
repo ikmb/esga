@@ -312,7 +312,7 @@ process runAugustus {
 
 	label 'augustus'
 
-	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
 
 	scratch true
 
@@ -344,6 +344,8 @@ process runAugustus {
 process runAugustusBatch {
 
 	label 'augustus'
+
+        publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
 
 	input:
 	path genome_chunk
@@ -441,7 +443,7 @@ process mergeAugustusGff {
 
 	label 'short_running'
 
-	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
 
 	input:
 	path augustus_gffs

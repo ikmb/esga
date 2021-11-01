@@ -24,9 +24,7 @@ java -version
 
 ### Install Nextflow
 
-You will currently need Nextflow version 20.01 to run this pipeline as certain features were removed in later releases and have not been updated in our code (we will eventually get around to it...).
-
-[Nextflow 20.01](https://github.com/nextflow-io/nextflow/releases/download/v20.01.0/nextflow-20.01.0-all)
+Get Netxtflow from [here](https://github.com/nextflow-io/nextflow/releases)
 
 Just put the downloaded file into your $PATH and rename it to 'nextflow'
 
