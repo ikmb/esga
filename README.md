@@ -50,6 +50,7 @@ Documentation about the pipeline can be found in the `docs/` directory or under 
 5. [Output](docs/output.md)
 6. [Troubleshooting](docs/troubleshooting.md)
 7. [What's next](docs/whatsnext.md)
+8. [Citations](docs/citations.md)
 
 ### Why ESGA?
 
