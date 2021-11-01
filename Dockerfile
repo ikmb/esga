@@ -4,7 +4,7 @@ LABEL authors="Marc Hoeppner" \
 
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/esga-1.2/bin:/opt/conda/envs/esga-1.2/opt/pasa-2.4.1:/opt/bin:/opt/spaln/2.4.5/bin:$PATH
+ENV PATH /opt/conda/envs/esga-1.2/bin:/opt/conda/envs/esga-1.2/opt/pasa-2.4.1:/opt/bin:/opt/spaln/2.4.6/bin:$PATH
 ENV PASAHOME /opt/conda/envs/esga-1.2/opt/pasa-2.4.1
 ENV EVM_HOME /opt/conda/envs/esga-1.2/opt/evidencemodeler-1.1.1
 RUN cp /opt/conda/envs/esga-1.2/opt/pasa-2.4.1/pasa_conf/pasa.CONFIG.template /opt/conda/envs/esga-1.2/opt/pasa-2.4.1/pasa_conf/conf.txt

@@ -4,7 +4,7 @@
 
 This project is under active development - it may not work for all possible use cases yet. 
 
->= [![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/)
+[![Nextflow](https://img.shields.io/badge/nextflow-20.01.0-brightgreen)](https://www.nextflow.io/) or higher
 
 [![Docker Container available](https://img.shields.io/badge/docker-required-brightgreen.svg)](https://www.docker.com/)
 or [![Singularity Container available](https://img.shields.io/badge/singularity-required-brightgreen.svg)](https://sylabs.io/docs/)
@@ -12,7 +12,7 @@ or [![Singularity Container available](https://img.shields.io/badge/singularity-
 
 This pipeline peforms annotation of novel genomes using a combination of evidence alignments, evidence-based gene building and ab-initio gene building.
 
-It does not constitute a novel algorithm but combines many well-established tools into an easy-to-use "one click" solution that is accessible even to inexperienced users. 
+It does not constitute a novel algorithm per se but combines many well-established tools into an easy-to-use "one click" solution that is accessible even to inexperienced users. 
 
 ### Pipeline main steps
 
@@ -50,6 +50,7 @@ Documentation about the pipeline can be found in the `docs/` directory or under 
 5. [Output](docs/output.md)
 6. [Troubleshooting](docs/troubleshooting.md)
 7. [What's next](docs/whatsnext.md)
+8. [Citations](docs/citations.md)
 
 ### Why ESGA?
 

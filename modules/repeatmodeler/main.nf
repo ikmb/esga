@@ -15,6 +15,8 @@ workflow model_repeats {
 
 process repeatModel {
 
+	label 'repeatmodeler'
+
         publishDir "${params.outdir}/repeatmodeler/", mode: 'copy'
 
         scratch true
