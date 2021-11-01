@@ -6,7 +6,7 @@ ESGA uses a wide range of published tools, as well as some scripts of our own cr
 
 ### AUGUSTUS
 
-Citation: [https://doi.org/10.1093/bioinformatics/btn013](doi:10.1093/bioinformatics/btn013)
+Citation: [https://doi.org/10.1093/bioinformatics/btn013]((https://doi.org/10.1093/bioinformatics/btn013)
 
 Version: 3.4.0
 
