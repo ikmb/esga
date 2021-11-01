@@ -1,3 +1,7 @@
+// ************************
+// Alignment of two assemblies using Satsuma2
+// ************************
+
 include { gtf2hints; kraken2gff } from "./../gtf" params(params)
 include { fastaSplitSize } from "./../fasta" params(params)
 
@@ -72,7 +76,7 @@ process align_genomes {
 // run Kraken to map the annotation from the reference to our genome of interest
 process map_gtf {
 
-	publishDir "${params.outdir}/logs/satsuma", mode: 'copy'
+	publishDir "${params.outdir}/synteny/satsuma", mode: 'copy'
 
 	label 'satsuma'
 

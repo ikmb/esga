@@ -1,3 +1,7 @@
+// ***************
+// Module for GTF functions
+// ***************
+
 process gtf2hints {
 
 	input:

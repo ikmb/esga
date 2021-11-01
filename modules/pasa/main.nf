@@ -1,6 +1,10 @@
-include fastaSplitSize from "./../fasta"  params(params)
+// ****************
+// PASA transcriptome assembly
+// ****************
+
+include { fastaSplitSize } from "./../fasta"  params(params)
 include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
-include GffToFasta from "./../util" params(params)
+include { GffToFasta } from "./../util" params(params)
 
 // Run the PASA pipeline
 workflow pasa {
@@ -66,6 +70,8 @@ process runSeqClean {
 // Using the built-in alignment is way too slow!
 process runPasa {
 
+        publishDir "${params.outdir}/logs/pasa", mode: 'copy'
+
 	input:
 	path genome
 	path transcripts
@@ -110,7 +116,7 @@ process runPasa {
 // Turn the pasa results into full gff3 file
 process PasaToModels {
 
-        publishDir "${params.outdir}/logs/pasa", mode: 'copy'
+        publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
         input:
         path pasa_assemblies_fasta

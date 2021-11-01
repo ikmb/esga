@@ -1,6 +1,7 @@
 // **************************
 // Production of annotation hints from EST/transcript FASTA sequences
 // **************************
+
 include { fastaCleanNames } from "../fasta.nf" params(params)
 include { bam_merge } from "../util.nf" params(params)
 
@@ -48,7 +49,10 @@ process estMinimap {
 	"""	
 }
 
+// Convert Minimap alignments to GFF format
 process estMinimapToGff {
+
+        publishDir "${params.outdir}/transcripts", mode: 'copy'
 
 	input:
 	path bam
@@ -68,7 +72,8 @@ process estMinimapToGff {
 // Combine exonerate hits and generate hints
 process estMinimapToHints {
 
-        publishDir "${params.outdir}/logs/minimap2", mode: 'copy'
+        publishDir "${params.outdir}/hints/transcripts", mode: 'copy'
+
 
 	label 'short_running'
 
@@ -86,11 +91,12 @@ process estMinimapToHints {
 	"""
 }
 
+// Convert Minimap GFF to gmod compatible format
 process estMinimapToTrack {
 
 	label 'short_running'
 
-        publishDir "${params.outdir}/tracks", mode: 'copy'
+        publishDir "${params.outdir}/gmod", mode: 'copy'
 
 	input:
 	path minimap_gff

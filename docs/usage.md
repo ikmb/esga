@@ -178,6 +178,12 @@ Location of Augustus extinsic hint configuration file. By default, this pipeline
 Augustus has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
 For example, to allow Augustus to predict overlapping genes (default: no), you could specifiy `--aug_options '--singleStrand=true'`
 
+#### `--aug_training` [ true | false (default) ]
+
+Enable training of an Augustus profile. This option requires either a species-specific proteome (--proteins_targeted) or a transcriptome (--pasa). ESGA will prefer a targeted proteome - however, this proteome should contain well over 1000 proteins, else the training will fail. 
+
+This option also interacts with `--aug_species` . If the species name already exists, ESGA will perform a re-training of that model. If the species name does not exist, a new profile will be created. 
+
 #### `--utr` [ true | false (default ]
 Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help produce more acurate gene models. However, this option is best used with available RNA-seq data and should only ever be switched on if the AUGUSTUS profile
 was trained to predict UTRs - else the pipeline will fatally fail (just remove --utr in that case and -resume).

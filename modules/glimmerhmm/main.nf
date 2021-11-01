@@ -1,3 +1,7 @@
+// ******************
+// Module for the GlimmerHMM gene finer
+// ******************
+
 workflow glimmerhmm_train {
 
 

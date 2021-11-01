@@ -100,7 +100,7 @@ workflow proteinmodels_gth {
 // Create a genome index for spaln
 process spalnMakeIndex {
 
-	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+	publishDir "${params.outdir}/logs/proteins/spaln", mode: 'copy'
 
 	input:
 	path genome
@@ -123,7 +123,7 @@ process spalnAlign {
 
 	scratch true
 
-	//publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+	//publishDir "${params.outdir}/logs/proteins/spaln", mode: 'copy'
 
 	input:
 	path proteins
@@ -148,7 +148,7 @@ process spalnAlign {
 // Merge spaln output across chunks using the companion tool sortgrcd
 process spalnMerge {
 
-	publishDir "${params.outdir}/logs/spaln" , mode: 'copy'
+	publishDir "${params.outdir}/logs/proteins/spaln" , mode: 'copy'
 
 	input:
 	path spaln_reports
@@ -172,7 +172,7 @@ process spalnMerge {
 // Convert spaln models into EVM compatible format
 process spaln2evm {
 
-        publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+        publishDir "${params.outdir}/logs/proteins/spaln", mode: 'copy'
 
 	input:
 	path spaln_models
@@ -190,7 +190,7 @@ process spaln2evm {
 
 process spaln2gmod {
 
-	publishDir "${params.outdir}/tracks", mode: 'copy'
+	publishDir "${params.outdir}/gmod", mode: 'copy'
 
 	input:
 	path spaln_models
@@ -210,7 +210,7 @@ process spaln2gmod {
 // Convert spaln models into AUGUSTUS compatible hint format
 process spalnToHints {
 
-	publishDir "${params.outdir}/logs/spaln", mode: 'copy'
+	publishDir "${params.outdir}/hints/proteins/", mode: 'copy'
 
 	input:
 	path gff
@@ -229,7 +229,7 @@ process spalnToHints {
 
 process gthToHints {
 
-	publishDir "${params.outdir}/logs/gth", mode: 'copy'
+	publishDir "${params.outdir}/hints/proteins", mode: 'copy'
 	
 	input:
 	path gffs
@@ -270,6 +270,7 @@ process blast_index {
 	"""
 }
 
+// blast proteins against a genome
 process blast_proteins {
 
 	scratch true
@@ -299,6 +300,7 @@ process blast_proteins {
 
 }
 
+// convert blast report to list of contigs and proteins accession hits
 process blast2targets {
 
 	input:
@@ -317,9 +319,12 @@ process blast2targets {
 	"""
 }	
 
+// run genome threader
 process targets2gth {
 
 	//scratch true
+
+	publishDir "${params.outdir}/logs/gth", mode: 'copy'
 
 	input:
 	path genome

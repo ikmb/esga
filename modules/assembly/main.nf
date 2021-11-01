@@ -1,3 +1,6 @@
+// ****************
+// Module for assembly processing and validation
+// ****************
 
 include { fastaCleanNames } from "./../fasta" addParams(results: "${params.outdir}/logs/fasta")
 
@@ -21,7 +24,7 @@ workflow assembly_preprocessing {
 // Get basic stats for the assembly
 process AssemblyStats {
 
-	//publishDir "${params.outdir}/assembly", mode: 'copy'
+	publishDir "${params.outdir}/stats/assembly", mode: 'copy'
 
 	label 'gaas'
 
@@ -43,7 +46,7 @@ process AssemblyStats {
 // Remove contigs below a certain length
 process AssemblyFilterSize {
 
-        //publishDir "${params.outdir}/assembly", mode: 'copy'
+        //publishDir "${params.outdir}/stats/assembly", mode: 'copy'
 
 	label 'gaas'
 

@@ -4,6 +4,18 @@ The output of this pipeline is a set of genome-specific hints and, optionally, a
 However, in most cases this is only the first step in an annotation project. Here are some suggestions on where to go
 next.
 
+## Competeness estimation
+
+The quality of the resulting annotation(s) may be judged by two main criteria:
+
+* Is the total number of genes roughly as expected?
+
+Poor annotations will typically contain many more (or much fewer) genes than what is expected. A good ballpark number for metazoans is 15.000-25.000 genes, although some species diverge from that. 
+
+* How complete is the annotated proteome?
+
+Using [Busco](https://busco.ezlab.org/), you can check your protein FASTA files for completeness against a database of known proteins, for various taxonomic groups. ESGA can typically achieve up to 96% completeness if the genome has a suitable AUGUSTUS profile and rich evidence data available. Note that this number strongly depends on the completeness of your assembly - this you should probably check also. 
+
 ## Comparative genome annotation with AUGUSTUS
 
 Basic gene structure and synteny is often conserved across closely related organisms. This information can thus be used to further improve
