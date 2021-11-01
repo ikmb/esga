@@ -8,7 +8,6 @@ channels:
 dependencies:
  - parallel
  - samtools
- - repeatmodeler=1.0.11
  - repeatmasker=4.0.7
  - bioconda::hisat2=2.2.1
  - cdbtools
@@ -16,6 +15,5 @@ dependencies:
  - evidencemodeler=1.1.1
  - gffread=0.11.7
  - pasa=2.4.1
- - gaas
  - bioconda::perl-uri=1.76
  - bioconda::genomethreader=1.7.1

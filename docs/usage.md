@@ -169,20 +169,22 @@ group, the pipeline may crash...(TBD)
 When in doubt, use `--rm_species mammal` to enable this option and mask mammalian repeats.
 
 #### `--aug_species` [ default = 'human' ]
-Species model for Augustus. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
+Species model for AUGUSTUS. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
 #### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
-Location of Augustus extinsic hint configuration file. By default, this pipeline uses a config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
+Location of AUGUSTUS extinsic hint configuration file. By default, this pipeline uses a config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
 
 #### `--aug_options` [ default = "" ]
-Augustus has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
+AUGUSTUS has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
 For example, to allow Augustus to predict overlapping genes (default: no), you could specifiy `--aug_options '--singleStrand=true'`
 
 #### `--aug_training` [ true | false (default) ]
 
-Enable training of an Augustus profile. This option requires either a species-specific proteome (--proteins_targeted) or a transcriptome (--pasa). ESGA will prefer a targeted proteome - however, this proteome should contain well over 1000 proteins, else the training will fail. 
+Enable training of an AUGUSTUS profile. This option requires either a species-specific proteome (--proteins_targeted) or a transcriptome (--pasa). ESGA will prefer a targeted proteome - however, this proteome should contain well over 1000 proteins, else the training will fail. 
 
 This option also interacts with `--aug_species` . If the species name already exists, ESGA will perform a re-training of that model. If the species name does not exist, a new profile will be created. 
+
+Please not that this routine is somewhat basic. Resulting models should work ok, but are likely not going to be as good as those shipping with AUGUSTUS.
 
 #### `--utr` [ true | false (default ]
 Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help produce more acurate gene models. However, this option is best used with available RNA-seq data and should only ever be switched on if the AUGUSTUS profile
@@ -217,6 +219,8 @@ Name of the taxonomic group to choose the internal SPALN parameters. See column 
 
 ### 6. How to tune the speed of the pipeline - data splitting
 
+TL;DR: This is probably not necessary, the default options should work fine. 
+
 One of the advantages of using Nextflow is that it allows you to speed up a pipeline by splitting some of the input files into smaller chunks before 
 running specific programs. Then that program can be run on each smaller chunk in parallel in a compute cluster. 
 When all instances of the program are finished, Nextflow can correctly put together all the results in a single output for that program. Depending on the size and contiguity of your target genome and the size of the evidence data, you may want 
@@ -250,12 +254,12 @@ By default, the pipeline expects paired-end RNA-seq data. If you have single-end
 --singleEnd --reads '*.fastq.gz'
 ```
 
-It is not possible to run a mixture of single-end and paired-end files in one run. 
+It is not possible to run a mixture of single-end and paired-end files in one run. Please see the [troubleshooting](troubleshooting.md) document for more information on this. 
 
 #### `--rnaseq_stranded` [ true | false (default) ]
 Whether your RNAseq library was sequenced with a fw strand-specific protocol. Our assumption is that this would be dUTP as is typical for Illumina applications. 
 
-#### `--outdir` [ default = 'annotation_output' ]
+#### `--outdir` [ default = 'results' ]
 The output directory where the results will be saved. 
 
 #### `--run_name` [default = a random name ]
