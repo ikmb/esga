@@ -2,14 +2,6 @@
 // Generic functions for FASTA processing
 // ******************
 
-workflow clean_fasta {
-
-	take:
-		fasta
-	
-	main:
-
-}
 process fastaSplitSize {
 
 	label 'medium_running'
@@ -133,7 +125,8 @@ process fastaGaasClean {
 
 	"""
 		sed 's/[.]\$//' $fasta > cleaned.fa
-                gaas_fasta_cleaner.pl -f cleaned.fa -o tmp
+                gaas_fasta_cleaner.pl -f cleaned.fa -o $fasta_clean
+		rm cleaned.fa
 	"""
 }
 
@@ -150,8 +143,7 @@ process fastaCleanProteins {
 	fasta_clean = fasta.getBaseName() + ".clean.fa"
 
 	"""
-		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
-		rm tmp cleaned.fa
+		fastaclean -f $fasta -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 	"""
 }
 
