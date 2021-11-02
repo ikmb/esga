@@ -91,6 +91,8 @@ process fastaMergeFiles {
 }
 
 process fastaRemoveShort {
+
+	label 'gaas'
 	
 	input:
 	path fasta
