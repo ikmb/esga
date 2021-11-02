@@ -53,6 +53,8 @@ process prepHintsToBed {
 // Use StringTies gffread tool to extract protein sequences from genomes and gtf files
 process GffToFasta {
 
+	publishDir "${params.folder}", mode: 'copy'
+
 	label 'short_running'
 
 	input:

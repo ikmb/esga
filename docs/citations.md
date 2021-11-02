@@ -2,11 +2,13 @@
 
 ESGA uses a wide range of published tools, as well as some scripts of our own creation. Below follow citations of tools used in this pipeline (please let us know if we missed anything...). There is also a logging function that reports version numbers during pipeline execution, for the most up to date list. 
 
+ESGA itself does not have a publication yet. For the time being, please cite this repository. 
+
 ## Gene predictor / finder
 
 ### AUGUSTUS
 
-Citation: [https://doi.org/10.1093/bioinformatics/btn013]((https://doi.org/10.1093/bioinformatics/btn013)
+Citation: [https://doi.org/10.1093/bioinformatics/btn013](https://doi.org/10.1093/bioinformatics/btn013)
 
 Version: 3.4.0
 
@@ -62,7 +64,7 @@ Version: 1.7.1
 
 ## Repeats
 
-### RepeatMaster
+### RepeatMasker
 
 Citation: [https://www.repeatmasker.org/](https://www.repeatmasker.org/)
 

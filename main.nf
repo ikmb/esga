@@ -562,7 +562,7 @@ workflow {
 	hints = protein_hints.concat(est_hints,trinity_hints,rna_hints,protein_targeted_hints,trans_hints,dummy_hints)
 	merge_hints(hints.collect())
 
-	// Run AUGUSTUS
+	// Run AUGUSTUS - non-fast means without contig chunking, i.e. each job runs on full contigs instead of sub-sections)
 	if (!params.fast) {
 		augustus_prediction_slow(genome_rm,merge_hints.out,augustus_conf_folder,aug_extrinsic_config)
                 augustus_gff = augustus_prediction_slow.out.gff
@@ -605,7 +605,7 @@ workflow {
 		evm_gff = evm_prediction.out.gff
 		evm_fa = evm_prediction.out.fasta
 
-		if (params.polish) {
+		if (params.polish && params.pasa) {
 			polish_annotation(genome,evm_gff,pasa_transcript_gff,pasa_db)
 			polish_gff = polish_annotation.gff
 		} else {
