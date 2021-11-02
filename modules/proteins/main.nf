@@ -2,7 +2,7 @@
 // Production of annotation hints from protein FASTA sequences
 // **************************
 
-include { fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
+include { fastaGaasClean; fastaCleanProteins; fastaRemoveShort; assemblySplit } from "./../fasta" params(params)
 
 // Used for related protein sequences
 workflow proteinhint_spaln {
@@ -12,7 +12,8 @@ workflow proteinhint_spaln {
 		protein_fa
 
 	main:
-                fastaCleanProteins(protein_fa)
+		fastaGaasClean(protein_fa)
+                fastaCleanProteins(fastaGaasClean.out)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
 		spalnMakeIndex(genome_rm)
 		spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out,1)
@@ -36,7 +37,8 @@ workflow proteinmodels_spaln {
                 protein_fa
 
         main:
-                fastaCleanProteins(protein_fa)
+		fastaGaasClean(protein_fa)
+                fastaCleanProteins(fastaGaasClean.out)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
                 spalnMakeIndex(genome_rm)
                 spalnAlign(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),spalnMakeIndex.out,1)
@@ -61,7 +63,8 @@ workflow proteinhint_gth {
 
 	main:
 		blast_index(genome)
-		fastaCleanProteins(protein_fa)
+		fastaGaasClean(protein_fa)
+                fastaCleanProteins(fastaGaasClean.out)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
 		blast_proteins(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),blast_index.out.collect())
 		blast2targets(blast_proteins.out.collect())
@@ -83,7 +86,8 @@ workflow proteinmodels_gth {
 
         main:
                 blast_index(genome)
-                fastaCleanProteins(protein_fa)
+		fastaGaasClean(protein_fa)
+                fastaCleanProteins(fastaGaasClean.out)
                 fastaRemoveShort(fastaCleanProteins.out,params.min_prot_length)
                 blast_proteins(fastaRemoveShort.out.splitFasta(by: params.nproteins, file: true),blast_index.out.collect())
                 blast2targets(blast_proteins.out.collect())
