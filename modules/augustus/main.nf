@@ -1,4 +1,4 @@
-include { prepHintsToBed ; GffToFasta } from "./../util" params(params)
+include { prepHintsToBed ; GffToFasta } from "./../util" addParams(folder: "${params.outdir}/annotation/augustus")
 include { fastaSplitSize } from "./../fasta" params(params)
 
 // Predict gene models on a genome sequence using hints

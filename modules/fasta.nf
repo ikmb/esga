@@ -122,13 +122,11 @@ process fastaCleanProteins {
 	fasta_clean = fasta.getBaseName() + ".clean.fa"
 
 	"""
-
 		sed 's/[.]\$//' $fasta > cleaned.fa
 		gaas_fasta_cleaner.pl -f cleaned.fa -o tmp
 		fastaclean -f tmp -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 		rm tmp cleaned.fa
 	"""
-
 }
 
 process fastaCleanNames {

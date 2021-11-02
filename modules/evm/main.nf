@@ -1,4 +1,4 @@
-include { GffToFasta } from "./../util" params(params)
+include { GffToFasta } from "./../util" addParams(folder: "${params.outdir}/annotation/evm")
 
 // Use EVM to reconsile gene model predictions and evidences
 workflow evm_prediction {

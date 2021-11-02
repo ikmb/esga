@@ -4,7 +4,7 @@
 
 include { fastaSplitSize } from "./../fasta"  params(params)
 include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
-include { GffToFasta } from "./../util" params(params)
+include { GffToFasta } from "./../util" addParams(folder: "${params.outdir}/annotation/pasa")
 
 // Run the PASA pipeline
 workflow pasa {
