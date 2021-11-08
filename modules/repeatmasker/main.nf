@@ -35,8 +35,7 @@ workflow repeatmasking_with_species {
                 assembly_name = Channel.value("genome.rm.fa")
 
 		fastaSplitSize(genome,params.npart_size)
-                repeatLibSpecies(species)
-                repeatMaskSpecies(fastaSplitSize.out.flatMap(),repeatLibSpecies.out.collect().map{it[0].toString()},species)
+                repeatMaskSpecies(fastaSplitSize.out.flatMap(),species)
                 fastaMergeChunks(repeatMaskSpecies.out[0].collect(),assembly_name)
 		repeats_to_hints(repeatMaskSpecies.out[1].collect())
 	emit:
@@ -73,6 +72,8 @@ process repeatLib {
 // trigger one-time repeat database formatting before running parallel masking steps
 process repeatLibSpecies {
 
+	label 'repeatmasker'
+
 	input:
 	val species
 
@@ -100,9 +101,9 @@ process repeatLibSpecies {
 // if nothing was masked, return the original genome sequence instead and an empty gff file. 
 process repeatMaskLib {
 
-	label 'long_running'
+	label 'repeatmasker'
 
-	publishDir "${params.outdir}/logs/repeatmasker", mode: 'copy'
+	publishDir "${params.outdir}/repeatmasker", mode: 'copy'
 
 	scratch true
 
@@ -137,11 +138,12 @@ process repeatMaskSpecies {
 
         scratch true
 
+	label 'repeatmasker'
+
 	publishDir "${params.outdir}/repeatmasker", mode: 'copy'	
 
         input:
         path genome
-        env REPEATMASKER_LIB_DIR
         val species
 
         output:
@@ -159,7 +161,6 @@ process repeatMaskSpecies {
         rm_out = base_name + ".out"
 
         """
-                echo \$REPEATMASKER_LIB_DIR > lib_dir.txt
                 RepeatMasker $options -gff -xsmall -nolow -q -pa ${task.cpus} $genome
                 test -f ${genome_rm} || cp $genome $genome_rm && touch $rm_gff
         """

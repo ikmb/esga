@@ -29,6 +29,7 @@ include { rfamsearch } from "./modules/infernal/main.nf" params(params)
 include { map_annotation } from "./modules/satsuma/main.nf" params(params)
 include { get_software_versions } from "./modules/logging/main.nf" params(params)
 include { snap_train_from_spaln; snap_train_from_pasa ; snap } from "./modules/snap/main.nf" params(params)
+include { multiqc } from "./modules/multiqc.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -370,7 +371,7 @@ workflow {
 	main:
 
 	// Get aa MultiQC compatible YAML file of software versions
-	get_software_versions()
+	get_software_versions(params.genome)
 	software_yaml = get_software_versions.out.yaml
 
 	// Pre-process the assembly
@@ -621,6 +622,7 @@ workflow {
 		polish_gff = Channel.empty()
 	}
 
+	multiqc(software_yaml)
 }
 
 workflow.onComplete {

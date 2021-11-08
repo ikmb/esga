@@ -9,16 +9,8 @@ likely be to achieve a highly sensitive annotation in just "one go".
 
 In any case, the product of this (or any other) annotation pipeline is a best-guess interpretation and will require manual curation to achieve the best possible result suitable for highly detailed genetic/genomic studies.
 
-The steps in this pipeline can be broken down based on the types of input they use. 
-
-* Proteins - are aligned against the genome assembly using SPALN. The pipeline distinguished between "targeted" proteins (stemming from your organism) and "generic" proteins (from other species)
-* Transcripts - are aligned against the genome assembly using Minimap2. These can stem from a range of technologies, including IsoSeq, ESTs and assembled RNA-seq data
-* Splice junctions - are extracted from aligned RNA-seq data
-* Repeats - are annotated using RepeatMasker. If no repeats are available, they will be modelled "de-novo" from the assembly (only really works for assemblies using long-read technologies...).
-* Gene synteny - is computed from whole genome alignments and mapped gene models from closely related high-quality reference genomes.
-
 The resulting data will be processed by annotation "engines" (AUGUSTUS, Pasa and EvidenceModeler) and produce distinct gene builds for each of these tools.
 
-All of the data types and tools are optional, with the expception of AUGUSTUS. More information on this is available from the [usage](usage.md) instructions
+All of the data types and tools are optional, with the expception of AUGUSTUS. More information on this is available from the [usage](usage.md) instructions.
 
-![](../images/Pipeline_dag.svg) 
+![](../images/pipeline_schema.png) 

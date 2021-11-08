@@ -8,7 +8,6 @@ channels:
 dependencies:
  - parallel
  - samtools
- - repeatmasker=4.0.7
  - bioconda::hisat2=2.2.1
  - cdbtools
  - exonerate=2.4.0 
