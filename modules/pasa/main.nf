@@ -17,7 +17,7 @@ workflow pasa {
 		seqclean(transcripts)
 		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		pasa_assembly(genome,transcripts,seqclean.out)
+		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],transcripts)
 		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
@@ -57,12 +57,14 @@ process seqclean {
 
 	output:
 	path transcripts_clean
-
+	path transcripts_cln
 	script:
 	transcripts_clean = transcripts.getName() + ".clean"
+	transcripts_cln = transcripts.getName() + ".cln"
 
 	"""
-		\$PASAHOME/seqclean -c ${task.cpus} $transcripts 
+		export USER=${workflow.userName}
+		seqclean $transcripts -c ${task.cpus}
 	"""
 }
 
@@ -76,8 +78,9 @@ process pasa_assembly {
 
 	input:
 	path genome
-	path transcripts
-	path trancsripts_untrimmed
+	path transcripts_clean
+	path transcripts_cln
+	path transcripts_untrimmed
 
 	output:
 	path pasa_assemblies_fasta
@@ -107,7 +110,7 @@ process pasa_assembly {
 		\$PASAHOME/Launch_PASA_pipeline.pl \
 			--ALIGNERS minimap2 \
                         -c pasa_DB.config -C -R \
-                        -t $transcripts \
+                        -t $transcripts_clean \
 			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \

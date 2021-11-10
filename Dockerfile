@@ -4,8 +4,8 @@ LABEL authors="Marc Hoeppner" \
 
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/esga-1.2/bin:/opt/bin:/opt/spaln/2.4.6/bin:$PATH
-ENV EVM_HOME /opt/conda/envs/esga-1.2/opt/evidencemodeler-1.1.1
+ENV PATH /opt/conda/envs/esga-1.3/bin:/opt/bin:/opt/spaln/2.4.6/bin:$PATH
+ENV EVM_HOME /opt/conda/envs/esga-1.3/opt/evidencemodeler-1.1.1
 RUN mkdir -p /opt/bin && cd /opt/bin && wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/faSomeRecords && chmod +x faSomeRecords
 RUN apt-get -y update && apt-get -y install make gcc g++ zlib1g-dev zlib1g
 RUN mkdir -p /opt/spaln && cd /opt/spaln && wget https://github.com/ogotoh/spaln/archive/refs/tags/ver.2.4.6.tar.gz && tar -xvf ver.2.4.6.tar.gz \

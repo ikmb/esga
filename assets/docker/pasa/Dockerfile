@@ -4,7 +4,7 @@ LABEL authors="Marc Hoeppner" \
 
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/esga-1.2/bin:/opt/pasa/2.5.1/bin:$PATH
+ENV PATH /opt/conda/envs/esga-1.3/bin:/opt/pasa/2.5.1/bin:$PATH
 ENV PASAHOME /opt/pasa/2.5.1
 
 RUN apt-get -y update && apt-get -y install wget build-essential zlib1g-dev
