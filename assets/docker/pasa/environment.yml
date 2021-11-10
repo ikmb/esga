@@ -10,7 +10,7 @@ dependencies:
  - bioconda::minimap2=2.22
  - sqlite
  - bioconda::gmap=2021.08.25
- - bioconda::pblat=2.5.1
+ - bioconda::pblat=2.5
  - bioconda::fasta3
  - blat
  - cdbtools
