@@ -17,7 +17,7 @@ workflow pasa {
 		seqclean(transcripts)
 		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		pasa_assembly(genome,transcripts,seqclean.out,estMinimapToGff.out[0])
+		pasa_assembly(genome,transcripts,seqclean.out)
 		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
@@ -78,7 +78,6 @@ process pasa_assembly {
 	path genome
 	path transcripts
 	path trancsripts_untrimmed
-	path minimap_gff
 
 	output:
 	path pasa_assemblies_fasta
@@ -106,12 +105,12 @@ process pasa_assembly {
 		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
 
 		\$PASAHOME/Launch_PASA_pipeline.pl \
+			--ALIGNERS minimap2 \
                         -c pasa_DB.config -C -R \
                         -t $transcripts \
 			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \
-                        --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \
                         --CPU ${task.cpus} \
 	"""
 
