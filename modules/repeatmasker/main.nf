@@ -50,6 +50,8 @@ workflow repeatmasking_with_species {
 // Solution: we trigger initial library formatting and then pass the resulting folder as REPEATMASKER_LIB_DIR
 process repeatLib {
 
+	label 'repeatmasker'
+
 	publishDir "${params.outdir}/logs/repeatmasker", mode: 'copy'
 
 	label 'short_running'
