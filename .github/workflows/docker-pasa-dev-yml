@@ -1,4 +1,4 @@
-name: Docker Augustus Publish
+name: Docker PASA Devel
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -7,9 +7,9 @@ name: Docker Augustus Publish
 
 on:
   push:
-    branches: [ master ]
+    branches: [ devel ]
   pull_request:
-    branches: [ master ]
+    branches: [ devel ]
 
 
 jobs:
@@ -24,9 +24,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build new docker image
-        run: docker build --no-cache assets/docker/augustus/ -t ikmb/esga:aug_latest
+        run: docker build --no-cache assets/docker/pasa/ -t ikmb/esga:pasa_devel
 
       - name: Push Docker image to DockerHub (latest)
         run: |
           echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-          docker push ikmb/esga:aug_latest
+          docker push ikmb/esga:pasa_devel

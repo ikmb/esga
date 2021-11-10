@@ -4,4 +4,4 @@ LABEL authors="Marc Hoeppner" \
 
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /opt/conda/envs/esga-1.2/bin:$PATH
+ENV PATH /opt/conda/envs/esga-1.3/bin:$PATH

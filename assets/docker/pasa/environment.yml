@@ -6,12 +6,16 @@ channels:
  - conda-forge
  - bioconda
 dependencies:
- - parallel
- - samtools
- - bioconda::hisat2=2.2.1
+ - bioconda::samtools=1.13
+ - bioconda::minimap2=2.22
+ - sqlite
+ - bioconda::gmap=2021.08.25
+ - bioconda::pblat=2.5
+ - bioconda::fasta3
+ - blat
  - cdbtools
- - exonerate=2.4.0 
- - evidencemodeler=1.1.1
- - gffread=0.11.7
- - bioconda::perl-uri=1.76
- - bioconda::genomethreader=1.7.1
+ - slclust
+ - perl-cgi
+ - perl-dbd-sqlite
+ - perl-db-file
+ - perl-uri

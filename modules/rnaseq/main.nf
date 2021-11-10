@@ -11,8 +11,8 @@ workflow rnaseqhint_hisat {
 
 	main:
 		HisatMakeDB(genome)
-		runFastp(reads )
-		HisatMap(runFastp.out[0],HisatMakeDB.out.collect())
+		trim(reads )
+		HisatMap(trim.out[0],HisatMakeDB.out.collect())
 		makeBigWig(HisatMap.out[0],HisatMap.out[1])
 		mergeBams(HisatMap.out[0].collect())
 		BamToExonHint(mergeBams.out)
@@ -32,9 +32,9 @@ workflow rnaseqhint_star {
 
         main:
                 STARmakeDB(genome)
-                runFastp(reads)
-                STARalign(runFastp.out[0],STARmakeDB.out.collect())
-		STARalignTwo(runFastp.out[0],STARmakeDB.out.collect(),STARalign.out.collect())
+                trim(reads)
+                STARalign(trim.out[0],STARmakeDB.out.collect())
+		STARalignTwo(trim.out[0],STARmakeDB.out.collect(),STARalign.out.collect())
 		bam_index(STARalignTwo.out[0])
 		makeBigWig(bam_index.out[0],bam_index.out[1])
                 mergeBams(STARalignTwo.out[0].collect())
@@ -51,7 +51,7 @@ workflow rnaseqhint_star {
 
 
 // trim RNAseq reads
-process runFastp {
+process trim {
 
 	label 'fastp'
 
@@ -268,7 +268,7 @@ process makeBigWig {
 
 	if (params.rnaseq_stranded) {
 		"""
-			bamCoverage -of bigwig -bs 10 --filterRNAstrand forward --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_fw
+ 			bamCoverage -of bigwig -bs 10 --filterRNAstrand forward --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_fw
         	        bamCoverage -of bigwig -bs 10 --filterRNAstrand reverse --ignoreDuplicates  -p ${task.cpus} -b $bam -o $bigwig_rev
 		"""
 

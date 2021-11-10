@@ -139,10 +139,19 @@ Alignment software to use for protein sequences. Default is `spaln` since it is 
 The default value is set to 20000 - for something like a nematode, this would be too long; for some lower vertebrates it would probably be fine, although 
 a few introns may be much longer. Genes containing such extraordinarily large introns will then probably be mis-annotated. Information on plausible intron sizes can be obtained from the literature for many taxonomic groups. 
 
+#### `--rm_species`
+Use this taxonomic group or species to identify and mask repeats. Valid names can, in most cases, be guessed, and follow the nomenclature provided through the [NCBI taxonomy](https://www.ncbi.nlm.nih.gov/taxonomy). This option draws from available data included in DFam 3.2, which contains HMM profiles for over 273.0000 repeat families from [347 species](https://www.dfam.org/releases/Dfam_3.2/relnotes.txt).
+
+As can be seen, this dataset is not necessarily comprehensive in its taxonomic coverage. If your species of interest falls well outside of the many organisms included with DFam, consider using a FASTA file of repeats instead (--rm_lib). If no such file exists, leave the options `--rm_lib` and `--rm_species` empty to trigger the de-novo repeat-modelling stage in ESGA using RepeatModeler. 
+
+On de-novo repeat-modelling:
+Detecting repeats de-novo  requires a sufficient number of related repeats to be present in your assembly. If your genome was assembled from short reads, this strategy may not return anything -
+short read assemblies tend to collapse repeats. In this case, the pipeline will fall back to the built-in DFam library that ships with RepeatMasker.
+
 #### `--rm_lib`[ fasta file | false ]
-ESGA can run RepeatMasker using the built-in repeat library (DFam 2.0) - see below. However, given that DFam is quite sparse, especially outside of mammals, we would recommend to instead provide 
-repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler) or curated repeat libraries from 
+ESGA can run RepeatMasker using repeat sequences in FASTA format. Possible sources include self-computed repeats (using RepeatModeler) or curated repeat libraries from 
 GRINST (www.grinst.org, commercial). 
+
 If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like so: 
 
 ```
@@ -155,18 +164,6 @@ perl /[...]/RepeatMasker/4.0.8/util/queryRepeatDatabase.pl -species Ostreoida > 
 You will need to delete the first line of the resulting FASTA file since RepeatMasker prints some basic information into it for no clear reason - but this otherwise breaks any FASTA parser. 
 
 Then run the pipeline with the option "--rm_lib RMdb_Ostreoida.fa". 
-
-Please note: If *no* repeats are specified, the pipeline will try to model repeats de-novo using the RepeatModeler package. However, this requires a
-sufficient number of related repeats to be present in your assembly. If your genome was assembled from short reads, this strategy may not return anything -
-short read assemblies tend to collapse repeats. In this case, the pipeline will fall back to the built-in library that ships with RepeatMasker
-(which is very limited and probably not very useful).
-
-#### `--rm_species` 
-Use this taxonomic group or species to identify and mask repeats. This option draws from available data included in DFam 2.0 (not 3.0, this option will come later!). 
-Generally, this data set is quite sparse and if you can, you should consider using a FASTA file of repeats instead (--rm_lib). Also, if you choose an unsupported taxonomic
-group, the pipeline may crash...(TBD)
-
-When in doubt, use `--rm_species mammal` to enable this option and mask mammalian repeats.
 
 #### `--aug_species` [ default = 'human' ]
 Species model for AUGUSTUS. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).

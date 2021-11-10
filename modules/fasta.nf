@@ -48,7 +48,7 @@ process fastaMergeChunks {
 
         label 'short_running'
 
-	//publishDir "${params.outdir}/fasta", mode: 'copy'
+	publishDir "${params.outdir}/logs/fasta", mode: 'copy'
 
         input:
         path chunks
@@ -147,6 +147,25 @@ process fastaCleanProteins {
 	"""
 		fastaclean -f $fasta -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
 	"""
+}
+
+process fastaCleanTranscripts {
+
+
+	input:
+        path fasta
+
+        output:
+        path fasta_clean
+
+        script:
+
+        fasta_clean = fasta.getBaseName() + ".clean.fa"
+
+        """
+		sed 's/\./_/' $fasta > $fasta_clean
+	"""
+
 }
 
 process fastaCleanNames {

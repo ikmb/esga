@@ -1,6 +1,6 @@
 # You can use this file to create a conda environment for the genome-annotation pipeline:
 #   conda env create -f genome-annotation-conda.yml
-name: esga-1.2
+name: esga-1.3
 channels:
  - defaults
  - conda-forge

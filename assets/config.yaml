@@ -16,6 +16,8 @@ trinity: false
 pasa: false
 evm: false
 nevm: 10
+protein_aligner: spaln
+rnaseq_aligner: star
 nproteins: 200
 npart_size: 200000000
 max_intron_size: 50000

@@ -14,18 +14,18 @@ workflow pasa {
 		transcripts
 
 	main:
-		runSeqClean(transcripts)
-		estMinimap(runSeqClean.out[0],genome)
+		seqclean(transcripts)
+		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		runPasa(genome,transcripts,estMinimapToGff.out[0])
-		PasaToModels(runPasa.out[0],runPasa.out[1])
+		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],transcripts)
+		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
 	emit:
 		gff = PasaToModels.out[1]
-		alignments = runPasa.out[1]
+		alignments = pasa_assembly.out[1]
 		fasta = GffToFasta.out[0]
-		db = runPasa.out[2]
+		db = pasa_assembly.out[2]
 		transcript_gff = estMinimap.out[0]
 
 }
@@ -48,7 +48,7 @@ workflow polish_annotation {
 }
 
 // Currently does not work in singularity/conda so we just copy the input until we can fix this
-process runSeqClean {
+process seqclean {
 
 	label 'pasa'
 
@@ -57,25 +57,30 @@ process runSeqClean {
 
 	output:
 	path transcripts_clean
-
+	path transcripts_cln
 	script:
 	transcripts_clean = transcripts.getName() + ".clean"
+	transcripts_cln = transcripts.getName() + ".cln"
 
 	"""
-		cp $transcripts $transcripts_clean
+		export USER=${workflow.userName}
+		seqclean $transcripts -c ${task.cpus}
 	"""
 }
 
 // Run the PASA pipeline from pre-aligned sequences (estMinimap)
 // Using the built-in alignment is way too slow!
-process runPasa {
+process pasa_assembly {
+
+	label 'pasa'
 
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
 	input:
 	path genome
-	path transcripts
-	path minimap_gff
+	path transcripts_clean
+	path transcripts_cln
+	path transcripts_untrimmed
 
 	output:
 	path pasa_assemblies_fasta
@@ -103,11 +108,12 @@ process runPasa {
 		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
 
 		\$PASAHOME/Launch_PASA_pipeline.pl \
+			--ALIGNERS minimap2 \
                         -c pasa_DB.config -C -R \
-                        -t $transcripts \
+                        -t $transcripts_clean \
+			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \
-                        --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \
                         --CPU ${task.cpus} \
 	"""
 
@@ -115,6 +121,8 @@ process runPasa {
 
 // Turn the pasa results into full gff3 file
 process PasaToModels {
+
+	label 'pasa'
 
         publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 

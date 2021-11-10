@@ -54,7 +54,7 @@ process align_genomes {
 
 	label 'satsuma'
 	tag "${ref_genome}"
-	scratch true
+	//scratch true
 
 	input:
 	tuple val(ref_name),path(ref_genome),path(gtf),path(query_genome)

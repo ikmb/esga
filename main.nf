@@ -29,6 +29,7 @@ include { rfamsearch } from "./modules/infernal/main.nf" params(params)
 include { map_annotation } from "./modules/satsuma/main.nf" params(params)
 include { get_software_versions } from "./modules/logging/main.nf" params(params)
 include { snap_train_from_spaln; snap_train_from_pasa ; snap } from "./modules/snap/main.nf" params(params)
+include { multiqc } from "./modules/multiqc.nf" params(params)
 
 def helpMessage() {
   log.info"""
@@ -370,7 +371,7 @@ workflow {
 	main:
 
 	// Get aa MultiQC compatible YAML file of software versions
-	get_software_versions()
+	get_software_versions(params.genome)
 	software_yaml = get_software_versions.out.yaml
 
 	// Pre-process the assembly
@@ -578,7 +579,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers, snap_gff).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff)
@@ -598,7 +599,7 @@ workflow {
 		} else if (params.proteins) {
 			protein_gff = protein_evm_align
 		} else {
-			protein_gff = Channel.empty()
+			protein_gff = Channel.fromPath(params.empty_gff)
 		}
 
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)
@@ -621,6 +622,7 @@ workflow {
 		polish_gff = Channel.empty()
 	}
 
+	multiqc(software_yaml)
 }
 
 workflow.onComplete {
