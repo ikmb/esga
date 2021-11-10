@@ -70,6 +70,8 @@ process seqclean {
 // Using the built-in alignment is way too slow!
 process pasa_assembly {
 
+	label 'pasa'
+
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
 	input:
@@ -117,6 +119,8 @@ process pasa_assembly {
 
 // Turn the pasa results into full gff3 file
 process PasaToModels {
+
+	label 'pasa'
 
         publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
