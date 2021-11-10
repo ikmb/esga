@@ -579,7 +579,7 @@ workflow {
 	// Combine all inputs into consensus annotation
 	if (params.evm) {
 	
-		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers, snap_gff).collect()
+		gene_gffs = augustus_filtered_gff.concat(pasa_gff, protein_targeted_gff, liftovers).collect()
 		// Reconcile optional multi-branch transcript evidence into a single channel
 		if (params.transcripts && params.reads && params.trinity) {
 			transcript_gff = est_gff.concat(trinity_gff)
@@ -599,7 +599,7 @@ workflow {
 		} else if (params.proteins) {
 			protein_gff = protein_evm_align
 		} else {
-			protein_gff = Channel.empty()
+			protein_gff = Channel.fromPath(params.empty_gff)
 		}
 
 		evm_prediction(genome_rm,protein_gff,transcript_gff,gene_gffs)

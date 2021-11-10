@@ -14,18 +14,18 @@ workflow pasa {
 		transcripts
 
 	main:
-		runSeqClean(transcripts)
-		estMinimap(runSeqClean.out[0],genome)
+		seqclean(transcripts)
+		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		runPasa(genome,transcripts,estMinimapToGff.out[0])
-		PasaToModels(runPasa.out[0],runPasa.out[1])
+		pasa_assembly(genome,transcripts,seqclean.out,estMinimapToGff.out[0])
+		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
 	emit:
 		gff = PasaToModels.out[1]
-		alignments = runPasa.out[1]
+		alignments = pasa_assembly.out[1]
 		fasta = GffToFasta.out[0]
-		db = runPasa.out[2]
+		db = pasa_assembly.out[2]
 		transcript_gff = estMinimap.out[0]
 
 }
@@ -48,7 +48,7 @@ workflow polish_annotation {
 }
 
 // Currently does not work in singularity/conda so we just copy the input until we can fix this
-process runSeqClean {
+process seqclean {
 
 	label 'pasa'
 
@@ -62,19 +62,20 @@ process runSeqClean {
 	transcripts_clean = transcripts.getName() + ".clean"
 
 	"""
-		cp $transcripts $transcripts_clean
+		\$PASAHOME/seqclean -c ${task.cpus} $transcripts 
 	"""
 }
 
 // Run the PASA pipeline from pre-aligned sequences (estMinimap)
 // Using the built-in alignment is way too slow!
-process runPasa {
+process pasa_assembly {
 
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
 	input:
 	path genome
 	path transcripts
+	path trancsripts_untrimmed
 	path minimap_gff
 
 	output:
@@ -105,6 +106,7 @@ process runPasa {
 		\$PASAHOME/Launch_PASA_pipeline.pl \
                         -c pasa_DB.config -C -R \
                         -t $transcripts \
+			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \
                         --IMPORT_CUSTOM_ALIGNMENTS_GFF3 $minimap_gff \

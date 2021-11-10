@@ -48,7 +48,7 @@ process fastaMergeChunks {
 
         label 'short_running'
 
-	//publishDir "${params.outdir}/fasta", mode: 'copy'
+	publishDir "${params.outdir}/logs/fasta", mode: 'copy'
 
         input:
         path chunks

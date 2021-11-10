@@ -35,7 +35,8 @@ workflow repeatmasking_with_species {
                 assembly_name = Channel.value("genome.rm.fa")
 
 		fastaSplitSize(genome,params.npart_size)
-                repeatMaskSpecies(fastaSplitSize.out.flatMap(),species)
+		trigger_library(species)
+                repeatMaskSpecies(fastaSplitSize.out.flatMap(),trigger_library.out.collect())
                 fastaMergeChunks(repeatMaskSpecies.out[0].collect(),assembly_name)
 		repeats_to_hints(repeatMaskSpecies.out[1].collect())
 	emit:
@@ -44,9 +45,12 @@ workflow repeatmasking_with_species {
 		genome_rm_hints = repeats_to_hints.out
 
 }
+
 // RepeatMasker library needs ot be writable. Need to do this so we can work with locked containers
 // Solution: we trigger initial library formatting and then pass the resulting folder as REPEATMASKER_LIB_DIR
 process repeatLib {
+
+	publishDir "${params.outdir}/logs/repeatmasker", mode: 'copy'
 
 	label 'short_running'
 
@@ -67,6 +71,24 @@ process repeatLib {
 		export REPEATMASKER_LIB_DIR=\$PWD/Library
 		RepeatMasker -lib $repeat_lib my_genome.fa > out
 	"""	
+}
+
+process trigger_library {
+
+	label 'repeatmasker'
+
+	input:
+	val species
+
+	output:
+	val species
+
+	script:
+
+	"""
+		cp ${baseDir}/assets/repeatmasker/my_genome.fa .
+		RepeatMasker -species $species my_genome.fa > out
+	"""
 }
 
 // trigger one-time repeat database formatting before running parallel masking steps
@@ -168,6 +190,8 @@ process repeatMaskSpecies {
 
 // Convert repeat annotations to AUGUSTUS hints
 process repeats_to_hints {
+
+	publishDir "${params.outdir}/logs/repeatmasker", mode: 'copy'
 
 	scratch true
 
