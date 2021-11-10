@@ -9,5 +9,9 @@ ENV PASAHOME /opt/pasa/2.5.1
 
 RUN apt-get -y update && apt-get -y install wget make gcc
 
-RUN mkdir -p /opt/pasa && cd /opt/pasa && wget https://github.com/PASApipeline/PASApipeline/archive/refs/tags/pasa-v2.5.1.tar.gz && tar -xvf pasa-v2.5.1.tar.gz && mv pasa-v2.5.1 2.5.1 && rm *.tar.gz
+RUN mkdir -p /opt/pasa && cd /opt/pasa && wget https://github.com/PASApipeline/PASApipeline/archive/refs/tags/pasa-v2.5.1.tar.gz && tar -xvf pasa-v2.5.1.tar.gz && mv PASApipeline-pasa-v2.5.1 2.5.1 && rm *.tar.gz
 RUN cd /opt/pasa/2.5.1 && make -j2
+
+RUN cp /opt/pasa/2.5.1/pasa_conf/pasa.CONFIG.template /opt/pasa/2.5.1/pasa_conf/conf.txt
+
+
