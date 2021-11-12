@@ -6,14 +6,14 @@ workflow trinity_guided_assembly {
 		bam
 
 	main:
-		runTrinityGuided(bam)				
+		trinity(bam)				
 
 	emit:
 		assembly = runTrinityGuided.out
 }
 
 
-process runTrinityGuided {
+process trinity {
 	
 	label 'trinity'
 

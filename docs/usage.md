@@ -169,7 +169,7 @@ Then run the pipeline with the option "--rm_lib RMdb_Ostreoida.fa".
 Species model for AUGUSTUS. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
 #### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
-Location of AUGUSTUS extinsic hint configuration file. By default, this pipeline uses a config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
+Location of AUGUSTUS extinsic hint configuration file. By default, this pipeline uses a [config file](../assets/augustus/augustus_default.cfg) that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
 
 #### `--aug_options` [ default = "" ]
 AUGUSTUS has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
@@ -188,7 +188,7 @@ Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help prod
 was trained to predict UTRs - else the pipeline will fatally fail (just remove --utr in that case and -resume).
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
-A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used. However, you can pass your own version - ideally starting from our template to make sure that all types of evidence are considered. 
+A file specifying the weights given to individual inputs when running EvidenceModeler. By default a [pre-configured file](../assets/evm/evm_weights.txt) is used. However, you can pass your own version - ideally starting from our template to make sure that all types of evidence are considered. 
 
 #### `--pri_prot_targeted <int>` [ 5 (default ]
 Priority of protein-based hints for Augustus gene predictions from the closest reference proteome. Higher priority hints are considered first and override lower-priority hints.
