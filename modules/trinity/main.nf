@@ -9,7 +9,7 @@ workflow trinity_guided_assembly {
 		trinity(bam)				
 
 	emit:
-		assembly = runTrinityGuided.out
+		assembly = trinity.out
 }
 
 

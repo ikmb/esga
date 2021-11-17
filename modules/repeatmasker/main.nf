@@ -226,7 +226,7 @@ process repeats_to_gmod {
 	path gff
 
 	script:
-	
+	gff = "repeats.gmod.gff"
 	"""
 		cat $gffs > $gff
 	"""

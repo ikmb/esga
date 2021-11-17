@@ -2,7 +2,7 @@
 // PASA transcriptome assembly
 // ****************
 
-include { fastaSplitSize } from "./../fasta"  params(params)
+include { fastaCleanProteins; fastaSplitSize ; fastaCleanNames } from "./../fasta"  params(params)
 include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
 include { GffToFasta } from "./../util" addParams(folder: "${params.outdir}/annotation/pasa")
 
@@ -14,7 +14,9 @@ workflow pasa {
 		transcripts
 
 	main:
-		seqclean(transcripts)
+		fastaCleanProteins(transcripts)	
+		fastaCleanNames(fastaCleanProteins.out)
+		seqclean(fastaCleanNames.out)
 		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
 		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],transcripts)
@@ -122,7 +124,7 @@ process pasa_assembly {
 // Turn the pasa results into full gff3 file
 process PasaToModels {
 
-	label 'pasa'
+	label 'pasaconda'
 
         publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
