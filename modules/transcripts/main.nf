@@ -45,7 +45,7 @@ process estMinimap {
 
 	"""
 		samtools faidx $genome_rm
-		minimap2 -t ${task.cpus} -ax splice:hq -c -G ${params.max_intron_size}  $genome_rm $est | samtools sort -@ ${task.cpus} -m 2G -O BAM -o $minimap_bam
+		minimap2 -t ${task.cpus} --split-prefix tmp -ax splice:hq -c -G ${params.max_intron_size}  $genome_rm $est | samtools sort -@ ${task.cpus} -m 2G -O BAM -o $minimap_bam
 	"""	
 }
 

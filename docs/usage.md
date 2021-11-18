@@ -112,7 +112,7 @@ that are always generated when RNA-seq data is available. Likewise, you can sele
 The only non-optional part is the AUGUSTUS stage as this is the core around which ESGA was originally built. 
 
 #### `--pasa` [ true | false (default) ]
-Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
+Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity). Please note that PASA runs off a SQLite database. Consequently, this step is quite slow for larger transcriptome data sets (several days!). 
 
 #### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 

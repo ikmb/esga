@@ -19,7 +19,7 @@ workflow pasa {
 		seqclean(fastaCleanNames.out)
 		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],transcripts)
+		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],fastaCleanNames.out)
 		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
