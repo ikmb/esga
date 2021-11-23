@@ -76,6 +76,8 @@ process pasa_assembly {
 
 	label 'pasa'
 
+	scratch true 
+
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
 	input:
@@ -113,7 +115,6 @@ process pasa_assembly {
 			--ALIGNERS minimap2 \
                         -c pasa_DB.config -C -R \
                         -t $transcripts_clean \
-			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \
                         --CPU ${task.cpus} \
