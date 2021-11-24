@@ -3,7 +3,7 @@
 ## Assembly pre-processing and quality
 
 Your assembly should ideally be very contiguous (scaffold N50 > 1MB), else the run time will be quite long and genes are more likely to be fragmented and mis-annotated. Make sure that the scaffold names do not contain "weird" special 
-characters (like colons, semicolons, etc). Ideally, a scaffold should be named ">scaffold1", not "scaffold:1 cov129X-blabla". In addition, public databases tend to not like assemblies that contain leading or trailing Ns in their scaffolds - so consider
+characters (like colons, semicolons, etc) and are not longer than 50 characters. Ideally, a scaffold should be named ">scaffold1", not "scaffold:1 cov129X-blabla". In addition, public databases tend to not like assemblies that contain leading or trailing Ns in their scaffolds - so consider
 removing those if they exist and you plan on submitting your data to e.g. GenBank. Otherwise it will be quite painful to do this later and re-compute all feature coordinates. 
 
 Finally, if your assembly contains the *mitchondrial genome* (or any other organelle), you should consider removing it. ESGA will not correctly deal with organellar genomes due to differences in the genetic code used. 
