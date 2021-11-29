@@ -156,6 +156,8 @@ process PasaToModels {
 // requires a gene build in gff3 format, aligned transcripts and the genome
 process runPasaPolish {
 
+	label 'pasa'
+
 	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
 	input:

@@ -211,7 +211,9 @@ process SpalnGffToTraining {
 // Can then be used for training AUGUSTUS
 process PasaGffToTraining {
 
-	label 'short_running'
+	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+	
+	label 'pasa'
 
 	input:
 	path pasa_gff
@@ -255,7 +257,10 @@ process trainAugustus {
         // If the model already exists, do not run new_species.pl
 	// Need to use bash for this as the config folder does not yet exist at this point of the process so can't use Groovy...
 	aug_folder = "augustus_config/species/${params.aug_species}"
-	options = "new_species.pl --species=${params.aug_species}"
+	aug_folder_path = file(aug_folder)
+	if (!aug_folder_path.exists()) {
+		options = "new_species.pl --species=${params.aug_species}"
+	}
 
 	// Re-training and optimization is quite slow and yields minimal gains. Disable if a fast annotation is requested. 
 	retrain_options = ""
@@ -406,6 +411,7 @@ process runAugustusChunks {
 	}
 
 	"""
+		echo \$AUGUSTUS_CONFIG_PATH > test.txt
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d .
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
