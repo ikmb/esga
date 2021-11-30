@@ -147,7 +147,7 @@ process evmToGff {
 	path evm_gff
 
 	script:
-	evm_gff = "evm.annotations.gff"
+	evm_gff = "evm.annotations.gff3"
 
 	"""
 		merge_evm_gff.pl --partitions $partitions --gff $evm_gff

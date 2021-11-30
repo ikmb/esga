@@ -19,6 +19,7 @@ workflow augustus_prediction {
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
 		AugustusFilterModels(mergeAugustusGff.out[0],genome)
+		AugustusToGmod(AugustusFilterModels.out[0])
 	emit:
 		gff = mergeAugustusGff.out
 		fasta = GffToFasta.out[0]
@@ -41,7 +42,7 @@ workflow augustus_prediction_slow {
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)		
-
+		AugustusToGmod(AugustusFilterModels.out[0])
         emit:
                 gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
@@ -66,6 +67,7 @@ workflow augustus_parallel {
 		mergeAugustusGff(joinAugustusChunks.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)
+		AugustusToGmod(mergeAugustusGff.out[0])
 	emit:
 		gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
@@ -397,7 +399,7 @@ process runAugustusChunks {
 
 	script:
 	chunk_name = genome_chunk.getName().tokenize("_")[-1]
-	augustus_result = "augustus.${chunk_name}.out.gff"
+	augustus_result = "augustus.${chunk_name}.out.gff3"
 	command_file = "commands." + chunk_name + ".txt"
 	utr = (params.utr) ? "on" : "off"
 	
@@ -437,7 +439,7 @@ process joinAugustusChunks {
 
 	script:
 	chunk_name = chunks.getBaseName() 
-	augustus_models = chunk_name + ".merged.gff"
+	augustus_models = chunk_name + ".merged.gff3"
 
 	"""
 		fix_joingenes_gtf.pl < $chunks > $augustus_models
@@ -458,7 +460,7 @@ process mergeAugustusGff {
 	path augustus_merged_gff
 
 	script:
-	augustus_merged_gff = "augustus.merged.out.gff"
+	augustus_merged_gff = "augustus.merged.out.gff3"
 	
 	"""	
 		cat $augustus_gffs >> merged.gff
@@ -487,4 +489,24 @@ process prepAugustusConfig {
 		cp -R $augustus_config_dir/* $copied_dir/
 	"""
 
+}
+
+process AugustusToGmod {
+
+	publishDir "${params.outdir}/gmod", mode: 'copy'
+
+	label 'augustus'
+
+	input:
+	path gff
+
+	output:
+	path gff_gmod
+
+	script:
+	gff_gmod = gff.getBaseName() + ".gmod.gff3"
+
+	"""
+		augustus2gbrowse.pl < $gff > $gff_gmod
+	"""
 }

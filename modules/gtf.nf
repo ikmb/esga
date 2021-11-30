@@ -21,7 +21,7 @@ process gtf2hints {
 // The sed command here is to fix an issue with malformed kraken output
 process kraken2gff {
 
-	publishDir "${params.outdir}/logs/kraken", mode: 'copy'
+	publishDir "${params.outdir}/gmod", mode: 'copy'
 
 	label 'gaas'
 
@@ -37,9 +37,9 @@ process kraken2gff {
 	"""
 		sed -i.bak 's/;\"/\"/g' $gtf
 		sed -i.bak2 's/\t\t/\tensembl\t/' $gtf
-		kraken2gff.pl --infile $gtf > $gff
-
-		rm *.bak*
+		kraken2gff.pl --infile $gtf > kraken.gff
+		grep -v "#" kraken.gff | sort -k1,1 -k4,4n -k5,5n -t\$'\t' >$gff
+		rm *.bak* kraken.gff
 	"""
 
 }
