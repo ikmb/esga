@@ -2,7 +2,7 @@
 // PASA transcriptome assembly
 // ****************
 
-include { fastaSplitSize } from "./../fasta"  params(params)
+include { fastaCleanProteins; fastaSplitSize ; fastaCleanNames } from "./../fasta"  params(params)
 include { estMinimap; estMinimapToGff } from "./../transcripts/main.nf" params(params)
 include { GffToFasta } from "./../util" addParams(folder: "${params.outdir}/annotation/pasa")
 
@@ -14,10 +14,12 @@ workflow pasa {
 		transcripts
 
 	main:
-		seqclean(transcripts)
+		fastaCleanProteins(transcripts)	
+		fastaCleanNames(fastaCleanProteins.out)
+		seqclean(fastaCleanNames.out)
 		estMinimap(seqclean.out[0],genome)
 		estMinimapToGff(estMinimap.out)
-		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],transcripts)
+		pasa_assembly(genome,seqclean.out[0],seqclean.out[1],fastaCleanNames.out)
 		PasaToModels(pasa_assembly.out[0],pasa_assembly.out[1])
 		GffToFasta(PasaToModels.out[1],genome)	
 
@@ -74,6 +76,8 @@ process pasa_assembly {
 
 	label 'pasa'
 
+	scratch true 
+
         publishDir "${params.outdir}/logs/pasa", mode: 'copy'
 
 	input:
@@ -111,7 +115,6 @@ process pasa_assembly {
 			--ALIGNERS minimap2 \
                         -c pasa_DB.config -C -R \
                         -t $transcripts_clean \
-			-T -u $transcripts_untrimmed \
                         -I $params.max_intron_size \
                         -g $genome \
                         --CPU ${task.cpus} \
@@ -122,7 +125,7 @@ process pasa_assembly {
 // Turn the pasa results into full gff3 file
 process PasaToModels {
 
-	label 'pasa'
+	label 'pasaconda'
 
         publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
@@ -152,6 +155,8 @@ process PasaToModels {
 // Use Pasa to polish a gene build with transcript data
 // requires a gene build in gff3 format, aligned transcripts and the genome
 process runPasaPolish {
+
+	label 'pasa'
 
 	publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 

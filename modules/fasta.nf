@@ -142,7 +142,7 @@ process fastaCleanProteins {
 
 	script:
 
-	fasta_clean = fasta.getBaseName() + ".clean.fa"
+	fasta_clean = fasta.getBaseName() + ".purged.fa"
 
 	"""
 		fastaclean -f $fasta -p | sed 's/:filter(clean)//' | sed 's/ pep .*//' > $fasta_clean
@@ -158,7 +158,7 @@ process fastaCleanNames {
 	path(fasta_clean)
 
 	script:
-	fasta_clean = fasta.getBaseName() + ".clean.fa"
+	fasta_clean = fasta.getBaseName() + ".stripped.fa"
 
 	"""
 		sed 's/ .*//' $fasta > $fasta_clean		

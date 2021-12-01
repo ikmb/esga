@@ -29,6 +29,7 @@ rm_lib: false
 rm_species: false
 reads: false
 aug_species: "human"
+ncrna: false
 aug_options: ""
 spaln_taxon: "Tetrapod"
 spaln_q: 5
@@ -104,6 +105,8 @@ Please make sure to use closely related genomes for this (to annotate a primate,
 (>>100GB for vertebrates). We have had this part crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster 
 to successfully use this part of ESGA when working on larger vertebrates. 
 
+Suitable sources for this step are, for example, genomes and annotations from the [EnsEMBL](https://www.ensembl.org/index.html) database.
+
 ### 3. Programs to run 
 By default, the pipeline will run all parts for which the required types of input are provided. However, some parts need to specifically "switched on" as they require longer run times and may not be strictly necessary. For example,
 yes you can run the Trinity transcriptome assembly part of the pipeline (see below), but if you already have a set of assembled transcripts (--transcripts), this may not be necessary in combination with the RNA-seq hints
@@ -112,7 +115,7 @@ that are always generated when RNA-seq data is available. Likewise, you can sele
 The only non-optional part is the AUGUSTUS stage as this is the core around which ESGA was originally built. 
 
 #### `--pasa` [ true | false (default) ]
-Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity).
+Run the PASA pipeline to build gene models from aligned transcripts (requires --transcripts and/or --reads & --trinity). Please note that due to our need to use container technologies, PASA runs off a SQLite database. Consequently, this step is quite slow for larger genome/transcriptome data sets (several days!). 
 
 #### `--evm` [ true | false (default) ]
 Run the evidence-modeler gene build pipeline, combining all the various outputs produced by this workflow. 
@@ -169,7 +172,7 @@ Then run the pipeline with the option "--rm_lib RMdb_Ostreoida.fa".
 Species model for AUGUSTUS. A list of valid identifiers can be found [here](https://github.com/Gaius-Augustus/Augustus/blob/master/docs/RUNNING-AUGUSTUS.md).
 
 #### `--aug_config` [ default = 'assets/augustus/augustus_default.cfg' ]
-Location of AUGUSTUS extinsic hint configuration file. By default, this pipeline uses a config file that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
+Location of AUGUSTUS extrinsic hint configuration file. By default, this pipeline uses a [config file](../assets/augustus/augustus_default.cfg) that we found to work well for predicting gene models in mammalian genomes using the kinds of extrinsic hints constructed by this pipeline. However, you can pass your own option. However, you should start from our template to make sure that the types of hints match the ones seen by Augustus. 
 
 #### `--aug_options` [ default = "" ]
 AUGUSTUS has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
@@ -181,14 +184,14 @@ Enable training of an AUGUSTUS profile. This option requires either a species-sp
 
 This option also interacts with `--aug_species` . If the species name already exists, ESGA will perform a re-training of that model. If the species name does not exist, a new profile will be created. 
 
-Please not that this routine is somewhat basic. Resulting models should work ok, but are likely not going to be as good as those shipping with AUGUSTUS.
+Please not that this routine is somewhat basic and reliant on the quality of your input data. Resulting models should work ok, but are likely not going to be as good as those shipping with AUGUSTUS. Especially sparse RNAseq data may cause issues when using the PASA route for producing training models. 
 
 #### `--utr` [ true | false (default ]
 Enabling prediction of UTRs during AUGUSTUS ab-initio gene finding can help produce more acurate gene models. However, this option is best used with available RNA-seq data and should only ever be switched on if the AUGUSTUS profile
 was trained to predict UTRs - else the pipeline will fatally fail (just remove --utr in that case and -resume).
     
 #### `--evm_weights` [ default = 'assets/evm/evm_weights.txt' ]
-A file specifying the weights given to individual inputs when running EvidenceModeler. By default a pre-configured file is used. However, you can pass your own version - ideally starting from our template to make sure that all types of evidence are considered. 
+A file specifying the weights given to individual inputs when running EvidenceModeler. By default a [pre-configured file](../assets/evm/evm_weights.txt) is used. However, you can pass your own version - ideally starting from our template to make sure that all types of evidence are considered. 
 
 #### `--pri_prot_targeted <int>` [ 5 (default ]
 Priority of protein-based hints for Augustus gene predictions from the closest reference proteome. Higher priority hints are considered first and override lower-priority hints.

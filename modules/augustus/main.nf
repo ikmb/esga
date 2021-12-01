@@ -19,6 +19,7 @@ workflow augustus_prediction {
 		mergeAugustusGff(runAugustusBatch.out.collect())
 		GffToFasta(mergeAugustusGff.out[0],genome)
 		AugustusFilterModels(mergeAugustusGff.out[0],genome)
+		AugustusToGmod(AugustusFilterModels.out[0])
 	emit:
 		gff = mergeAugustusGff.out
 		fasta = GffToFasta.out[0]
@@ -41,7 +42,7 @@ workflow augustus_prediction_slow {
                 mergeAugustusGff(runAugustus.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)		
-
+		AugustusToGmod(AugustusFilterModels.out[0])
         emit:
                 gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
@@ -66,6 +67,7 @@ workflow augustus_parallel {
 		mergeAugustusGff(joinAugustusChunks.out.collect())
                 GffToFasta(mergeAugustusGff.out[0],genome)
                 AugustusFilterModels(mergeAugustusGff.out[0],genome)
+		AugustusToGmod(mergeAugustusGff.out[0])
 	emit:
 		gff = mergeAugustusGff.out
                 fasta = GffToFasta.out[0]
@@ -211,7 +213,9 @@ process SpalnGffToTraining {
 // Can then be used for training AUGUSTUS
 process PasaGffToTraining {
 
-	label 'short_running'
+	publishDir "${params.outdir}/logs/augustus", mode: 'copy'
+	
+	label 'pasa'
 
 	input:
 	path pasa_gff
@@ -255,7 +259,10 @@ process trainAugustus {
         // If the model already exists, do not run new_species.pl
 	// Need to use bash for this as the config folder does not yet exist at this point of the process so can't use Groovy...
 	aug_folder = "augustus_config/species/${params.aug_species}"
-	options = "new_species.pl --species=${params.aug_species}"
+	aug_folder_path = file(aug_folder)
+	if (!aug_folder_path.exists()) {
+		options = "new_species.pl --species=${params.aug_species}"
+	}
 
 	// Re-training and optimization is quite slow and yields minimal gains. Disable if a fast annotation is requested. 
 	retrain_options = ""
@@ -392,7 +399,7 @@ process runAugustusChunks {
 
 	script:
 	chunk_name = genome_chunk.getName().tokenize("_")[-1]
-	augustus_result = "augustus.${chunk_name}.out.gff"
+	augustus_result = "augustus.${chunk_name}.out.gff3"
 	command_file = "commands." + chunk_name + ".txt"
 	utr = (params.utr) ? "on" : "off"
 	
@@ -406,6 +413,7 @@ process runAugustusChunks {
 	}
 
 	"""
+		echo \$AUGUSTUS_CONFIG_PATH > test.txt
 		samtools faidx $genome_chunk
 		fastaexplode -f $genome_chunk -d .
 		augustus_from_chunks.pl --chunk_length $params.aug_chunk_length --genome_fai ${genome_chunk}.fai --model $params.aug_species --utr ${utr} --options '${params.aug_options}' --aug_conf ${params.aug_config} --hints $hints > $command_file
@@ -431,7 +439,7 @@ process joinAugustusChunks {
 
 	script:
 	chunk_name = chunks.getBaseName() 
-	augustus_models = chunk_name + ".merged.gff"
+	augustus_models = chunk_name + ".merged.gff3"
 
 	"""
 		fix_joingenes_gtf.pl < $chunks > $augustus_models
@@ -452,7 +460,7 @@ process mergeAugustusGff {
 	path augustus_merged_gff
 
 	script:
-	augustus_merged_gff = "augustus.merged.out.gff"
+	augustus_merged_gff = "augustus.merged.out.gff3"
 	
 	"""	
 		cat $augustus_gffs >> merged.gff
@@ -481,4 +489,24 @@ process prepAugustusConfig {
 		cp -R $augustus_config_dir/* $copied_dir/
 	"""
 
+}
+
+process AugustusToGmod {
+
+	publishDir "${params.outdir}/gmod", mode: 'copy'
+
+	label 'augustus'
+
+	input:
+	path gff
+
+	output:
+	path gff_gmod
+
+	script:
+	gff_gmod = gff.getBaseName() + ".gmod.gff3"
+
+	"""
+		augustus2gbrowse.pl < $gff > $gff_gmod
+	"""
 }

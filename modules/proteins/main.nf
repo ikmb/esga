@@ -203,7 +203,7 @@ process spaln2gmod {
 	path spaln_track
 
 	script:
-	spaln_track = spaln_models.getBaseName() + ".gmod.gff"
+	spaln_track = spaln_models.getBaseName() + ".gmod.gff3"
 
 	"""
 		spaln2gmod.pl --infile $spaln_models > $spaln_track
@@ -243,7 +243,7 @@ process gthToHints {
 	path hints
 
 	script:
-	hints = file(gffs[0]).getBaseName() + ".proteins.${priority}.hints.gff"
+	hints = file(gffs[0]).getBaseName() + ".proteins.${priority}.hints.gff3"
 
 	"""
 		cat $gffs > gff

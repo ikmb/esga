@@ -22,7 +22,7 @@ Version: 1.1.1
 
 Citation: [https://doi.org/10.1093/nar/gkg770](https://doi.org/10.1093/nar/gkg770)
 
-Version: 2.4.0
+Version: 2.5.1
 
 ## Search / mapping algorithms
 
@@ -68,7 +68,7 @@ Version: 1.7.1
 
 Citation: [https://www.repeatmasker.org/](https://www.repeatmasker.org/)
 
-Version: 4.0.7
+Version: 4.1.2
 
 ### RepeatModeler
 

@@ -515,7 +515,7 @@ workflow {
 		if (params.proteins_targeted) {
 			augustus_train_from_spaln(genome_rm,protein_targeted_gff,augustus_config_dir)
 			augustus_conf_folder = augustus_train_from_spaln.out.acf_folder
-		} else if (params.transcripts && params.pasa) {
+		} else if (params.transcripts && params.pasa || params.reads && params.pasa) {
 			augustus_train_from_pasa(genome_rm,pasa_gff,augustus_config_dir)
 			augustus_conf_folder = augustus_train_from_pasa.out.acf_folder
 		} 

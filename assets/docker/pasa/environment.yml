@@ -19,3 +19,5 @@ dependencies:
  - perl-dbd-sqlite
  - perl-db-file
  - perl-uri
+ - slclust
+ - transdecoder >=5.5.0

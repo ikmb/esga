@@ -17,6 +17,7 @@ workflow repeatmasking_with_lib {
 		repeatMaskLib(fastaSplitSize.out.flatMap(),repeatLib.out.collect().map{it[0].toString()},rm_lib.collect())
 		fastaMergeChunks(repeatMaskLib.out[0].collect(),assembly_name)
 		repeats_to_hints(repeatMaskLib.out[1].collect())
+		repeats_to_gmod(repeatMaskLib.out[1].collect())
 	emit:
 		genome_rm = fastaMergeChunks.out[0]
 		genome_rm_gffs = repeatMaskLib.out[1].collectFile()
@@ -39,6 +40,7 @@ workflow repeatmasking_with_species {
                 repeatMaskSpecies(fastaSplitSize.out.flatMap(),trigger_library.out.collect())
                 fastaMergeChunks(repeatMaskSpecies.out[0].collect(),assembly_name)
 		repeats_to_hints(repeatMaskSpecies.out[1].collect())
+		repeats_to_gmod(repeatMaskLib.out[1].collect())
 	emit:
 		genome_rm = fastaMergeChunks.out[0]
                 genome_rm_gffs = repeatMaskSpecies.out[1].collectFile()
@@ -209,6 +211,24 @@ process repeats_to_hints {
 	"""
 		cat $gffs > merged.gff
 		gff_repeats2hints.pl --infile merged.gff > $hints
+	"""
+
+}
+
+process repeats_to_gmod {
+
+	publishDir "${params.outdir}/gmod", mode: 'copy'
+
+	input:
+	path gffs
+
+	output:
+	path gff
+
+	script:
+	gff = "repeats.gmod.gff"
+	"""
+		cat $gffs > $gff
 	"""
 
 }
