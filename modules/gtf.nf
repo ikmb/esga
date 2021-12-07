@@ -38,8 +38,9 @@ process kraken2gff {
 		sed -i.bak 's/;\"/\"/g' $gtf
 		sed -i.bak2 's/\t\t/\tensembl\t/' $gtf
 		kraken2gff.pl --infile $gtf > kraken.gff
-		grep -v "#" kraken.gff | sort -k1,1 -k4,4n -k5,5n -t\$'\t' >$gff
-		rm *.bak* kraken.gff
+		grep -v "#" kraken.gff | sort -k1,1 -k4,4n -k5,5n -t\$'\t' >sorted.gff
+		sed 's/;type.*\$//' sorted.gff > $gff
+		rm *.bak* kraken.gff sorted.gff
 	"""
 
 }

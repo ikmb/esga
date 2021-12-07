@@ -449,6 +449,8 @@ process joinAugustusChunks {
 // Merge all the chunk GFF files into one file and make new IDs
 process mergeAugustusGff {
 
+	stageOutMode 'rsync'
+
 	label 'short_running'
 
 	publishDir "${params.outdir}/annotation/augustus", mode: 'copy'
