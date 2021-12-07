@@ -136,6 +136,8 @@ process evmMerge {
 // since the output folders are not transferred between processes
 process evmToGff {
 
+	stageOutMode 'rsync'
+
 	label 'medium_running'
 
 	publishDir "${params.outdir}/annotation/evm", mode: 'copy'

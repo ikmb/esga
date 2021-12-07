@@ -22,13 +22,6 @@ ESGA depends on a number of sources, including the ab-initio predictor AUGUSTUS.
 * noisy input data (especially RNAseq)
 * inadequate repeat masking (some repeat types carry features that can be mistaken for, or are in fact, coding gene loci and seed incorrect predictions)
 
-To mitigate this, ESGA performs an optional filtering on the final ab-initio predictions to remove any model not supported by proteins. For vertebrates, this is not an unreasonable assumption, we find, as there is ample protein data available for
-most taxonomic groups.
-
-These files can be found under: results/logs/augustus
-
-We find that this filtered file is a good place to start with your manual curation work.
-
 ### Do I have enough/too much evidence data?
 
 Another critical factor is of course the amount of sequence data that is used for annotation. Especially
@@ -50,6 +43,8 @@ rm -Rf empty_dir work
 ## Common causes for pipeline crashes
 
 ### SPALN protein alignments
+
+Note: We have not encountered this issue in the past few releases of SPALN.
 
 Spaln appears a little flakey in some situations. By default, spaln is run with the option "-Q7". You can modify this by using the --spaln_q option (or "spaln_q:" when using a yaml file) - try setting it to 6, or 5, and resume the pipeline run with "-resume".
 
@@ -89,6 +84,7 @@ of our pipeline and feed the resulting FASTA file as EST (--transcripts) evidenc
 Another source of problems is the underlying alignment/splice model. Make sure to set the option --spaln_taxon to something reasonable (see our [documentation](usage.md). By default, it is set to "Tetrapod", but if that does not make sense, use something more fitting. When in doubt, use "unknown" and --resume the pipeline. 
 
 ## Extra resources and getting help
+
 If you still have an issue with running the pipeline then feel free to contact us and open an issue here on github.
 
 If you have problems that are related to Nextflow and not our pipeline then check out the [Nextflow gitter channel](https://gitter.im/nextflow-io/nextflow) or the [google group](https://groups.google.com/forum/#!forum/nextflow).

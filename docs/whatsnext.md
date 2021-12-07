@@ -1,20 +1,18 @@
 # What's next?
 
-The output of this pipeline is a set of genome-specific hints and, optionally, an in-silico gene prediction. 
-However, in most cases this is only the first step in an annotation project. Here are some suggestions on where to go
-next.
+ESGA produces one or several gene builds, as well as alignment tracks, synteny chain files, etc. However, these typically do not consitute the final goal of your annotation project. Here are some suggestions on what to do next. 
 
-## Competeness estimation
+## Completeness estimation
 
 The quality of the resulting annotation(s) may be judged by two main criteria:
 
 * Is the total number of genes roughly as expected?
 
-Poor annotations will typically contain many more (or much fewer) genes than what is expected. A good ballpark number for metazoans is 15.000-25.000 genes, although some species diverge from that. 
+Poor annotations will typically contain many more (or much fewer) genes than what is expected. A good ballpark number for metazoans is 15.000-25.000 genes, although some species diverge from that. To get a sense of what types of problems you may be dealing with, consider loading your assembly, annotation and possibly lift-over files and evidence tracks into e.g. [IGV](https://software.broadinstitute.org/software/igv/). For example, you may find that many genes do in fact have longer introns than what you anticipated, and as a result were broken into two or three models instead. Adjusting the maximum intron size can help address such an issue. 
 
 * How complete is the annotated proteome?
 
-Using [Busco](https://busco.ezlab.org/), you can check your protein FASTA files for completeness against a database of known proteins, for various taxonomic groups. ESGA can typically achieve up to 96% completeness if the genome has a suitable AUGUSTUS profile and rich evidence data available. Note that this number strongly depends on the completeness of your assembly - this you should probably check also. 
+Using [Busco](https://busco.ezlab.org/), you can check your protein FASTA files for completeness against a database of known proteins, for various taxonomic groups. ESGA can typically achieve up to 96% completeness if the genome has a suitable AUGUSTUS profile and rich evidence data available. Note that this number strongly depends on the completeness of your assembly - this you should probably check also (busco mode 'genome'). 
 
 ## Comparative genome annotation with AUGUSTUS
 
@@ -22,7 +20,7 @@ Basic gene structure and synteny is often conserved across closely related organ
 the prediction of gene models. 
 
 Using AUGUSTUS, it is possible to run such a comparative gene build using hints from the related genomes of interest and a whole-genome alignment
-graph to identify syntenic regions for gene prediction. For more information, please see [here](http://bioinf.uni-greifswald.de/augustus/binaries/tutorial-cgp/).  
+graph to identify syntenic regions for gene prediction. For more information, please see [here](http://bioinf.uni-greifswald.de/augustus/binaries/tutorial-cgp/). In some sense, ESGA emulates this approach by using lift-over annotations - but of course only for one genome at a time.  
 
 ## Functional annotation
 
@@ -33,3 +31,7 @@ Uniprot/Swissprot formatted reference database. A tool that makes this workflow 
 
 Automated gene prediction will typically contain numerous errors that are best rectified through manual review and curation. A suitable platform
 for this is available with [WebApollo](http://genomearchitect.github.io/).
+
+## Hosting your annotation
+
+Once you have completed your curation, you will perhaps want to make it available - to collaborators or the wider community. One popular solution for this is [Jbrowse](https://jbrowse.org/jb2/).
