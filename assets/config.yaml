@@ -7,7 +7,7 @@ rm_species: false
 reads: false
 references: false
 aug_species: "human"
-aug_options: ""
+aug_options: "--singlestrand=true --alternatives-from-evidence=on --minexonintronprob=0.08 --minmeanexonintronprob=0.4 --maxtracks=3"
 spaln_taxon: "Tetrapod"
 spaln_q: 5
 utr: false

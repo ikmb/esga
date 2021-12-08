@@ -44,6 +44,11 @@ An alternative to traditional ESTs are sequence data from de-novo assembled tran
 
 For long reads, you might want to check out IsoSeq (PacBio).
 
+### References
+
+ESGA is capable of aligning distantly related genomes (e.g. human to a non-primate mammal or even chicken) and projecting the matching reference annotation onto your assembly of interest. This can prove useful for manual curation of annotations and supports the gene building process. 
+Suitable references (assembly + annotation) can be downloaded from e.g. the EnsEMBL [FTP server](http://ftp.ensembl.org/pub). Other sources will probably work too, as long as they offer annotations in GTF format, but have not been thoroughly tested.
+
 ### RNA-seq data
 
 This is perhaps the most important type of annotation evidence, as it stems specifically from your organism of interest and should provide
@@ -84,9 +89,8 @@ chicken should work just fine. Remember, Augustus uses a range of hints produced
 the model are appropriate for you organism, this is a good approach.
 
 However, if you are not getting satisfying results or find that no pre-existing model is likely appropriate for your genome of choice, you can enable an
-automatic training routine. This will use available transcriptome data to either refine an existing model (--aug_species) or built one from scratch 
-(i.e. --aug_species does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a pretty long time (several
-days for larger genomes) as it needs to first re-construct gene models from the aligned transcriptome data, select all the models that are probably
+automatic training routine. This will use available proteome or transcriptome data to either refine an existing model (--aug_species) or built one from scratch 
+(i.e. --aug_species does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a fairly long time, especially from transcriptome data, as it needs to first re-construct gene models from the aligned transcriptome data, select all the models that are probably
 full length and finally use these gene structures to train Augustus. 
 
 ## Improving an initial gene build
@@ -104,6 +108,6 @@ controlled by a config file.
 Please see [here](https://github.com/Gaius-Augustus/Augustus/blob/master/config/extrinsic/extrinsic.cfg) for instructions on how to tweak these parameters for optiomal performance. ESGA uses, by default,
 an extrinsic config file that we have set up to work for our typical projects. You can however pass a modified version from the command line instead using the `--aug_config` option together with `-resume`. 
 
-## EVM
+### EVM
 ESGA produces several types of inputs (all of them optional) that are then combined by EVM into a consensus gene buid. The weight given to each type of input is controlled by the [weights.txt](../assets/evm/weights.txt) file. 
 EVM uses weights between 1 and 10 to determine which evidence to consider first. To pass your own, modified version of the weights file, use the `--evm_weights my_weights.txt` syntax together with the `-resume` option. 

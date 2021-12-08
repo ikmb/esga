@@ -26,6 +26,8 @@ ESGA produces Gmod compliant data tracks, including annotations and alignments. 
 
 ![](images/ESGA_Apollo_locus.PNG)
 
+ESGA outputs, visualized using WebApollo. In addition to novel gene builds (red), ESGA can optionally produce transcriptome-based gene models (purple) or lift-over annotations from distantly related organisms (orange) to help guide the curation effort. 
+
 ### Test data
 
 A simple test data set can be downloaded [here](https://drive.google.com/open?id=1VFqLnRJiuj5Vhj2KCOdY58jwxZKkkMVU)

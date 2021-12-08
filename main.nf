@@ -140,6 +140,9 @@ summary['AugustusSpecies'] = params.aug_species
 summary['AugustusOptions'] = params.aug_options
 summary['AugustusConfig'] = params.aug_config
 summary['ProteinAligner'] = params.protein_aligner
+if (params.spaln_taxon) {
+	summary["SpalnTaxon"] = params.spaln_taxon
+}		
 summary['Priority Proteins'] = params.pri_prot
 summary['Priority Transcripts'] = params.pri_est
 summary['Priority RNAseq Introns'] = params.pri_rnaseq
@@ -162,6 +165,11 @@ genome = file(params.genome)
 if (!genome.exists()) {
 	exit 1, "Could not find a genome assembly or file does not exist (---genome)"
 }
+
+if (params.protein_aligner == "spaln" && !params.spaln_taxon) {
+	exit 1, "Must specify a taxon model for SPALN alignments - see documentation for details"
+}
+
 if (params.proteins) {
 	p = file(params.proteins)
 	if (!p.exists()) {
@@ -361,7 +369,6 @@ log.info "Nextflow Version:		$workflow.nextflow.version"
 log.info "Command Line:			$workflow.commandLine"
 log.info "Run name: 			${params.run_name}"
 log.info "========================================="
-
 
 // ***********************************
 // WORKFLOW STARTS HERE
