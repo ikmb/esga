@@ -42,6 +42,28 @@ rm -Rf empty_dir work
 
 ## Common causes for pipeline crashes
 
+### Running out of space in $HOME
+
+Nextflow will download pipeline assets into a hidden directory $HOME/.nextflow. For this, you probably need a few hundred MB of free space. 
+
+In addition, the containers used by ESGA will be build on-the-fly, which consumes space as well (dozens of GB!). On some systems, Singularity will use $HOME/.singularity for this - this 
+is controlled by the Singularity config file, and can be manipulated by environment variables. If space does become an issue, consider re-directing the builds to a larger space. See the Singularity [documentation](https://sylabs.io/guides/3.0/user-guide/build_env.html) for more information. 
+
+### File locking not supported
+
+This issue will present itself immediately upon starting the pipeline. The underlying problem is that the database Nextflow uses for keeping track of the hundreds of jobs requires file locking support. Certain file systems, such as Lustre, do not support this. 
+
+A possible solution involves launching the pipeline from a file system that supports locking (like a local disc, or NFS mount). This does not have to be shared across nodes - however, the "work" directory must be re-directed to a shared space:
+
+```bash
+
+cd /tmp
+nextflow run ikmb/esga -params-file config-yaml -w /lustre/my_space/work 
+
+```
+
+More information can be found on the [Nextflow](https://www.nextflow.io/docs/latest/cli.html) website. 
+
 ### SPALN protein alignments
 
 Note: We have not encountered this issue in the past few releases of SPALN.

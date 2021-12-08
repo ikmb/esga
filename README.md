@@ -61,7 +61,6 @@ containers to deliver all the required dependencies. In our experience, this sol
 
 All you need to do is write a small config file and provide singularity/docker support on your cluster. Done. 
 
-
 ### Credits
 
 This pipeline was written by Dr. Montserrat Torres ([MontseTor](https://github.com/MontseTor)) and Dr. Marc Höppner ([marchoeppner](https://github.com/marchoeppner)) at [IKMB](http://www.ikmb.uni-kiel.de).
