@@ -18,22 +18,13 @@ It does not constitute a novel algorithm per se but combines many well-establish
 
 The minimum requirements are a genome file and at least one type of evidence.
 
-From this, the pipeline can run the following processing steps:
+From this, the pipeline will align evidences, compute synteny maps, perform repeat masking, model training and subsequent gene building using one or several tools. A full description is available [here](docs/pipeline.md).
 
-* Repeat-mask the assembly
-* align species-specific proteins to build protein-based gene models
-* align proteins against a genome and generate annotation hints
-* align transcripts against a genome and generate annotation hints
-* align RNA-seq reads against a genome and generate annotation hints
-* assemble transcripts from aligned RNA-seq reads and generate annotation hints (Trinity pipeline)
-* Produce evidence-based gene models from aligned transcript sequences (PASA pipeline)
-* Produce ab-initio, hint-supported gene models (AUGUSTUS pipeline)
-* Produce consensus annotation from all of the above (EvidenceModeler pipeline)
-* Predict non-coding RNA loci using RFam 
+### Results
 
-Optional:
+ESGA produces Gmod compliant data tracks, including annotations and alignments. These can be used as-is or taken as input for e.g. manual curation. 
 
-* Train a novel ab-initio prediction profile for AUGUSTUS (using PASA transcripts or SPALN protein models)
+![](images/ESGA_Apollo_locus.PNG)
 
 ### Test data
 

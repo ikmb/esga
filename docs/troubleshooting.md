@@ -64,17 +64,6 @@ nextflow run ikmb/esga -params-file config-yaml -w /lustre/my_space/work
 
 More information can be found on the [Nextflow](https://www.nextflow.io/docs/latest/cli.html) website. 
 
-### SPALN protein alignments
-
-Note: We have not encountered this issue in the past few releases of SPALN.
-
-Spaln appears a little flakey in some situations. By default, spaln is run with the option "-Q7". You can modify this by using the --spaln_q option (or "spaln_q:" when using a yaml file) - try setting it to 6, or 5, and resume the pipeline run with "-resume".
-
-Another source of problems is the underlying alignment/splice model. Make sure to set the option --spaln_taxon to something reasonable (see our [documentation](usage.md). By default, it is set to "Tetrapod", but if that does not make sense, use something more
-fitting. When in doubt, use "unknown" and --resume the pipeline.
-
-Finally, Spaln may behave oddly or fail catastrophically if the genome assembly contains problematic regions (illegal characters, for example). 
-
 ## RNA-seq
 
 ### Input files not found
