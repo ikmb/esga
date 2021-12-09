@@ -17,7 +17,7 @@ To provide a config file as an option, use `-params-file my_config.yaml`. The re
 
 `nextflow -c nextflow.config run ikmb/esga -params-file config.yaml`
 
-The default YAML options file:
+The default [YAML options file]():
 
 ```yaml
 genome: ""
@@ -30,21 +30,18 @@ rm_species: false
 reads: false
 aug_species: "human"
 ncrna: false
-aug_options: ""
+aug_options: "--singlestrand=true --alternatives-from-evidence=on --minexonintronprob=0.08 --minmeanexonintronprob=0.4 --maxtracks=3"
 spaln_taxon: "Tetrapod"
 spaln_q: 5
 utr: false
 trinity: false
 pasa: false
 evm: false
-nevm: 10
-nproteins: 200
 npart_size: 200000000
 max_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
 rnaseq_stranded: false
-email: false
 ```
   
 An explanation of these options follows below.
@@ -102,7 +99,7 @@ Each genome sequence will be aligned to the target assembly using [Satsuma2](htt
 annotation onto the target genome. The resulting mapped models will not be corrected for splice junctions, so they are not fully valid annotations. However, the mapping of CDS and exon features can be used to inform the subsequent gene finding process.
 
 Please make sure to use closely related genomes for this (to annotate a primate, any other primate or even mammal, would be fine). Also note that this process can consume a large amount of memory depending on the genome size(s) 
-(>>100GB for vertebrates). We have had this part crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 512GB Ram nodes in your cluster 
+(>>250GB for vertebrates). We have had this part crash on nodes with 250GB Ram when aligning a chunk of a mammalian genome to the whole genome of another mammal. So you are likely going to need >= 250GB Ram nodes in your cluster 
 to successfully use this part of ESGA when working on larger vertebrates. 
 
 Suitable sources for this step are, for example, genomes and annotations from the [EnsEMBL](https://www.ensembl.org/index.html) database.
@@ -137,6 +134,12 @@ Alignment software to use for RNAseq reads. Default is STAR.
 Alignment software to use for protein sequences. Default is `spaln` since it is much faster than `gth`. This speed advantage may be offset by some questionable alignments. In that case, re-run with gth to check if the alignments improve. 
 
 ### 5. Program parameters
+
+#### `--spaln_q <int>` [ 5 (default) ]
+Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details. Options 5 to 7 are typically what you want when aligning proteins against an entire genome.
+
+#### `--spaln_taxon` [ default = "Tetrapod" ]
+Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. The default, 'Tetrapod', should work for all tetrapods.
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
 The default value is set to 20000 - for something like a nematode, this would be too long; for some lower vertebrates it would probably be fine, although 
@@ -178,6 +181,8 @@ Location of AUGUSTUS extrinsic hint configuration file. By default, this pipelin
 AUGUSTUS has numerous options, not all of which are exposed through our pipeline. If you have good reason to use a specific command line flag that is not configurable through ESGA, you can use this option to set it manually. 
 For example, to allow Augustus to predict overlapping genes (default: no), you could specifiy `--aug_options '--singleStrand=true'`
 
+Our template contains some of the non-standard options that we found to help improve the results produced by AUGUSTUS. 
+
 #### `--aug_training` [ true | false (default) ]
 
 Enable training of an AUGUSTUS profile. This option requires either a species-specific proteome (--proteins_targeted) or a transcriptome (--pasa). ESGA will prefer a targeted proteome - however, this proteome should contain well over 1000 proteins, else the training will fail. 
@@ -210,12 +215,6 @@ Read coverage from RNA-seq experiments may be used to help AUGUSTUS in particula
 
 #### `--pri_trans <int>` [ 4 (default) ]
 Priority for trans-mapped annotations (i.e. lift-over gene models, converted to CDS and exon hints).
-
-#### `--spaln_q <int>` [ 5 (default) ]
-Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details. Options 5 to 7 are typically what you want when aligning proteins against an entire genome. 
-
-#### `--spaln_taxon` [ default = "Tetrapod" ]
-Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. The default, 'Tetrapod', should work for all tetrapods.
 
 ### 6. How to tune the speed of the pipeline - data splitting
 

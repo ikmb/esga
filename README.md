@@ -18,22 +18,15 @@ It does not constitute a novel algorithm per se but combines many well-establish
 
 The minimum requirements are a genome file and at least one type of evidence.
 
-From this, the pipeline can run the following processing steps:
+From this, the pipeline will align evidences, compute synteny maps, perform repeat masking, model training and subsequent gene building using one or several tools. A full description is available [here](docs/pipeline.md).
 
-* Repeat-mask the assembly
-* align species-specific proteins to build protein-based gene models
-* align proteins against a genome and generate annotation hints
-* align transcripts against a genome and generate annotation hints
-* align RNA-seq reads against a genome and generate annotation hints
-* assemble transcripts from aligned RNA-seq reads and generate annotation hints (Trinity pipeline)
-* Produce evidence-based gene models from aligned transcript sequences (PASA pipeline)
-* Produce ab-initio, hint-supported gene models (AUGUSTUS pipeline)
-* Produce consensus annotation from all of the above (EvidenceModeler pipeline)
-* Predict non-coding RNA loci using RFam 
+### Results
 
-Optional:
+ESGA produces Gmod compliant data tracks, including annotations and alignments. These can be used as-is or taken as input for e.g. manual curation. 
 
-* Train a novel ab-initio prediction profile for AUGUSTUS (using PASA transcripts or SPALN protein models)
+![](images/ESGA_Apollo_locus.PNG)
+
+ESGA outputs, visualized using WebApollo. In addition to novel gene builds (red), ESGA can optionally produce transcriptome-based gene models (purple) or lift-over annotations from distantly related organisms (orange) to help guide the curation effort. 
 
 ### Test data
 
@@ -60,7 +53,6 @@ annotations from other model systems. Finally, we wanted all of this to be usabl
 containers to deliver all the required dependencies. In our experience, this solves some of the main issues people typically experience when trying to annotate a genome.
 
 All you need to do is write a small config file and provide singularity/docker support on your cluster. Done. 
-
 
 ### Credits
 

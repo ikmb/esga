@@ -50,7 +50,7 @@ available options can be found [here](https://www.nextflow.io/docs/latest/execut
 Create your own config file and pass it to the pipeline during start-up using the `-c` flag
 
 ```bash
-nextflow -c nextflow.config ikmb/esga -params-file config.yaml`
+nextflow -c nextflow.config ikmb/esga -params-file config.yaml
 ```
 
 An example of a simple SLURM config file:`
@@ -123,4 +123,5 @@ singularity {
 }
 ```
 
-Note, that the cacheDir option will make sure that the container is only downloaded once and can be re-used for future pipeline runs. Otherwise, nextflow will re-download it every time you start an annotation project. 
+Note, that the cacheDir option will make sure that the container is only downloaded once and can be re-used for future pipeline runs. Otherwise, nextflow will re-download it every time you start an annotation project. This assumes that
+cacheDir is located on a shared file system. 

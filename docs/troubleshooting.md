@@ -42,16 +42,27 @@ rm -Rf empty_dir work
 
 ## Common causes for pipeline crashes
 
-### SPALN protein alignments
+### Running out of space in $HOME
 
-Note: We have not encountered this issue in the past few releases of SPALN.
+Nextflow will download pipeline assets into a hidden directory $HOME/.nextflow. For this, you probably need a few hundred MB of free space. 
 
-Spaln appears a little flakey in some situations. By default, spaln is run with the option "-Q7". You can modify this by using the --spaln_q option (or "spaln_q:" when using a yaml file) - try setting it to 6, or 5, and resume the pipeline run with "-resume".
+In addition, the containers used by ESGA will be build on-the-fly, which consumes space as well (dozens of GB!). On some systems, Singularity will use $HOME/.singularity for this - this 
+is controlled by the Singularity config file, and can be manipulated by environment variables. If space does become an issue, consider re-directing the builds to a larger space. See the Singularity [documentation](https://sylabs.io/guides/3.0/user-guide/build_env.html) for more information. 
 
-Another source of problems is the underlying alignment/splice model. Make sure to set the option --spaln_taxon to something reasonable (see our [documentation](usage.md). By default, it is set to "Tetrapod", but if that does not make sense, use something more
-fitting. When in doubt, use "unknown" and --resume the pipeline.
+### File locking not supported
 
-Finally, Spaln may behave oddly or fail catastrophically if the genome assembly contains problematic regions (illegal characters, for example). 
+This issue will present itself immediately upon starting the pipeline. The underlying problem is that the database Nextflow uses for keeping track of the hundreds of jobs requires file locking support. Certain file systems, such as Lustre, do not support this. 
+
+A possible solution involves launching the pipeline from a file system that supports locking (like a local disc, or NFS mount). This does not have to be shared across nodes - however, the "work" directory must be re-directed to a shared space:
+
+```bash
+
+cd /tmp
+nextflow run ikmb/esga -params-file config-yaml -w /lustre/my_space/work 
+
+```
+
+More information can be found on the [Nextflow](https://www.nextflow.io/docs/latest/cli.html) website. 
 
 ## RNA-seq
 

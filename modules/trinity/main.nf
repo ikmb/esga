@@ -19,7 +19,7 @@ process trinity {
 
 	scratch true 
 
-	//publishDir "${params.outdir}/transcripts/trinity", mode: 'copy'
+	publishDir "${params.outdir}/transcripts/trinity", mode: 'copy'
 	
 	input:
 	path bam	
