@@ -17,7 +17,7 @@ To provide a config file as an option, use `-params-file my_config.yaml`. The re
 
 `nextflow -c nextflow.config run ikmb/esga -params-file config.yaml`
 
-The default YAML options file:
+The default [YAML options file]():
 
 ```yaml
 genome: ""
@@ -37,14 +37,11 @@ utr: false
 trinity: false
 pasa: false
 evm: false
-nevm: 10
-nproteins: 200
 npart_size: 200000000
 max_intron_size: 50000
 min_contig_size: 5000
 singleEnd: false
 rnaseq_stranded: false
-email: false
 ```
   
 An explanation of these options follows below.
