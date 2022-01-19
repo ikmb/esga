@@ -22,4 +22,4 @@ dependencies:
  - slclust
  - transdecoder >=5.5.0
  - mysqlclient
- - perl-db-mysql
+ - perl-dbd-mysql
