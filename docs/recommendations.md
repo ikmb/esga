@@ -63,8 +63,8 @@ reads takes a very long time if too much data is provided, typically without muc
 
 ## Repeats
 
-By default, Repeatmasker will run with the built-in DFam hmm profile for (mostly) primates. It is thus generally advisable to instead provide 
-repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler - which ESGA will run for you if no other repeat informatino is provided) or curated repeat libraries from 
+By default, Repeatmasker will run with the built-in DFam hmm profile for (mostly) established model systems. It is thus generally advisable to instead provide 
+repeat annotations in FASTA format. Possible sources include self-computed repeats (using RepeatModeler - which ESGA will run for you if no other repeat information is provided) or curated repeat libraries from 
 GRINST (www.grinst.org, commercial). 
 
 If you have a copy of the complete Repeatmasker library (and an installation of RM), you can extract the repeat annotation from a species like so: 
@@ -90,7 +90,7 @@ the model are appropriate for you organism, this is a good approach.
 
 However, if you are not getting satisfying results or find that no pre-existing model is likely appropriate for your genome of choice, you can enable an
 automatic training routine. This will use available proteome or transcriptome data to either refine an existing model (--aug_species) or built one from scratch 
-(i.e. --aug_species does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a fairly long time, especially from transcriptome data, as it needs to first re-construct gene models from the aligned transcriptome data, select all the models that are probably
+(i.e. --aug_species does not yet exist). This is somewhat experimental and depends a lot on the quality of the input data. It also takes a fairly long time, especially from transcriptome data, as the process needs to first re-construct gene models from the aligned transcriptome data, select all the models that are probably
 full length and finally use these gene structures to train Augustus. 
 
 ## Improving an initial gene build

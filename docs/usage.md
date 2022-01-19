@@ -17,7 +17,7 @@ To provide a config file as an option, use `-params-file my_config.yaml`. The re
 
 `nextflow -c nextflow.config run ikmb/esga -params-file config.yaml`
 
-The default [YAML options file]():
+The default (reduced) [YAML options file](../assets/config.yaml):
 
 ```yaml
 genome: ""
@@ -30,8 +30,10 @@ rm_species: false
 reads: false
 aug_species: "human"
 ncrna: false
+protein_aligner: spaln
+rnaseq_aligner: star
 aug_options: "--singlestrand=true --alternatives-from-evidence=on --minexonintronprob=0.08 --minmeanexonintronprob=0.4 --maxtracks=3"
-spaln_taxon: "Tetrapod"
+spaln_taxon: false
 spaln_q: 5
 utr: false
 trinity: false
