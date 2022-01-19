@@ -1,27 +1,24 @@
-genome: ""
-proteins: false
-proteins_targeted: false
-transcripts: false
-rm_lib: false
-rm_species: false
-reads: false
-references: false
-aug_species: "human"
-aug_options: "--singlestrand=true --alternatives-from-evidence=on --minexonintronprob=0.08 --minmeanexonintronprob=0.4 --maxtracks=3"
-spaln_taxon: "Tetrapod"
-spaln_q: 5
-utr: false
-ncrna: false
-trinity: false
-pasa: false
-evm: false
-nevm: 10
-protein_aligner: spaln
-rnaseq_aligner: star
-nproteins: 200
-npart_size: 200000000
-max_intron_size: 50000
-min_contig_size: 5000
-singleEnd: false
-rnaseq_stranded: false
-email: false
+genome: "" 			# Your genome assembly
+proteins: false 		# related proteins
+proteins_targeted: false 	# proteins from this organism
+transcripts: false 		# pre-assembled transcripts/ESTs
+rm_lib: false 			# repeats in FASTA format
+rm_species: false 		# Taxonomic group for repeat-masking
+reads: false 			# Path to RNA-seq data
+references: false 		# Related genoems and their annotations
+aug_species: "human"		# AUGUSTUS profile
+aug_options: "--singlestrand=true --alternatives-from-evidence=on --minexonintronprob=0.08 --minmeanexonintronprob=0.4 --maxtracks=3" # AUGUSTUS additional options
+protein_aligner: spaln 		# Protein aligner
+rnaseq_aligner: star		# RNAseq aligner
+spaln_taxon: false		# Protein aligner profile
+utr: false			# Predict UTRS with AUGUSTUS
+ncrna: false			# Search for ncRNAs with RFam
+trinity: false			# Reconstruct transcriptome de-novo
+pasa: false			# PASA gene build pipeline
+evm: false			# Consensus gene building
+npart_size: 200000000		# Split assembly into sizes of this
+max_intron_size: 50000		# Largest possible intron
+min_contig_size: 5000		# Remove scaffolds smaller than this
+singleEnd: false		# RNAseq data is single-end?
+rnaseq_stranded: false		# RNAseq data is stranded (dUTP)?
+email: false			# Your Email adress

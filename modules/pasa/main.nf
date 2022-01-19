@@ -101,11 +101,11 @@ process pasa_assembly {
 
 	mysql_create_options = ""
         mysql_config_option = ""
-        mysql_db_name = ""
+        mysql_db_name = params.pasa_mysql_db_name
         if (params.pasa_mysql_user) {
                 mysql_options = "make_pasa_mysql_config.pl --infile \$PASAHOME/pasa_conf/conf.txt --outfile pasa_mysql_conf.txt --user ${params.pasa_mysql_user} --pass ${params.pasa_mysql_pass} --host ${params.pasa_mysql_host} --port ${params.pasa_mysql_port}"
                 mysql_config_option = "-C pasa_mysql_conf.txt"
-                mysql_db_name = "--mysql $run_name"
+                mysql_db_name = "--mysql pasa_db"
         }
 
 	"""
@@ -125,8 +125,9 @@ process pasa_assembly {
 // Turn the pasa results into full gff3 file
 process PasaToModels {
 
-	label 'pasaconda'
+	label 'pasa'
 
+	//scratch true 
         publishDir "${params.outdir}/annotation/pasa", mode: 'copy'
 
         input:

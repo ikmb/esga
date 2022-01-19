@@ -9,8 +9,6 @@ likely be to achieve a highly sensitive annotation in just "one go".
 
 In any case, the product of this (or any other) annotation pipeline is a best-guess interpretation and will require manual curation to achieve the best possible result suitable for highly detailed genetic/genomic studies.
 
-The resulting data will be processed by annotation "engines" (AUGUSTUS, Pasa and EvidenceModeler) and produce distinct gene builds for each of these tools.
-
-All of the data types and tools are optional, with the expception of AUGUSTUS. More information on this is available from the [usage](usage.md) instructions.
+All of the data types and tools are optional, with the expception of AUGUSTUS. More information on this is available in the [usage](usage.md) instructions.
 
 ![](../images/pipeline_schema.png) 
