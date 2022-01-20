@@ -93,7 +93,7 @@ nextflow run ikmb/esga --references /path/to/ref_genome/my_genome.fa [...]
 
 ```bash
 
-nextflow run ikmb/esga --refefences /path/to/ref_genomes/*.fa [...]
+nextflow run ikmb/esga --refefences '/path/to/ref_genomes/*.fa' [...]
 
 ```
 
