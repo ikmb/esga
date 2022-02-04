@@ -20,6 +20,6 @@ dependencies:
  - perl-db-file
  - perl-uri
  - slclust
- - transdecoder >=5.5.0
+ - bioconda::transdecoder >=5.5.0
  - mysqlclient
  - perl-dbd-mysql

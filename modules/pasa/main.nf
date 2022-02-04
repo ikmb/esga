@@ -112,10 +112,11 @@ process pasa_assembly {
 		make_pasa_config.pl --infile ${params.pasa_config} --trunk $trunk --outfile pasa_DB.config $mysql_db_name
 
 		\$PASAHOME/Launch_PASA_pipeline.pl \
-			--ALIGNERS minimap2 \
+			--ALIGNERS ${params.pasa_aligner} \
                         -c pasa_DB.config -C -R \
                         -t $transcripts_clean \
                         -I $params.max_intron_size \
+			--transcribed_is_aligned_orient \
                         -g $genome \
                         --CPU ${task.cpus} \
 	"""

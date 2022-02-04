@@ -140,8 +140,8 @@ Alignment software to use for protein sequences. Default is `spaln` since it is 
 #### `--spaln_q <int>` [ 5 (default) ]
 Algorithm to be used for SPALN alignment. See Spaln [documentation](https://github.com/ogotoh/spaln#Exec) for details. Options 5 to 7 are typically what you want when aligning proteins against an entire genome.
 
-#### `--spaln_taxon` [ default = "Tetrapod" ]
-Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. The default, 'Tetrapod', should work for all tetrapods.
+#### `--spaln_taxon` [ default = false ]
+Name of the taxonomic group to choose the internal SPALN parameters. See column 2 of [this](https://github.com/ogotoh/spaln/blob/master/table/gnm2tab) list. If nothing is set, the pipeline will fail (to make sure you don't accidentally use a pre-set default that does not fit your organism). 
 
 #### `--max_intron_size <int>` [ 20000 (default) ]
 The default value is set to 20000 - for something like a nematode, this would be too long; for some lower vertebrates it would probably be fine, although 
