@@ -1,3 +1,5 @@
+THIS PIPELINE HAS BEEN REPLACE BY [nf-core/genomeannotator](https://github.com/nf-core/genomeannotator) and is no longer maintained. 
+
 ![](images/deNBI_logo.jpg) ![](images/ikmb_bfx_logo.png)
 
 # ESGA - Genome Annotation (v2)
